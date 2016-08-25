@@ -1,0 +1,2 @@
+--find-links=https://gapi-pypi.appspot.com
+google-endpoints-api-management>=0.2.0,<0.3

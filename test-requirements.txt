@@ -1,0 +1,10 @@
+--find-links=https://gapi-pypi.appspot.com
+appengine-sdk>=1.9.36,<2.0
+mox>=0.5.3,<0.6
+mock>=1.3.0
+pytest>=2.8.3
+pytest-cov>=1.8.1
+pytest-timeout>=1.0.0
+webtest>=2.0.23,<3.0
+protorpc==0.12.0a0
+protobuf>=3.0.0b3

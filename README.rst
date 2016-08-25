@@ -1,0 +1,67 @@
+Google Cloud Endpoints
+======================
+
+Google Cloud Endpoints is a Google App Engine feature that simplifies your API
+development and management.  In just a few steps, it wraps your code to build
+and deploy an API backend server.
+
+
+Installation
+-------------
+
+Install using pip, as recommended per `App Engine vendoring`_
+
+  ::
+     [sudo] pip install -t lib --ignore-installed google-endpoints
+
+
+
+Python Versions
+---------------
+
+google-endpoints is currently tested with Python 2.7.
+
+
+Contributing
+------------
+
+Contributions to this library are always welcome and highly encouraged.
+
+See the `CONTRIBUTING`_ documentation for more information on how to get started.
+
+
+Versioning
+----------
+
+This library follows `Semantic Versioning`_
+
+It is currently in major version zero (``0.y.z``), which means that anything
+may change at any time and the public API should not be considered
+stable.
+
+
+Details
+-------
+
+For detailed documentation of the modules in google-endpoints, please watch `DOCUMENTATION`_.
+
+
+License
+-------
+
+BSD - See `LICENSE`_ for more information.
+
+.. _`CONTRIBUTING`: https://github.com/googleapis/google-endpoints/blob/master/CONTRIBUTING.rst
+.. _`LICENSE`: https://github.com/googleapis/google-endpoints/blob/master/LICENSE
+.. _`Install virtualenv`: http://docs.python-guide.org/en/latest/dev/virtualenvs/
+.. _`pip`: https://pip.pypa.io
+.. _`edit RST online`: http://rst.ninjs.org
+.. _`RST cheatsheet`: http://docutils.sourceforge.net/docs/user/rst/cheatsheet.txt
+.. _`py.test`: http://pytest.org
+.. _`Tox-driven python development`: http://www.boronine.com/2012/11/15/Tox-Driven-Python-Development/
+.. _`Sphinx documentation example`: http://sphinx-doc.org/latest/ext/example_google.html
+.. _`hyper`: https://github.com/lukasa/hyper
+.. _`Google APIs`: https://github.com/google/googleapis/
+.. _`Semantic Versioning`: http://semver.org/
+.. _`DOCUMENTATION`: https://google-endpoints.readthedocs.org/
+.. _`App Engine vendoring`: https://cloud.google.com/appengine/docs/python/tools/using-libraries-python-27#vendoring
