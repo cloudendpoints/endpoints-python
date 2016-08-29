@@ -50,5 +50,6 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
+    scripts=['endpoints/endpointscfg.py'],
     tests_require=['mox', 'protobuf', 'protorpc', 'pytest', 'webtest'],
 )
