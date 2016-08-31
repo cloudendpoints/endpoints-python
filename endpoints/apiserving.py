@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -59,6 +59,7 @@ compatible errors, it exposes a helper service that describes your services.
 import cgi
 import httplib
 import json
+import logging
 import os
 
 import api_backend_service
@@ -67,6 +68,10 @@ import api_exceptions
 import endpoints_dispatcher
 import protojson
 
+from google.appengine.api import app_identity
+from google.api.control import client as control_client
+from google.api.control import wsgi as control_wsgi
+
 from protorpc import messages
 from protorpc import remote
 from protorpc.wsgi import service as wsgi_service
@@ -74,6 +79,7 @@ from protorpc.wsgi import service as wsgi_service
 import util
 
 
+logger = logging.getLogger(__name__)
 package = 'google.appengine.endpoints'
 
 
@@ -444,6 +450,7 @@ def api_server(api_services, **kwargs):
   instance for the service handlers described by the services passed in.
   Additionally, it registers each API in ApiConfigRegistry for later use
   in the BackendService.getApiConfigs() (API config enumeration service).
+  It also configures service control.
 
   Args:
     api_services: List of protorpc.remote.Service classes implementing the API
@@ -462,5 +469,29 @@ def api_server(api_services, **kwargs):
   if 'protocols' in kwargs:
     raise TypeError("__init__() got an unexpected keyword argument 'protocols'")
 
-  return endpoints_dispatcher.EndpointsDispatcherMiddleware(
-      _ApiServer(api_services, **kwargs))
+  # Construct the api serving app
+  apis_app = _ApiServer(api_services, **kwargs)
+  dispatcher = endpoints_dispatcher.EndpointsDispatcherMiddleware(apis_app)
+
+  # Determine the service name
+  service_name = os.environ.get('ENDPOINTS_SERVICE_NAME')
+  if not service_name:
+    logger.warn('Did not specify the ENDPOINTS_SERVICE_NAME environment'
+                ' variable so service control is disabled.  Please specify the'
+                ' the name of service in ENDPOINTS_SERVICE_NAME to enable it.')
+    return dispatcher
+
+
+  # The DEFAULT 'config' should be tuned so that it's always OK for python
+  # App Engine workloads.  The config can be adjusted, but that's probably
+  # unnecessary on App Engine.
+  controller = control_client.Loaders.DEFAULT.load(service_name)
+
+  # Start the GAE background thread that powers the control client's cache.
+  control_client.use_gae_thread()
+  controller.start()
+
+  return control_wsgi.add_all(
+      dispatcher,
+      app_identity.get_application_id(),
+      controller)
