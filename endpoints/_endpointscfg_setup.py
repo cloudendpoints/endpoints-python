@@ -76,6 +76,7 @@ def _FindSdkPath():
 
 
 def _SetupPaths():
+  """Sets up the sys.path with special directories for endpointscfg.py."""
   sdk_path = _FindSdkPath()
   if sdk_path:
     sys.path.append(sdk_path)
@@ -86,9 +87,12 @@ def _SetupPaths():
       sys.path = additional_paths + sys.path
     except ImportError:
       logging.warning(_IMPORT_ERROR_WARNING)
-    return
   else:
     logging.warning(_NOT_FOUND_WARNING)
+
+  # Add the path above this directory, so we can import the endpoints package
+  # from the user's app code (rather than from another, possibly outdated SDK).
+  sys.path = [os.path.dirname(os.path.dirname(__file__))] + sys.path
 
 
 _SetupPaths()
