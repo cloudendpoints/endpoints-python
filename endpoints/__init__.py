@@ -23,6 +23,7 @@ from api_config import api
 from api_config import API_EXPLORER_CLIENT_ID
 from api_config import AUTH_LEVEL
 from api_config import EMAIL_SCOPE
+from api_config import Issuer
 from api_config import method
 from api_exceptions import *
 from apiserving import *
