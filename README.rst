@@ -1,9 +1,7 @@
 Google Cloud Endpoints
 ======================
 
-Google Cloud Endpoints aims to be a simple solution to assist in creation of RESTful web APIs in python. It is a Google App Engine feature that simplifies your API development and management.  In just a few steps, it wraps your code to build
-and deploy an API backend server.
-
+Google Cloud Endpoints is a solution for creating RESTful web APIs.
 
 Installation
 -------------
