@@ -30,6 +30,10 @@ with open('endpoints/__init__.py', 'r') as f:
     else:
         raise RuntimeError("No version number found!")
 
+install_requires = [
+    'google-endpoints-api-management>=1.0.0b1'
+]
+
 setup(
     name='google-endpoints',
     version=version,
@@ -52,4 +56,5 @@ setup(
     ],
     scripts=['endpoints/endpointscfg.py'],
     tests_require=['mox', 'protobuf', 'protorpc', 'pytest', 'webtest'],
+    install_requires=install_requires,
 )
