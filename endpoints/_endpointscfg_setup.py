@@ -81,10 +81,8 @@ def _SetupPaths():
   if sdk_path:
     sys.path.append(sdk_path)
     try:
-      import wrapper_util  # pylint: disable=g-import-not-at-top
-      paths = wrapper_util.Paths(sdk_path)
-      additional_paths = paths.v1_extra_paths + paths.endpointscfg_extra_paths
-      sys.path = additional_paths + sys.path
+      import dev_appserver  # pylint: disable=g-import-not-at-top
+      dev_appserver.fix_sys_path()
     except ImportError:
       logging.warning(_IMPORT_ERROR_WARNING)
   else:
@@ -92,7 +90,9 @@ def _SetupPaths():
 
   # Add the path above this directory, so we can import the endpoints package
   # from the user's app code (rather than from another, possibly outdated SDK).
-  sys.path = [os.path.dirname(os.path.dirname(__file__))] + sys.path
+  # pylint: disable=g-import-not-at-top
+  from google.appengine.ext import vendor
+  vendor.add(os.path.dirname(os.path.dirname(__file__)))
 
 
 _SetupPaths()
