@@ -55,7 +55,7 @@ class SwaggerGenerator(object):
         return HelloResponse(hello='Hello there, %s!' %
                              request.my_name)
 
-    api_config = SwaggerGenerator().pretty_print_swagger_to_json(HelloService)
+    api_config = SwaggerGenerator().pretty_print_config_to_json(HelloService)
 
   The resulting api_config will be a JSON Swagger document describing the API
   implemented by HelloService.

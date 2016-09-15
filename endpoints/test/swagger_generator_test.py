@@ -188,7 +188,7 @@ class SwaggerGeneratorTest(unittest.TestCase):
         """Path has a parameter and request body is in the body field."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_swagger_to_json(MyService))
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
     # Some constants to shorten line length in expected Swagger output
     prefix = 'SwaggerGeneratorTest'
@@ -658,7 +658,7 @@ class SwaggerGeneratorTest(unittest.TestCase):
       def noop_get(self, unused_request):
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_swagger_to_json(MyService))
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
     expected_swagger = {
         'swagger': '2.0',
