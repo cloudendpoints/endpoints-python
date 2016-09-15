@@ -214,7 +214,7 @@ class SwaggerGeneratorTest(unittest.TestCase):
         'schemes': ['https'],
         'basePath': '/_ah/api',
         'paths': {
-            '/entries': {
+            '/root/v1/entries': {
                 'get': {
                     'operationId': 'MyService_entriesGet',
                     'parameters': [
@@ -294,24 +294,32 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
                 'post': {
                     'operationId': 'MyService_entriesPut',
                     'parameters': [],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                             'schema': {
                                 '$ref': self._def_path(boolean_response),
                             },
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/entries/container': {
+            '/root/v1/entries/container': {
                 'get': {
                     'operationId': 'MyService_entriesGetContainer',
                     'parameters': [
@@ -391,12 +399,16 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/entries/container/{entryId}/items': {
+            '/root/v1/entries/container/{entryId}/items': {
                 'post': {
                     'operationId': 'MyService_itemsPutContainer',
                     'parameters': [
@@ -409,12 +421,16 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/entries/container/{entryId}/publish': {
+            '/root/v1/entries/container/{entryId}/publish': {
                 'post': {
                     'operationId': 'MyService_entriesPublishContainer',
                     'parameters': [
@@ -427,12 +443,16 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/entries/{entryId}/items': {
+            '/root/v1/entries/{entryId}/items': {
                 'post': {
                     'operationId': 'MyService_itemsPut',
                     'parameters': [
@@ -445,12 +465,16 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/entries/{entryId}/publish': {
+            '/root/v1/entries/{entryId}/publish': {
                 'post': {
                     'operationId': 'MyService_entriesPublish',
                     'parameters': [
@@ -463,45 +487,61 @@ class SwaggerGeneratorTest(unittest.TestCase):
                     ],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/nested': {
+            '/root/v1/nested': {
                 'post': {
                     'operationId': 'MyService_entriesNestedCollectionAction',
                     'parameters': [],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/process': {
+            '/root/v1/process': {
                 'post': {
                     'operationId': 'MyService_entriesProcess',
                     'parameters': [],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
-            '/roundtrip': {
+            '/root/v1/roundtrip': {
                 'post': {
                     'operationId': 'MyService_entriesRoundtrip',
                     'parameters': [],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                             'schema': {
                                 '$ref': self._def_path(all_fields)
                             },
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
             },
         },
@@ -644,6 +684,15 @@ class SwaggerGeneratorTest(unittest.TestCase):
                 },
             },
         },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
     }
 
     test_util.AssertDictEqual(expected_swagger, api, self)
@@ -673,16 +722,29 @@ class SwaggerGeneratorTest(unittest.TestCase):
         'schemes': ['http'],
         'basePath': '/_ah/api',
         'paths': {
-            '/noop': {
+            '/root/v1/noop': {
                 'get': {
                     'operationId': 'MyService_noopGet',
                     'parameters': [],
                     'responses': {
                         '200': {
-                            'description': '200_response',
+                            'description': 'A successful response',
                         },
                     },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
                 },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
             },
         },
     }
