@@ -79,7 +79,7 @@ from protorpc.wsgi import service as wsgi_service
 import util
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 package = 'google.appengine.endpoints'
 
 
@@ -476,11 +476,11 @@ def api_server(api_services, **kwargs):
   # Determine the service name
   service_name = os.environ.get('ENDPOINTS_SERVICE_NAME')
   if not service_name:
-    logger.warn('Did not specify the ENDPOINTS_SERVICE_NAME environment'
-                ' variable so service control is disabled.  Please specify the'
-                ' the name of service in ENDPOINTS_SERVICE_NAME to enable it.')
+    _logger.warn('Did not specify the ENDPOINTS_SERVICE_NAME environment'
+                 ' variable so service control is disabled.  Please specify'
+                 ' the name of service in ENDPOINTS_SERVICE_NAME to enable'
+                 ' it.')
     return dispatcher
-
 
   # The DEFAULT 'config' should be tuned so that it's always OK for python
   # App Engine workloads.  The config can be adjusted, but that's probably
