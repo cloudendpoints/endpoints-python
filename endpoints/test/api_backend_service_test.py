@@ -48,7 +48,7 @@ class ApiConfigRegistryTest(unittest.TestCase):
     self.registry.register_backend(config2)
     self.assertEquals('c1.foo', self.registry.lookup_api_method('method1'))
     self.assertEquals('c2.bar', self.registry.lookup_api_method('method2'))
-    self.assertSameElements([config1, config2], self.registry.all_api_configs())
+    self.assertItemsEqual([config1, config2], self.registry.all_api_configs())
 
   def testNoneApiConfigContent(self):
     self.registry.register_backend(None)
@@ -113,11 +113,17 @@ class BackedServiceImplTest(unittest.TestCase):
     self.assertEqual([], self.service.getApiConfigs(request).items)
 
   def testGetApiConfigsWithCorrectRevision(self):
-    request = api_backend.GetApiConfigsRequest(appRevision='1')
+    # TODO: there currently exists a bug in protorpc where non-unicode strings
+    #     aren't validated correctly and so their values aren't set correctly.
+    #     Remove 'u' this once that's fixed. This shouldn't affect production.
+    request = api_backend.GetApiConfigsRequest(appRevision=u'1')
     self.assertEqual([], self.service.getApiConfigs(request).items)
 
   def testGetApiConfigsWithIncorrectRevision(self):
-    request = api_backend.GetApiConfigsRequest(appRevision='2')
+    # TODO: there currently exists a bug in protorpc where non-unicode strings
+    #     aren't validated correctly and so their values aren't set correctly.
+    #     Remove 'u' this once that's fixed. This shouldn't affect production.
+    request = api_backend.GetApiConfigsRequest(appRevision=u'2')
     self.assertRaises(
         api_exceptions.BadRequestException, self.service.getApiConfigs, request)
 

@@ -25,8 +25,7 @@ from protorpc import messages
 import test_util
 
 
-# TODO(friedmanb): Use the package variable to force the descriptor prefix
-_DESCRIPTOR_PATH_PREFIX = ''
+package = 'TestPackage'
 
 
 class ModuleInterfaceTest(test_util.ModuleInterfaceTest,
@@ -68,8 +67,7 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     parser.add_message(SelfReference)
     schemas = parser.schemas()
     self.assertEquals(1, len(schemas))
-    self.assertTrue(
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestSelfReference' in schemas)
+    self.assertTrue(package + 'SelfReference' in schemas)
 
   def testRecursiveDescent(self):
     """MessageFields should be recursively parsed."""
@@ -87,9 +85,9 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     parser.add_message(A)
     schemas = parser.schemas()
     self.assertEquals(3, len(schemas))
-    self.assertTrue(_DESCRIPTOR_PATH_PREFIX + 'MessageParserTestA' in schemas)
-    self.assertTrue(_DESCRIPTOR_PATH_PREFIX + 'MessageParserTestB' in schemas)
-    self.assertTrue(_DESCRIPTOR_PATH_PREFIX + 'MessageParserTestC' in schemas)
+    self.assertTrue(package + 'A' in schemas)
+    self.assertTrue(package + 'B' in schemas)
+    self.assertTrue(package + 'C' in schemas)
 
   def testRepeatedAndRequired(self):
     """Repeated and required fields should show up as such in the schema."""
@@ -114,9 +112,9 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     schemas = parser.schemas()
 
     expected = {
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestAllFields': {
+        package + 'AllFields': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestAllFields',
+            'id': package + 'AllFields',
             'description': 'Documentation for AllFields.',
             'properties': {
                 'string': {
@@ -177,9 +175,9 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     schemas = parser.schemas()
 
     expected = {
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestAllTypes': {
+        package + 'AllTypes': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestAllTypes',
+            'id': package + 'AllTypes',
             'description': 'Contains all field types.',
             'properties': {
                 'bool_value': {'type': 'boolean'},
@@ -235,9 +233,9 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     schemas = parser.schemas()
 
     expected = {
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestMyMessage': {
+        package + 'MyMessage': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestMyMessage',
+            'id': package + 'MyMessage',
             'description': 'Documentation for MyMessage.',
             'properties': {
                 'enum_value': {
@@ -262,9 +260,9 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     schemas = parser.schemas()
 
     expected = {
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestNoFields': {
+        package + 'NoFields': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestNoFields',
+            'id': package + 'NoFields',
             'properties': {
                 }
             }
@@ -282,7 +280,7 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     self.assertRaises(KeyError, parser.ref_for_message_type, NoFields)
 
     parser.add_message(NoFields)
-    self.assertEqual(_DESCRIPTOR_PATH_PREFIX + 'MessageParserTestNoFields',
+    self.assertEqual(package + 'NoFields',
                      parser.ref_for_message_type(NoFields))
 
   def testMessageFieldDocsAndArrayRef(self):
@@ -300,22 +298,22 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     schemas = parser.schemas()
 
     expected = {
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestA': {
+        package + 'A': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestA',
+            'id': package + 'A',
             'properties': {
                 'b': {
                     'type': 'array',
                     'description': 'A description of B.',
                     'items': {
-                        '$ref': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestB'
+                        '$ref': package + 'B'
                         }
                     }
                 }
             },
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestB': {
+        package + 'B': {
             'type': 'object',
-            'id': _DESCRIPTOR_PATH_PREFIX + 'MessageParserTestB',
+            'id': package + 'B',
             'description': 'A description of B.',
             'properties': {}
             }
@@ -331,7 +329,7 @@ class MessageTypeToJsonSchemaTest(unittest.TestCase):
     parser = message_parser.MessageTypeToJsonSchema()
     # Test _, numbers, and case fixing.
     self.assertEqual(
-        _DESCRIPTOR_PATH_PREFIX + 'MessageParserTest1LowerCaseName',
+        package + '1LowerCaseName',
         parser.add_message(_1_lower_case_name_))
 
   def testNormalizeSchemaNameCollision(self):

@@ -32,6 +32,7 @@ import endpoints.resource_container as resource_container
 
 import test_util
 
+package = 'api_config_test'
 _DESCRIPTOR_PATH_PREFIX = ''
 
 
@@ -82,6 +83,7 @@ class ApiConfigTest(unittest.TestCase):
 
   def setUp(self):
     self.generator = ApiConfigGenerator()
+    self.maxDiff = None
 
   def testAllVariantsCovered(self):
     variants_covered = set([field.variant for field in AllFields.all_fields()])
