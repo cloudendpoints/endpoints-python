@@ -301,6 +301,10 @@ class ParameterizedPathTest(unittest.TestCase):
     self.assertEquals('123', params.get('x.y.z'))
     self.assertEquals('456', params.get('t'))
 
+  def test_space_in_path(self):
+    params = self.assert_match('/abc/foo+bar', '/abc/{x}', 1)
+    self.assertEquals('foo bar', params.get('x'))
+
   def assert_invalid_value(self, value):
     """Assert that the path parameter value is not valid.
 

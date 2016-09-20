@@ -19,6 +19,7 @@ import base64
 import logging
 import re
 import threading
+import urllib
 
 import discovery_service
 
@@ -158,7 +159,7 @@ class ApiConfigManager(object):
     result = {}
     for var_name, value in match.groupdict().iteritems():
       actual_var_name = ApiConfigManager._from_safe_path_param_name(var_name)
-      result[actual_var_name] = value
+      result[actual_var_name] = urllib.unquote_plus(value)
     return result
 
   def lookup_rpc_method(self, method_name, version):
