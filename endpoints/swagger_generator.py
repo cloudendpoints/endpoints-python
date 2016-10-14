@@ -36,6 +36,9 @@ _MULTICLASS_MISMATCH_ERROR_TEMPLATE = (
 
 _INVALID_AUTH_ISSUER = 'No auth issuer named %s defined in this Endpoints API.'
 
+_API_KEY = 'api_key'
+_API_KEY_PARAM = 'key'
+
 
 class SwaggerGenerator(object):
   """Generates a Swagger spec from a ProtoRPC service.
@@ -619,28 +622,38 @@ class SwaggerGenerator(object):
     descriptor['operationId'] = operation_id
 
     # Insert the auth audiences, if any
+    api_key_required = method_info.is_api_key_required(service.api_info)
     if method_info.audiences is not None:
       descriptor['x-security'] = self.__x_security_descriptor(
           method_info.audiences, security_definitions)
       descriptor['security'] = self.__security_descriptor(
-          method_info.audiences, security_definitions)
-    elif service.api_info.audiences is not None:
-      descriptor['x-security'] = self.__x_security_descriptor(
-          service.api_info.audiences, security_definitions)
+          method_info.audiences, security_definitions,
+          api_key_required=api_key_required)
+    elif service.api_info.audiences is not None or api_key_required:
+      if service.api_info.audiences:
+        descriptor['x-security'] = self.__x_security_descriptor(
+            service.api_info.audiences, security_definitions)
       descriptor['security'] = self.__security_descriptor(
-          service.api_info.audiences, security_definitions)
+          service.api_info.audiences, security_definitions,
+          api_key_required=api_key_required)
 
     return descriptor
 
-  def __security_descriptor(self, audiences, security_definitions):
-    if not audiences:
+  def __security_descriptor(self, audiences, security_definitions,
+                            api_key_required=False):
+    if not audiences and not api_key_required:
       return []
 
-    return [
-        {
-            issuer_name: []
-        } for issuer_name in security_definitions.keys()
-    ]
+    result_dict = {
+        issuer_name: [] for issuer_name in security_definitions.keys()
+    }
+
+    if api_key_required:
+      result_dict[_API_KEY] = []
+      # Remove the unnecessary implicit google_id_token issuer
+      result_dict.pop('google_id_token', None)
+
+    return [result_dict]
 
   def __x_security_descriptor(self, audiences, security_definitions):
     default_auth_issuer = 'google_id_token'
@@ -773,6 +786,7 @@ class SwaggerGenerator(object):
         if method_info is None:
           continue
         method_id = method_info.method_id(service.api_info)
+        is_api_key_required = method_info.is_api_key_required(service.api_info)
         path = '/{0}/{1}/{2}'.format(merged_api_info.name,
                                      merged_api_info.version,
                                      method_info.get_path(service.api_info))
@@ -780,6 +794,15 @@ class SwaggerGenerator(object):
 
         if path not in method_map:
           method_map[path] = {}
+
+        # If an API key is required and the security definitions don't already
+        # have the apiKey issuer, add the appropriate notation now
+        if is_api_key_required and _API_KEY not in security_definitions:
+          security_definitions[_API_KEY] = {
+              'type': 'apiKey',
+              'name': _API_KEY_PARAM,
+              'in': 'query'
+          }
 
         # Derive an OperationId from the method name data
         operation_id = self._construct_operation_id(

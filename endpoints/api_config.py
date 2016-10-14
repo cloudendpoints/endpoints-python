@@ -216,7 +216,8 @@ class _ApiInfo(object):
 
   @util.positional(2)
   def __init__(self, common_info, resource_name=None, path=None, audiences=None,
-               scopes=None, allowed_client_ids=None, auth_level=None):
+               scopes=None, allowed_client_ids=None, auth_level=None,
+               api_key_required=None):
     """Constructor for _ApiInfo.
 
     Args:
@@ -234,6 +235,7 @@ class _ApiInfo(object):
         (Default: None)
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
         (Default: None)
+      api_key_required: bool, whether a key is required to call this API.
     """
     _CheckType(resource_name, basestring, 'resource_name')
     _CheckType(path, basestring, 'path')
@@ -242,6 +244,7 @@ class _ApiInfo(object):
     endpoints_util.check_list_type(allowed_client_ids, basestring,
                                    'allowed_client_ids')
     _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')
+    _CheckType(api_key_required, bool, 'api_key_required')
 
     self.__common_info = common_info
     self.__resource_name = resource_name
@@ -250,6 +253,7 @@ class _ApiInfo(object):
     self.__scopes = scopes
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
+    self.__api_key_required = api_key_required
 
   def is_same_api(self, other):
     """Check if this implements the same API as another _ApiInfo instance."""
@@ -310,6 +314,13 @@ class _ApiInfo(object):
     if self.__auth_level is not None:
       return self.__auth_level
     return self.__common_info.auth_level
+
+  @property
+  def api_key_required(self):
+    """bool specifying whether a key is required to call into this API."""
+    if self.__api_key_required is not None:
+      return self.__api_key_required
+    return self.__common_info.api_key_required
 
   @property
   def canonical_name(self):
@@ -375,7 +386,8 @@ class _ApiDecorator(object):
                audiences=None, scopes=None, allowed_client_ids=None,
                canonical_name=None, auth=None, owner_domain=None,
                owner_name=None, package_path=None, frontend_limits=None,
-               title=None, documentation=None, auth_level=None, issuers=None):
+               title=None, documentation=None, auth_level=None, issuers=None,
+               api_key_required=None):
     """Constructor for _ApiDecorator.
 
     Args:
@@ -408,6 +420,7 @@ class _ApiDecorator(object):
         plugin to allow users to learn about your service.
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
       issuers: list of endpoints.Issuer objects, auth issuers for this API.
+      api_key_required: bool, whether a key is required to call this API.
     """
     self.__common_info = self.__ApiCommonInfo(
         name, version, description=description, hostname=hostname,
@@ -416,7 +429,8 @@ class _ApiDecorator(object):
         canonical_name=canonical_name, auth=auth, owner_domain=owner_domain,
         owner_name=owner_name, package_path=package_path,
         frontend_limits=frontend_limits, title=title,
-        documentation=documentation, auth_level=auth_level, issuers=issuers)
+        documentation=documentation, auth_level=auth_level, issuers=issuers,
+        api_key_required=api_key_required)
     self.__classes = []
 
   class __ApiCommonInfo(object):
@@ -440,7 +454,8 @@ class _ApiDecorator(object):
                  audiences=None, scopes=None, allowed_client_ids=None,
                  canonical_name=None, auth=None, owner_domain=None,
                  owner_name=None, package_path=None, frontend_limits=None,
-                 title=None, documentation=None, auth_level=None, issuers=None):
+                 title=None, documentation=None, auth_level=None, issuers=None,
+                 api_key_required=None):
       """Constructor for _ApiCommonInfo.
 
       Args:
@@ -473,6 +488,7 @@ class _ApiDecorator(object):
           GPE plugin to allow users to learn about your service.
         auth_level: enum from AUTH_LEVEL, Frontend authentication level.
         issuers: dict, mapping auth issuer names to endpoints.Issuer objects.
+        api_key_required: bool, whether a key is required to call into this API.
       """
       _CheckType(name, basestring, 'name', allow_none=False)
       _CheckType(version, basestring, 'version', allow_none=False)
@@ -490,6 +506,7 @@ class _ApiDecorator(object):
       _CheckType(title, basestring, 'title')
       _CheckType(documentation, basestring, 'documentation')
       _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')
+      _CheckType(api_key_required, bool, 'api_key_required')
 
       _CheckType(issuers, dict, 'issuers')
       if issuers:
@@ -501,14 +518,14 @@ class _ApiDecorator(object):
 
       if hostname is None:
         hostname = app_identity.get_default_version_hostname()
-      if audiences is None:
-        audiences = []
       if scopes is None:
         scopes = [EMAIL_SCOPE]
       if allowed_client_ids is None:
         allowed_client_ids = [API_EXPLORER_CLIENT_ID]
       if auth_level is None:
         auth_level = AUTH_LEVEL.NONE
+      if api_key_required is None:
+        api_key_required = False
 
       self.__name = name
       self.__version = version
@@ -527,6 +544,7 @@ class _ApiDecorator(object):
       self.__documentation = documentation
       self.__auth_level = auth_level
       self.__issuers = issuers
+      self.__api_key_required = api_key_required
 
     @property
     def name(self):
@@ -584,6 +602,11 @@ class _ApiDecorator(object):
       return self.__auth
 
     @property
+    def api_key_required(self):
+      """Whether a key is required to call into this API."""
+      return self.__api_key_required
+
+    @property
     def owner_domain(self):
       """Domain of the owner of this API."""
       return self.__owner_domain
@@ -625,7 +648,8 @@ class _ApiDecorator(object):
     return self.api_class()(service_class)
 
   def api_class(self, resource_name=None, path=None, audiences=None,
-                scopes=None, allowed_client_ids=None, auth_level=None):
+                scopes=None, allowed_client_ids=None, auth_level=None,
+                api_key_required=None):
     """Get a decorator for a class that implements an API.
 
     This can be used for single-class or multi-class implementations.  It's
@@ -643,6 +667,8 @@ class _ApiDecorator(object):
       allowed_client_ids: list of strings, Acceptable client IDs for auth.
         (Default: None)
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
+        (Default: None)
+      api_key_required: bool, Whether a key is required to call into this API.
         (Default: None)
 
     Returns:
@@ -662,7 +688,8 @@ class _ApiDecorator(object):
       api_class.api_info = _ApiInfo(
           self.__common_info, resource_name=resource_name,
           path=path, audiences=audiences, scopes=scopes,
-          allowed_client_ids=allowed_client_ids, auth_level=auth_level)
+          allowed_client_ids=allowed_client_ids, auth_level=auth_level,
+          api_key_required=api_key_required)
       return api_class
 
     return apiserving_api_decorator
@@ -815,7 +842,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
         scopes=None, allowed_client_ids=None, canonical_name=None,
         auth=None, owner_domain=None, owner_name=None, package_path=None,
         frontend_limits=None, title=None, documentation=None, auth_level=None,
-        issuers=None):
+        issuers=None, api_key_required=None):
   """Decorate a ProtoRPC Service class for use by the framework above.
 
   This decorator can be used to specify an API name, version, description, and
@@ -874,6 +901,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
       plugin to allow users to learn about your service.
     auth_level: enum from AUTH_LEVEL, frontend authentication level.
     issuers: list of endpoints.Issuer objects, auth issuers for this API.
+    api_key_required: bool, whether a key is required to call into this API.
 
   Returns:
     Class decorated with api_info attribute, an instance of ApiInfo.
@@ -887,7 +915,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
                        package_path=package_path,
                        frontend_limits=frontend_limits, title=title,
                        documentation=documentation, auth_level=auth_level,
-                       issuers=issuers)
+                       issuers=issuers, api_key_required=api_key_required)
 
 
 class _MethodInfo(object):
@@ -901,7 +929,7 @@ class _MethodInfo(object):
   @util.positional(1)
   def __init__(self, name=None, path=None, http_method=None,
                scopes=None, audiences=None, allowed_client_ids=None,
-               auth_level=None):
+               auth_level=None, api_key_required=None):
     """Constructor.
 
     Args:
@@ -913,6 +941,7 @@ class _MethodInfo(object):
       audiences: list of string, IdToken must contain one of these audiences.
       allowed_client_ids: list of string, Client IDs allowed to call the method.
       auth_level: enum from AUTH_LEVEL, Frontend auth level for the method.
+      api_key_required: bool, whether a key is required to call the method.
     """
     self.__name = name
     self.__path = path
@@ -921,6 +950,7 @@ class _MethodInfo(object):
     self.__audiences = audiences
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
+    self.__api_key_required = api_key_required
 
   def __safe_name(self, method_name):
     """Restrict method name to a-zA-Z0-9_, first char lowercase."""
@@ -998,6 +1028,17 @@ class _MethodInfo(object):
     """Enum from AUTH_LEVEL specifying default frontend auth level."""
     return self.__auth_level
 
+  @property
+  def api_key_required(self):
+    """bool whether a key is required to call the API method."""
+    return self.__api_key_required
+
+  def is_api_key_required(self, api_info):
+    if self.api_key_required is not None:
+      return self.api_key_required
+    else:
+      return api_info.api_key_required
+
   def method_id(self, api_info):
     """Computed method name."""
     # This is done here for now because at __init__ time, the method is known
@@ -1020,7 +1061,8 @@ def method(request_message=message_types.VoidMessage,
            scopes=None,
            audiences=None,
            allowed_client_ids=None,
-           auth_level=None):
+           auth_level=None,
+           api_key_required=None):
   """Decorate a ProtoRPC Method for use by the framework above.
 
   This decorator can be used to specify a method name, path, http method,
@@ -1045,6 +1087,7 @@ def method(request_message=message_types.VoidMessage,
     allowed_client_ids: list of string, Client IDs allowed to call the method.
       If None and auth_level is REQUIRED, no calls will be allowed.
     auth_level: enum from AUTH_LEVEL, Frontend auth level for the method.
+    api_key_required: bool, whether a key is required to call the method
 
   Returns:
     'apiserving_method_wrapper' function.
@@ -1104,7 +1147,8 @@ def method(request_message=message_types.VoidMessage,
         name=name or api_method.__name__, path=path or api_method.__name__,
         http_method=http_method or DEFAULT_HTTP_METHOD,
         scopes=scopes, audiences=audiences,
-        allowed_client_ids=allowed_client_ids, auth_level=auth_level)
+        allowed_client_ids=allowed_client_ids, auth_level=auth_level,
+        api_key_required=api_key_required)
     invoke_remote.__name__ = invoke_remote.method_info.name
     return invoke_remote
 
