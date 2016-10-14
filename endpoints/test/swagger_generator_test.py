@@ -300,10 +300,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
                 'post': {
                     'operationId': 'MyService_entriesPut',
@@ -316,10 +312,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             },
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/entries/container': {
@@ -405,10 +397,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/entries/container/{entryId}/items': {
@@ -427,10 +415,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/entries/container/{entryId}/publish': {
@@ -449,10 +433,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/entries/{entryId}/items': {
@@ -471,10 +451,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/entries/{entryId}/publish': {
@@ -493,10 +469,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/nested': {
@@ -508,10 +480,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/process': {
@@ -523,10 +491,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
             '/root/v1/roundtrip': {
@@ -541,10 +505,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             },
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
         },
@@ -734,10 +694,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
         },
@@ -748,6 +704,85 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                 'type': 'oauth2',
                 'x-issuer': 'accounts.google.com',
                 'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_swagger, api, self)
+
+  def testApiKeyRequired(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    api_key_required=True)
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
+                         path='noop', http_method='GET', name='noop')
+      def noop_get(self, unused_request):
+        return message_types.VoidMessage()
+
+      @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
+                         path='override', http_method='GET', name='override',
+                         api_key_required=False)
+      def override_get(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_swagger = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/noop': {
+                'get': {
+                    'operationId': 'MyService_noopGet',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    'security': [
+                        {
+                            'api_key': [],
+                        }
+                    ],
+                },
+            },
+            '/root/v1/override': {
+                'get': {
+                    'operationId': 'MyService_overrideGet',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+            'api_key': {
+                'type': 'apiKey',
+                'name': 'key',
+                'in': 'query',
             },
         },
     }
@@ -799,10 +834,6 @@ class DevServerSwaggerGeneratorTest(BaseSwaggerGeneratorTest,
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
         },

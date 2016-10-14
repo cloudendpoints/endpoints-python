@@ -1026,7 +1026,7 @@ class ApiConfigTest(unittest.TestCase):
       self.assertEqual(cls.api_info.name, 'root')
       self.assertEqual(cls.api_info.version, 'v1')
       self.assertEqual(cls.api_info.hostname, 'example.appspot.com')
-      self.assertEqual(cls.api_info.audiences, [])
+      self.assertIsNone(cls.api_info.audiences)
       self.assertEqual(cls.api_info.allowed_client_ids,
                        [api_config.API_EXPLORER_CLIENT_ID])
       self.assertEqual(cls.api_info.scopes, [api_config.EMAIL_SCOPE])
@@ -1956,7 +1956,7 @@ class ApiDecoratorTest(unittest.TestCase):
     self.assertEqual('My Cool Service', api_info.description)
     self.assertEqual('myhost.com', api_info.hostname)
     self.assertEqual('Cool Service Name', api_info.canonical_name)
-    self.assertEqual([], api_info.audiences)
+    self.assertIsNone(api_info.audiences)
     self.assertEqual([api_config.EMAIL_SCOPE], api_info.scopes)
     self.assertEqual([api_config.API_EXPLORER_CLIENT_ID],
                      api_info.allowed_client_ids)
@@ -2235,7 +2235,7 @@ class MethodDecoratorTest(unittest.TestCase):
 
   def testMethodAttributeInheritance(self):
     """Test descriptor attributes that can be inherited from the main config."""
-    self.TryListAttributeVariations('audiences', 'audiences', [])
+    self.TryListAttributeVariations('audiences', 'audiences', None)
     self.TryListAttributeVariations(
         'scopes', 'scopes',
         ['https://www.googleapis.com/auth/userinfo.email'])
