@@ -50,6 +50,12 @@ PATH environment variable or that the ENDPOINTS_GAE_SDK variable points to a
 valid SDK root.""".strip()
 
 
+_NO_FIX_SYS_PATH_WARNING = """
+Could not find the fix_sys_path() function in dev_appserver.
+If you encounter errors, please make sure that your Google App Engine SDK is
+up-to-date.""".strip()
+
+
 def _FindSdkPath():
   environ_sdk = os.environ.get('ENDPOINTS_GAE_SDK')
   if environ_sdk:
@@ -82,7 +88,10 @@ def _SetupPaths():
     sys.path.append(sdk_path)
     try:
       import dev_appserver  # pylint: disable=g-import-not-at-top
-      dev_appserver.fix_sys_path()
+      if hasattr(dev_appserver, 'fix_sys_path'):
+        dev_appserver.fix_sys_path()
+      else:
+        logging.warning(_NO_FIX_SYS_PATH_WARNING)
     except ImportError:
       logging.warning(_IMPORT_ERROR_WARNING)
   else:
