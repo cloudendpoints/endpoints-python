@@ -68,7 +68,7 @@ ALL_FIELDS_AS_PARAMETERS = resource_container.ResourceContainer(
     **{field.name: field for field in AllFields.all_fields()})
 
 
-class SwaggerGeneratorTest(unittest.TestCase):
+class BaseSwaggerGeneratorTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
@@ -79,6 +79,9 @@ class SwaggerGeneratorTest(unittest.TestCase):
 
   def _def_path(self, path):
     return '#/definitions/' + path
+
+
+class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
 
   def testAllFieldTypes(self):
 
@@ -750,6 +753,72 @@ class SwaggerGeneratorTest(unittest.TestCase):
     }
 
     test_util.AssertDictEqual(expected_swagger, api, self)
+
+
+class DevServerSwaggerGeneratorTest(BaseSwaggerGeneratorTest,
+                                    test_util.DevServerTest):
+
+  def setUp(self):
+    super(DevServerSwaggerGeneratorTest, self).setUp()
+    self.env_key, self.orig_env_value = (test_util.DevServerTest.
+                                         setUpDevServerEnv())
+    self.addCleanup(test_util.DevServerTest.restoreEnv,
+                    self.env_key, self.orig_env_value)
+
+  def testDevServerSwagger(self):
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
+                         path='noop', http_method='GET', name='noop')
+      def noop_get(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_swagger = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['http'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/noop': {
+                'get': {
+                    'operationId': 'MyService_noopGet',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    'security': [],
+                    'x-security': [
+                        {'google_id_token': {'audiences': []}},
+                    ],
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_swagger, api, self)
+
 
 if __name__ == '__main__':
   unittest.main()

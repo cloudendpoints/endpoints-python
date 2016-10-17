@@ -22,6 +22,7 @@ Classes:
 
 import __future__
 import json
+import os
 import types
 
 
@@ -174,3 +175,21 @@ class ModuleInterfaceTest(object):
           exported_modules.append(attribute)
     if exported_modules:
       self.fail('%s are modules and may not be exported.' % exported_modules)
+
+
+class DevServerTest(object):
+
+  @staticmethod
+  def setUpDevServerEnv(server_software_key='SERVER_SOFTWARE',
+                        server_software_value='Development/2.0.0'):
+    original_env_value = os.environ.get(server_software_key)
+    os.environ[server_software_key] = server_software_value
+    return server_software_key, original_env_value
+
+  @staticmethod
+  def restoreEnv(server_software_key, server_software_value):
+    if server_software_value is None:
+      os.environ.pop(server_software_key, None)
+    else:
+      os.environ[server_software_key] = server_software_value
+
