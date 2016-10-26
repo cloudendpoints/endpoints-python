@@ -17,11 +17,11 @@
 from __future__ import with_statement
 
 # pylint: disable=g-bad-name
-import cgi
 import copy
 import json
 import logging
 import urllib
+import urlparse
 import zlib
 
 import util
@@ -69,10 +69,10 @@ class ApiRequest(object):
       raise ValueError('Invalid request path: %s' % self.path)
     self.path = self.path[len(self._API_PREFIX):]
     if self.query:
-      self.parameters = cgi.parse_qs(self.query, keep_blank_values=True)
+      self.parameters = urlparse.parse_qs(self.query, keep_blank_values=True)
     else:
       self.parameters = {}
-    self.body_json = json.loads(self.body) if self.body else {}
+    self.body_json = self._process_req_body(self.body) if self.body else {}
     self.request_id = None
 
     # Check if it's a batch request.  We'll only handle single-element batch
@@ -92,6 +92,20 @@ class ApiRequest(object):
       self._is_batch = True
     else:
       self._is_batch = False
+
+  def _process_req_body(self, body):
+    """Process the body of the HTTP request.
+
+    If the body is valid JSON, return the JSON as a dict.
+    Else, convert the key=value format to a dict and return that.
+
+    Args:
+      body: The body of the HTTP request.
+    """
+    try:
+      return json.loads(body)
+    except ValueError:
+      return urlparse.parse_qs(body, keep_blank_values=True)
 
   def _reconstruct_relative_url(self, environ):
     """Reconstruct the relative URL of this request.
