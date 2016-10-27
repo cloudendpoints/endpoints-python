@@ -184,7 +184,11 @@ def put_headers_in_environ(headers, environ):
 
 
 def is_running_on_app_engine():
-  return os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/')
+  return os.environ.get('GAE_MODULE_NAME') is not None
+
+
+def is_running_on_devserver():
+  return os.environ.get('SERVER_SOFTWARE', '').startswith('Development/')
 
 
 def is_running_on_localhost():

@@ -1927,10 +1927,9 @@ class ApiConfigGenerator(object):
     """
     hostname = (hostname or endpoints_util.get_app_hostname() or
                 api_info.hostname)
-    protocol = ('http' if hostname and hostname.startswith('localhost') else
-                'https')
-    protocol = ('http' if hostname and hostname.startswith('localhost') else
-                'https')
+    protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
+                          endpoints_util.is_running_on_devserver()) else 'https'
+
     defaults = {
         'extends': 'thirdParty.api',
         'root': '{0}://{1}/_ah/api'.format(protocol, hostname),

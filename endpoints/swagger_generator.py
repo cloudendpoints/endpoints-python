@@ -835,10 +835,8 @@ class SwaggerGenerator(object):
     """
     hostname = (hostname or util.get_app_hostname() or
                 api_info.hostname)
-    protocol = ('http' if hostname and hostname.startswith('localhost') else
-                'https')
-    protocol = ('http' if hostname and hostname.startswith('localhost') else
-                'https')
+    protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
+                          util.is_running_on_devserver()) else 'https'
     defaults = {
         'swagger': '2.0',
         'info': {

@@ -14,12 +14,14 @@
 
 """Tests for discovery_service."""
 
+import os
 import unittest
 
 import endpoints.api_config as api_config
 import endpoints.api_config_manager as api_config_manager
 import endpoints.apiserving as apiserving
 import endpoints.discovery_service as discovery_service
+import test_util
 
 from protorpc import message_types
 from protorpc import remote
@@ -70,6 +72,9 @@ class DiscoveryServiceTest(unittest.TestCase):
     # Check root
     self.assertEqual(expected_base_url, config_dict.get('root'))
 
+
+class ProdDiscoveryServiceTest(DiscoveryServiceTest):
+
   def testGenerateApiConfigWithRoot(self):
     server = 'test.appspot.com'
     port = '12345'
@@ -92,7 +97,7 @@ class DiscoveryServiceTest(unittest.TestCase):
     self._check_api_config(expected_base_url, server, port, url_scheme, api,
                            version)
 
-  def testGenerateApiConfigWithRootDefaultHttpPort(self):
+  def testGenerateApiConfigLocalhostDefaultHttpPort(self):
     server = 'localhost'
     port = '80'
     url_scheme = 'http'
@@ -110,6 +115,50 @@ class DiscoveryServiceTest(unittest.TestCase):
     api = 'aservice'
     version = 'v3'
     expected_base_url = '{0}://{1}/_ah/api'.format(url_scheme, server)
+
+    self._check_api_config(expected_base_url, server, port, url_scheme, api,
+                           version)
+
+
+class DevServerDiscoveryServiceTest(DiscoveryServiceTest,
+                                    test_util.DevServerTest):
+
+  def setUp(self):
+    super(DevServerDiscoveryServiceTest, self).setUp()
+    self.env_key, self.orig_env_value = (test_util.DevServerTest.
+                                         setUpDevServerEnv())
+    self.addCleanup(test_util.DevServerTest.restoreEnv,
+                    self.env_key, self.orig_env_value)
+
+  def testGenerateApiConfigWithRootDefaultHttpPort(self):
+    server = 'test.appspot.com'
+    port = '80'
+    url_scheme = 'http'
+    api = 'aservice'
+    version = 'v3'
+    expected_base_url = '{0}://{1}/_ah/api'.format(url_scheme, server)
+
+    self._check_api_config(expected_base_url, server, port, url_scheme, api,
+                           version)
+
+  def testGenerateApiConfigLocalhostDefaultHttpPort(self):
+    server = 'localhost'
+    port = '80'
+    url_scheme = 'http'
+    api = 'aservice'
+    version = 'v3'
+    expected_base_url = '{0}://{1}/_ah/api'.format(url_scheme, server)
+
+    self._check_api_config(expected_base_url, server, port, url_scheme, api,
+                           version)
+
+  def testGenerateApiConfigHTTPS(self):
+    server = 'test.appspot.com'
+    port = '443'
+    url_scheme = 'http'  # Should still be 'http' because we're using devserver
+    api = 'aservice'
+    version = 'v3'
+    expected_base_url = '{0}://{1}:{2}/_ah/api'.format(url_scheme, server, port)
 
     self._check_api_config(expected_base_url, server, port, url_scheme, api,
                            version)
