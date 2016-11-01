@@ -1729,6 +1729,36 @@ class ApiConfigTest(unittest.TestCase):
 
     test_util.AssertDictEqual(expected, api['methods'], self)
 
+  def testCustomUrl(self):
+
+    test_request = resource_container.ResourceContainer(
+        message_types.VoidMessage,
+        id=messages.IntegerField(1, required=True))
+
+    @api_config.api(name='testapicustomurl', version='v3',
+                    hostname='example.appspot.com',
+                    description='A wonderful API.', base_path='/my/base/path/')
+    class TestServiceCustomUrl(remote.Service):
+
+      @api_config.method(test_request,
+                         message_types.VoidMessage,
+                         http_method='DELETE', path='items/{id}')
+      # Silence lint warning about method naming conventions
+      # pylint: disable=g-bad-name
+      def delete(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(
+        self.generator.pretty_print_config_to_json(TestServiceCustomUrl))
+
+    expected_adapter = {
+        'bns': 'https://example.appspot.com/my/base/path',
+        'type': 'lily',
+        'deadline': 10.0
+    }
+
+    test_util.AssertDictEqual(expected_adapter, api['adapter'], self)
+
 
 class ApiConfigParamsDescriptorTest(unittest.TestCase):
 

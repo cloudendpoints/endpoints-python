@@ -111,6 +111,19 @@ class TestService(remote.Service):
     return message_types.VoidMessage()
 
 
+@api_config.api(name='testapicustomurl', version='v3',
+                description='A wonderful API.', base_path='/my/base/path/')
+class TestServiceCustomUrl(remote.Service):
+
+  @api_config.method(test_request,
+                     message_types.VoidMessage,
+                     http_method='DELETE', path='items/{id}')
+  # Silence lint warning about method naming conventions
+  # pylint: disable=g-bad-name
+  def delete(self, unused_request):
+    return message_types.VoidMessage()
+
+
 my_api = api_config.api(name='My Service', version='v1')
 
 
@@ -182,6 +195,58 @@ TEST_SERVICE_API_CONFIG = {'items': [{
 }]}
 
 
+TEST_SERVICE_CUSTOM_URL_API_CONFIG = {'items': [{
+    'abstract': False,
+    'adapter': {
+        'bns': 'https://None/my/base/path',
+        'type': 'lily',
+        'deadline': 10.0
+    },
+    'defaultVersion': True,
+    'description': 'A wonderful API.',
+    'descriptor': {
+        'methods': {
+            'TestServiceCustomUrl.delete': {}
+        },
+        'schemas': {
+            'ProtorpcMessageTypesVoidMessage': {
+                'description': 'Empty message.',
+                'id': 'ProtorpcMessageTypesVoidMessage',
+                'properties': {},
+                'type': 'object'
+            }
+        }
+    },
+    'extends': 'thirdParty.api',
+    'methods': {
+        'testapicustomurl.delete': {
+            'httpMethod': 'DELETE',
+            'path': 'items/{id}',
+            'request': {
+                'body': 'empty',
+                'parameterOrder': ['id'],
+                'parameters': {
+                    'id': {
+                        'required': True,
+                        'type': 'int64',
+                    }
+                }
+            },
+            'response': {
+                'body': 'empty'
+            },
+            'rosyMethod': 'TestServiceCustomUrl.delete',
+            'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
+            'clientIds': ['292824132082.apps.googleusercontent.com'],
+            'authLevel': 'NONE'
+        }
+    },
+    'name': 'testapicustomurl',
+    'root': 'https://None/my/base/path',
+    'version': 'v3'
+}]}
+
+
 class ModuleInterfaceTest(test_util.ModuleInterfaceTest,
                           unittest.TestCase):
 
@@ -217,6 +282,21 @@ class GetAppRevisionTest(unittest.TestCase):
   def testGetAppRevisionWithNoEntry(self):
     environ = {}
     self.assertEqual(None, apiserving._get_app_revision(environ=environ))
+
+
+class ApiServerTestApiConfigRegistryEndToEndCustomUrl(unittest.TestCase):
+  # Show diff with expected API config
+  maxDiff = None
+
+  def setUp(self):
+    super(ApiServerTestApiConfigRegistryEndToEndCustomUrl, self).setUp()
+
+  def testGetApiConfigs(self):
+    my_app = apiserving.api_server([TestServiceCustomUrl])
+
+    # 200 with X-Appengine-Peer: apiserving header
+    configs = my_app.get_api_configs()
+    self.assertEqual(TEST_SERVICE_CUSTOM_URL_API_CONFIG, configs)
 
 
 if __name__ == '__main__':
