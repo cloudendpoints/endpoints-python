@@ -482,6 +482,12 @@ def api_server(api_services, **kwargs):
                  ' it.')
     return dispatcher
 
+  # If we're using a local server, just return the dispatcher now to bypass
+  # control client.
+  if control_wsgi.running_on_devserver():
+    _logger.warn('Running on local devserver, so service control is disabled.')
+    return dispatcher
+
   # The DEFAULT 'config' should be tuned so that it's always OK for python
   # App Engine workloads.  The config can be adjusted, but that's probably
   # unnecessary on App Engine.
