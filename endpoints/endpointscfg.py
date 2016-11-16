@@ -323,7 +323,7 @@ def _GenSwaggerSpec(service_class_names, output_path, hostname=None,
       config_string_generator=swagger_generator.SwaggerGenerator(),
       application_path=application_path)
   for api_name_version, config in service_configs.iteritems():
-    swagger_name = api_name_version + '_swagger.json'
+    swagger_name = api_name_version.replace('-', '') + 'swagger.json'
     output_files.append(_WriteFile(output_path, swagger_name, config))
 
   return output_files
