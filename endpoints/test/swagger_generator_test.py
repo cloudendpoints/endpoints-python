@@ -577,31 +577,35 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                 'properties': {
                     'result': {
                         'type': 'boolean',
-                        'required': True,
                     },
                 },
+                'required': ['result'],
             },
             entry_publish_request: {
                 'type': 'object',
                 'properties': {
                     'entryId': {
                         'type': 'string',
-                        'required': True,
                     },
                     'title': {
                         'type': 'string',
-                        'required': True,
                     },
                 },
+                'required': [
+                    'entryId',
+                    'title',
+                ]
             },
             publish_request_for_container: {
                 'type': 'object',
                 'properties': {
                     'title': {
                         'type': 'string',
-                        'required': True,
                     },
                 },
+                'required': [
+                    'title',
+                ]
             },
             items_put_request: {
                 'type': 'object',
@@ -612,9 +616,11 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                     },
                     'entryId': {
                         'type': 'string',
-                        'required': True,
                     },
                 },
+                'required': [
+                    'entryId',
+                ]
             },
             nested: {
                 'type': 'object',
