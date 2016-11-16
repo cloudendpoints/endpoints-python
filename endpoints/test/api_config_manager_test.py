@@ -194,6 +194,16 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({'id': 'i'}, params)
 
+  def test_lookup_rest_method_with_colon(self):
+    fake_method = {'httpMethod': 'GET',
+                   'path': 'greetings:testcolon'}
+    self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
+                                          'v1', fake_method)
+    method_name, method_spec, params = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/greetings%3Atestcolon', 'GET')
+    self.assertEqual('guestbook_api.get', method_name)
+    self.assertEqual(fake_method, method_spec)
+
   def test_trailing_slash_optional(self):
     # Create a typical get resource URL.
     fake_method = {'httpMethod': 'GET', 'path': 'trailingslash'}
