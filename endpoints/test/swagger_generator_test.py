@@ -825,10 +825,6 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
                             'description': 'A successful response',
                         },
                     },
-                    'security': [],
-                    'x-security': [
-                        {'google_id_token': {'audiences': []}},
-                    ],
                 },
             },
         },
