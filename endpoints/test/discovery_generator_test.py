@@ -126,6 +126,12 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
     class MyService(remote.Service):
       """Describes MyService."""
 
+      @api_config.method(message_types.VoidMessage, BooleanMessageResponse,
+                        path ='toplevel:withcolon', http_method='GET',
+                        name='toplevelwithcolon')
+      def toplevel(self, unused_request):
+        return BooleanMessageResponse(result=True)
+
       @api_config.method(AllFields, message_types.VoidMessage, path='entries',
                          http_method='GET', name='entries.get')
       def entries_get(self, unused_request):

@@ -221,6 +221,19 @@
       }
     }
   },
+  "methods": {
+    "toplevelwithcolon": {
+      "httpMethod": "GET",
+      "id": "root.toplevelwithcolon",
+      "path": "toplevel:withcolon",
+      "response": {
+        "$ref": "DiscoveryGeneratorTestBooleanMessageResponse"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    }
+  },
   "resources":{
     "entries":{
       "methods":{
