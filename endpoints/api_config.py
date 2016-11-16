@@ -372,6 +372,11 @@ class _ApiInfo(object):
     """Base path prepended to any method paths in the class this decorates."""
     return self.__path
 
+  @property
+  def base_path(self):
+    """Base path for the entire API prepended before the path property."""
+    return self.__common_info.base_path
+
 
 class _ApiDecorator(object):
   """Decorator for single- or multi-class APIs.
@@ -387,7 +392,7 @@ class _ApiDecorator(object):
                canonical_name=None, auth=None, owner_domain=None,
                owner_name=None, package_path=None, frontend_limits=None,
                title=None, documentation=None, auth_level=None, issuers=None,
-               api_key_required=None):
+               api_key_required=None, base_path=None):
     """Constructor for _ApiDecorator.
 
     Args:
@@ -421,6 +426,7 @@ class _ApiDecorator(object):
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
       issuers: list of endpoints.Issuer objects, auth issuers for this API.
       api_key_required: bool, whether a key is required to call this API.
+      base_path: string, the base path for all endpoints in this API.
     """
     self.__common_info = self.__ApiCommonInfo(
         name, version, description=description, hostname=hostname,
@@ -430,7 +436,7 @@ class _ApiDecorator(object):
         owner_name=owner_name, package_path=package_path,
         frontend_limits=frontend_limits, title=title,
         documentation=documentation, auth_level=auth_level, issuers=issuers,
-        api_key_required=api_key_required)
+        api_key_required=api_key_required, base_path=base_path)
     self.__classes = []
 
   class __ApiCommonInfo(object):
@@ -455,7 +461,7 @@ class _ApiDecorator(object):
                  canonical_name=None, auth=None, owner_domain=None,
                  owner_name=None, package_path=None, frontend_limits=None,
                  title=None, documentation=None, auth_level=None, issuers=None,
-                 api_key_required=None):
+                 api_key_required=None, base_path=None):
       """Constructor for _ApiCommonInfo.
 
       Args:
@@ -489,6 +495,7 @@ class _ApiDecorator(object):
         auth_level: enum from AUTH_LEVEL, Frontend authentication level.
         issuers: dict, mapping auth issuer names to endpoints.Issuer objects.
         api_key_required: bool, whether a key is required to call into this API.
+        base_path: string, the base path for all endpoints in this API.
       """
       _CheckType(name, basestring, 'name', allow_none=False)
       _CheckType(version, basestring, 'version', allow_none=False)
@@ -507,6 +514,7 @@ class _ApiDecorator(object):
       _CheckType(documentation, basestring, 'documentation')
       _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')
       _CheckType(api_key_required, bool, 'api_key_required')
+      _CheckType(base_path, basestring, 'base_path')
 
       _CheckType(issuers, dict, 'issuers')
       if issuers:
@@ -526,6 +534,8 @@ class _ApiDecorator(object):
         auth_level = AUTH_LEVEL.NONE
       if api_key_required is None:
         api_key_required = False
+      if base_path is None:
+        base_path = '/_ah/api/'
 
       self.__name = name
       self.__version = version
@@ -545,6 +555,7 @@ class _ApiDecorator(object):
       self.__auth_level = auth_level
       self.__issuers = issuers
       self.__api_key_required = api_key_required
+      self.__base_path = base_path
 
     @property
     def name(self):
@@ -635,6 +646,11 @@ class _ApiDecorator(object):
     def documentation(self):
       """Link to the documentation for this version of the API."""
       return self.__documentation
+
+    @property
+    def base_path(self):
+      """The base path for all endpoints in this API."""
+      return self.__base_path
 
   def __call__(self, service_class):
     """Decorator for ProtoRPC class that configures Google's API server.
@@ -842,7 +858,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
         scopes=None, allowed_client_ids=None, canonical_name=None,
         auth=None, owner_domain=None, owner_name=None, package_path=None,
         frontend_limits=None, title=None, documentation=None, auth_level=None,
-        issuers=None, api_key_required=None):
+        issuers=None, api_key_required=None, base_path=None):
   """Decorate a ProtoRPC Service class for use by the framework above.
 
   This decorator can be used to specify an API name, version, description, and
@@ -902,6 +918,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
     auth_level: enum from AUTH_LEVEL, frontend authentication level.
     issuers: list of endpoints.Issuer objects, auth issuers for this API.
     api_key_required: bool, whether a key is required to call into this API.
+    base_path: string, the base path for all endpoints in this API.
 
   Returns:
     Class decorated with api_info attribute, an instance of ApiInfo.
@@ -915,7 +932,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
                        package_path=package_path,
                        frontend_limits=frontend_limits, title=title,
                        documentation=documentation, auth_level=auth_level,
-                       issuers=issuers, api_key_required=api_key_required)
+                       issuers=issuers, api_key_required=api_key_required,
+                       base_path=base_path)
 
 
 class _MethodInfo(object):
@@ -981,7 +999,8 @@ class _MethodInfo(object):
         this API.
 
     Returns:
-      This method's request path (not including the http://.../_ah/api/ prefix).
+      This method's request path (not including the http://.../{base_path}
+      prefix).
 
     Raises:
       ApiConfigurationError: If the path isn't properly formatted.
@@ -1973,16 +1992,16 @@ class ApiConfigGenerator(object):
                 api_info.hostname)
     protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
                           endpoints_util.is_running_on_devserver()) else 'https'
-
+    base_path = api_info.base_path.strip('/')
     defaults = {
         'extends': 'thirdParty.api',
-        'root': '{0}://{1}/_ah/api'.format(protocol, hostname),
+        'root': '{0}://{1}/{2}'.format(protocol, hostname, base_path),
         'name': api_info.name,
         'version': api_info.version,
         'defaultVersion': True,
         'abstract': False,
         'adapter': {
-            'bns': '{0}://{1}/_ah/api'.format(protocol, hostname),
+            'bns': '{0}://{1}/{2}'.format(protocol, hostname, base_path),
             'type': 'lily',
             'deadline': 10.0
         }

@@ -870,7 +870,7 @@ class SwaggerGenerator(object):
         'consumes': ['application/json'],
         'produces': ['application/json'],
         'schemes': [protocol],
-        'basePath': '/_ah/api',
+        'basePath': api_info.base_path.rstrip('/'),
     }
 
     return defaults

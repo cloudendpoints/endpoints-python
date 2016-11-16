@@ -14,9 +14,9 @@
 
 """Dispatcher middleware for Cloud Endpoints API server.
 
-This middleware does simple transforms on requests that come in to /_ah/api and
-then re-dispatches them to the main backend.  It does not do any authentication,
-quota checking, DoS checking, etc.
+This middleware does simple transforms on requests that come into the base path
+and then re-dispatches them to the main backend. It does not do any
+authentication, quota checking, DoS checking, etc.
 
 In addition, the middleware loads API configs prior to each call, in case the
 configuration has changed.
@@ -40,14 +40,8 @@ import parameter_converter
 import util
 
 
-__all__ = ['API_SERVING_PATTERN',
-           'EndpointsDispatcherMiddleware']
+__all__ = ['EndpointsDispatcherMiddleware']
 
-
-# Pattern for paths handled by this module.
-API_SERVING_PATTERN = '_ah/api/.*'
-
-_API_ROOT_FORMAT = '/_ah/api/%s'
 _SERVER_SOURCE_IP = '0.2.0.3'
 
 # Internal constants
@@ -84,10 +78,11 @@ class EndpointsDispatcherMiddleware(object):
 
     self._backend = backend_wsgi_app
     self._dispatchers = []
-    self._add_dispatcher('/_ah/api/explorer/?$',
-                         self.handle_api_explorer_request)
-    self._add_dispatcher('/_ah/api/static/.*$',
-                         self.handle_api_static_request)
+    for base_path in self._backend.base_paths:
+      self._add_dispatcher('%sexplorer/?$' % base_path,
+                           self.handle_api_explorer_request)
+      self._add_dispatcher('%sstatic/.*$' % base_path,
+                           self.handle_api_static_request)
 
   def _add_dispatcher(self, path_regex, dispatch_function):
     """Add a request path and dispatch handler.
@@ -114,7 +109,8 @@ class EndpointsDispatcherMiddleware(object):
     Yields:
       An iterable over strings containing the body of the HTTP response.
     """
-    request = api_request.ApiRequest(environ)
+    request = api_request.ApiRequest(environ,
+                                     base_paths=self._backend.base_paths)
 
     # PEP-333 requires that we return an iterator that iterates over the
     # response body.  Yielding the returned body accomplishes this.
@@ -183,7 +179,7 @@ class EndpointsDispatcherMiddleware(object):
     return None
 
   def handle_api_explorer_request(self, request, start_response):
-    """Handler for requests to _ah/api/explorer.
+    """Handler for requests to {base_path}/explorer.
 
     This calls start_response and returns the response body.
 
@@ -195,13 +191,14 @@ class EndpointsDispatcherMiddleware(object):
       A string containing the response body (which is empty, in this case).
     """
     protocol = 'http' if 'localhost' in request.server else 'https'
-    base_url = '{0}://{1}:{2}/_ah/api'.format(
-        protocol, request.server, request.port)
+    base_path = request.base_path.strip('/')
+    base_url = '{0}://{1}:{2}/{3}'.format(
+        protocol, request.server, request.port, base_path)
     redirect_url = self._API_EXPLORER_URL + base_url
     return util.send_wsgi_redirect_response(redirect_url, start_response)
 
   def handle_api_static_request(self, request, start_response):
-    """Handler for requests to _ah/api/static/.*.
+    """Handler for requests to {base_path}/static/.*.
 
     This calls start_response and returns the response body.
 
@@ -341,7 +338,7 @@ class EndpointsDispatcherMiddleware(object):
     if discovery_response:
       return discovery_response
 
-    url = _API_ROOT_FORMAT % transformed_request.path
+    url = transformed_request.base_path + transformed_request.path
     transformed_request.headers['Content-Type'] = 'application/json'
     transformed_environ = self.prepare_backend_environ(
         orig_request.server, 'POST', url, transformed_request.headers.items(),

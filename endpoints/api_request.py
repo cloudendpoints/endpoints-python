@@ -33,9 +33,7 @@ class ApiRequest(object):
   Parses the request from environment variables into convenient pieces
   and stores them as members.
   """
-  _API_PREFIX = '/_ah/api/'
-
-  def __init__(self, environ):
+  def __init__(self, environ, base_paths=None):
     """Constructor.
 
     Args:
@@ -65,9 +63,20 @@ class ApiRequest(object):
     self.source_ip = environ.get('REMOTE_ADDR')
     self.relative_url = self._reconstruct_relative_url(environ)
 
-    if not self.path.startswith(self._API_PREFIX):
+    if not base_paths:
+      base_paths = set()
+    elif isinstance(base_paths, list):
+      base_paths = set(base_paths)
+
+    # Find a base_path in the path
+    for base_path in base_paths:
+      if self.path.startswith(base_path):
+        self.path = self.path[len(base_path):]
+        self.base_path = base_path
+        break
+    else:
       raise ValueError('Invalid request path: %s' % self.path)
-    self.path = self.path[len(self._API_PREFIX):]
+
     if self.query:
       self.parameters = urlparse.parse_qs(self.query, keep_blank_values=True)
     else:

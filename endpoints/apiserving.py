@@ -34,6 +34,8 @@ compatible errors, it exposes a helper service that describes your services.
 
   handlers:
   # Path to your API backend.
+  # /_ah/api/.* is the default. Using the base_path parameter, you can
+  # customize this to whichever base path you desire.
   - url: /_ah/api/.*
     # For the legacy python runtime this would be "script: services.py"
     script: services.app
@@ -203,7 +205,6 @@ class _ApiServer(object):
   """
   # Silence lint warning about invalid const name
   # pylint: disable=g-bad-name
-  __API_PREFIX = '/_ah/api/'
   __SERVER_SOFTWARE = 'SERVER_SOFTWARE'
   __HEADER_NAME_PEER = 'HTTP_X_APPENGINE_PEER'
   __GOOGLE_PEER = 'apiserving'
@@ -235,6 +236,12 @@ class _ApiServer(object):
       if isinstance(entry, api_config._ApiDecorator):
         api_services.remove(entry)
         api_services.extend(entry.get_api_classes())
+        self.base_paths.add(entry.base_path)
+
+    # Record the base paths
+    self.base_paths = set()
+    for entry in api_services:
+      self.base_paths.add(entry.api_info.base_path)
 
     self.api_config_registry = api_backend_service.ApiConfigRegistry()
     self.api_name_version_map = self.__create_name_version_map(api_services)
@@ -326,7 +333,8 @@ class _ApiServer(object):
 
       for service_factory in service_factories:
         protorpc_class_name = service_factory.service_class.__name__
-        root = _ApiServer.__API_PREFIX + protorpc_class_name
+        root = '%s%s' % (service_factory.service_class.api_info.base_path,
+                         protorpc_class_name)
         if any(service_map[0] == root or service_map[1] == service_factory
                for service_map in protorpc_services):
           raise api_config.ApiConfigurationError(
