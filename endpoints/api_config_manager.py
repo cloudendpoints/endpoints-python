@@ -197,6 +197,7 @@ class ApiConfigManager(object):
         <params> is a dict of path parameters matched in the rest request.
     """
     with self._config_lock:
+      path = urllib.unquote(path)
       for compiled_path_pattern, unused_path, methods in self._rest_methods:
         match = compiled_path_pattern.match(path)
         if match:
