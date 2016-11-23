@@ -32,13 +32,29 @@ _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'
 
 _MULTICLASS_MISMATCH_ERROR_TEMPLATE = (
     'Attempting to implement service %s, version %s, with multiple '
-    'classes that aren\'t compatible. See docstring for api() for '
+    'classes that are not compatible. See docstring for api() for '
     'examples how to implement a multi-class API.')
 
 _INVALID_AUTH_ISSUER = 'No auth issuer named %s defined in this Endpoints API.'
 
 _API_KEY = 'api_key'
 _API_KEY_PARAM = 'key'
+
+CUSTOM_VARIANT_MAP = {
+    messages.Variant.DOUBLE: ('number', 'double'),
+    messages.Variant.FLOAT: ('number', 'float'),
+    messages.Variant.INT64: ('string', 'int64'),
+    messages.Variant.SINT64: ('string', 'int64'),
+    messages.Variant.UINT64: ('string', 'uint64'),
+    messages.Variant.INT32: ('integer', 'int32'),
+    messages.Variant.SINT32: ('integer', 'int32'),
+    messages.Variant.UINT32: ('integer', 'uint32'),
+    messages.Variant.BOOL: ('boolean', None),
+    messages.Variant.STRING: ('string', None),
+    messages.Variant.BYTES: ('string', 'byte'),
+    messages.Variant.ENUM: ('string', None),
+}
+
 
 
 class DiscoveryGenerator(object):
@@ -200,27 +216,13 @@ class DiscoveryGenerator(object):
     # We use lowercase values for types (e.g. 'string' instead of 'STRING').
     variant = field.variant
     if variant == messages.Variant.MESSAGE:
-      raise TypeError('A message variant can\'t be used in a parameter.')
+      raise TypeError('A message variant cannot be used in a parameter.')
 
     # Note that the 64-bit integers are marked as strings -- this is to
     # accommodate JavaScript, which would otherwise demote them to 32-bit
     # integers.
 
-    custom_variant_map = {
-        messages.Variant.DOUBLE: ('number', 'double'),
-        messages.Variant.FLOAT: ('number', 'float'),
-        messages.Variant.INT64: ('string', 'int64'),
-        messages.Variant.SINT64: ('string', 'int64'),
-        messages.Variant.UINT64: ('string', 'uint64'),
-        messages.Variant.INT32: ('integer', 'int32'),
-        messages.Variant.SINT32: ('integer', 'int32'),
-        messages.Variant.UINT32: ('integer', 'uint32'),
-        messages.Variant.BOOL: ('boolean', None),
-        messages.Variant.STRING: ('string', None),
-        messages.Variant.BYTES: ('string', 'byte'),
-        messages.Variant.ENUM: ('string', None),
-    }
-    return custom_variant_map.get(variant) or (variant.name.lower(), None)
+    return CUSTOM_VARIANT_MAP.get(variant) or (variant.name.lower(), None)
 
   def __get_path_parameters(self, path):
     """Parses path paremeters from a URI path and organizes them by parameter.
