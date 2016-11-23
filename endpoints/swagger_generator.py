@@ -547,13 +547,12 @@ class SwaggerGenerator(object):
     # Filter out any keys that aren't 'properties' or 'type'
     result = {}
     for def_key, def_value in self.__parser.schemas().iteritems():
-      def_item_keys = def_value.keys()
-      if 'properties' in def_item_keys or 'type' in def_item_keys:
+      if 'properties' in def_value or 'type' in def_value:
         key_result = {}
         required_keys = set()
-        if 'type' in def_item_keys:
+        if 'type' in def_value:
           key_result['type'] = def_value['type']
-        if 'properties' in def_item_keys:
+        if 'properties' in def_value:
           for prop_key, prop_value in def_value['properties'].items():
             if isinstance(prop_value, dict) and 'required' in prop_value:
               required_keys.add(prop_key)
@@ -561,7 +560,7 @@ class SwaggerGenerator(object):
           key_result['properties'] = def_value['properties']
         # Add in the required fields, if any
         if required_keys:
-          key_result['required'] = sorted(list(required_keys))
+          key_result['required'] = sorted(required_keys)
         result[def_key] = key_result
 
     # Add 'type': 'object' to all object properties
