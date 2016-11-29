@@ -20,6 +20,7 @@ import logging
 
 import api_config
 import discovery_api_proxy
+import discovery_generator
 import util
 
 
@@ -88,14 +89,13 @@ class DiscoveryService(object):
     headers = [('Content-Type', 'application/json; charset=UTF-8')]
     return util.send_wsgi_response('200', headers, response, start_response)
 
-  def _get_rpc_or_rest(self, api_format, request, start_response):
+  def _get_rest_doc(self, request, start_response):
     """Sends back HTTP response with API directory.
 
     This calls start_response and returns the response body.  It will return
     the discovery doc for the requested api/version.
 
     Args:
-      api_format: A string containing either 'rest' or 'rpc'.
       request: An ApiRequest, the transformed request sent to the Discovery API.
       start_response: A function with semantics defined in PEP-333.
 
@@ -105,16 +105,8 @@ class DiscoveryService(object):
     api = request.body_json['api']
     version = request.body_json['version']
 
-    # Create a lookup key including the root of the request
-    lookup_key = (api, version, self._get_actual_root(request))
-
-    config = (self._config_manager.configs.get(lookup_key) or
-              self._generate_api_config_with_root(request))
-
-    if not config:
-      logging.warn('No discovery doc for version %s of api %s', version, api)
-      return util.send_wsgi_not_found_response(start_response)
-    doc = self._discovery_proxy.generate_discovery_doc(config, api_format)
+    generator = discovery_generator.DiscoveryGenerator()
+    doc = generator.pretty_print_config_to_json(self._backend.api_services)
     if not doc:
       error_msg = ('Failed to convert .api to discovery doc for '
                    'version %s of api %s') % (version, api)
@@ -207,9 +199,13 @@ class DiscoveryService(object):
       DiscoveryService.
     """
     if path == self._GET_REST_API:
-      return self._get_rpc_or_rest('rest', request, start_response)
+      return self._get_rest_doc(request, start_response)
     elif path == self._GET_RPC_API:
-      return self._get_rpc_or_rest('rpc', request, start_response)
+      error_msg = ('RPC format documents are no longer supported with the '
+                   'Endpoints Framework for Python. Please use the REST '
+                   'format.')
+      logging.error('%s', error_msg)
+      return util.send_wsgi_error_response(error_msg, start_response)
     elif path == self._LIST_API:
       return self._list(start_response)
     return False
