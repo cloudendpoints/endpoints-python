@@ -96,23 +96,6 @@ class DiscoveryGenerator(object):
     # Maps method id to the response schema id.
     self.__response_schema = {}
 
-  '''
-  def _add_def_paths(self, prop_dict):
-    """Recursive method to add relative paths for any $ref objects.
-
-    Args:
-      prop_dict: The property dict to alter.
-
-    Side Effects:
-      Alters prop_dict in-place.
-    """
-    for prop_key, prop_value in prop_dict.iteritems():
-      if prop_key == '$ref':
-        prop_dict[prop_key] = '#/definitions/' + prop_dict[prop_key]
-      elif isinstance(prop_value, dict):
-        self._add_def_paths(prop_value)
-  '''
-
   def _get_resource_path(self, method_id):
     """Return the resource path for a method or an empty array if none."""
     return method_id.split('.')[1:-1]
