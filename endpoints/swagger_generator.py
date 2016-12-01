@@ -547,12 +547,20 @@ class SwaggerGenerator(object):
     # Filter out any keys that aren't 'properties' or 'type'
     result = {}
     for def_key, def_value in self.__parser.schemas().iteritems():
-      prop_keys = def_value.keys()
-      if 'properties' in prop_keys or 'type' in prop_keys:
+      if 'properties' in def_value or 'type' in def_value:
         key_result = {}
-        for key in ('properties', 'type'):
-          if key in prop_keys:
-            key_result[key] = def_value[key]
+        required_keys = set()
+        if 'type' in def_value:
+          key_result['type'] = def_value['type']
+        if 'properties' in def_value:
+          for prop_key, prop_value in def_value['properties'].items():
+            if isinstance(prop_value, dict) and 'required' in prop_value:
+              required_keys.add(prop_key)
+              del prop_value['required']
+          key_result['properties'] = def_value['properties']
+        # Add in the required fields, if any
+        if required_keys:
+          key_result['required'] = sorted(required_keys)
         result[def_key] = key_result
 
     # Add 'type': 'object' to all object properties
@@ -652,6 +660,9 @@ class SwaggerGenerator(object):
       result_dict[_API_KEY] = []
       # Remove the unnecessary implicit google_id_token issuer
       result_dict.pop('google_id_token', None)
+    else:
+      # If the API key is not required, remove the issuer for it
+      result_dict.pop('api_key', None)
 
     return [result_dict]
 
