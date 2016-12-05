@@ -231,6 +231,8 @@ class _ApiServer(object):
       TypeError: if protocols are configured (this feature is not supported).
       ApiConfigurationError: if there's a problem with the API config.
     """
+    self.base_paths = set()
+
     for entry in api_services[:]:
       # pylint: disable=protected-access
       if isinstance(entry, api_config._ApiDecorator):
@@ -242,7 +244,6 @@ class _ApiServer(object):
     self.api_services = api_services
 
     # Record the base paths
-    self.base_paths = set()
     for entry in api_services:
       self.base_paths.add(entry.api_info.base_path)
 
