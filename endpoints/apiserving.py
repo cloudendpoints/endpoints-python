@@ -238,6 +238,9 @@ class _ApiServer(object):
         api_services.extend(entry.get_api_classes())
         self.base_paths.add(entry.base_path)
 
+    # Record the API services for quick discovery doc generation
+    self.api_services = api_services
+
     # Record the base paths
     self.base_paths = set()
     for entry in api_services:

@@ -74,3 +74,7 @@ class InternalServerErrorException(ServiceException):
 
 class ApiConfigurationError(Exception):
   """Exception thrown if there's an error in the configuration/annotations."""
+
+
+class ToolError(Exception):
+  """Exception thrown if there's a general error in the endpointscfg.py tool."""

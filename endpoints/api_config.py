@@ -947,7 +947,8 @@ class _MethodInfo(object):
   @util.positional(1)
   def __init__(self, name=None, path=None, http_method=None,
                scopes=None, audiences=None, allowed_client_ids=None,
-               auth_level=None, api_key_required=None):
+               auth_level=None, api_key_required=None, request_body_class=None,
+               request_params_class=None):
     """Constructor.
 
     Args:
@@ -960,6 +961,10 @@ class _MethodInfo(object):
       allowed_client_ids: list of string, Client IDs allowed to call the method.
       auth_level: enum from AUTH_LEVEL, Frontend auth level for the method.
       api_key_required: bool, whether a key is required to call the method.
+      request_body_class: The type for the request body when using a
+        ResourceContainer. Otherwise, null.
+      request_params_class: The type for the request parameters when using a
+        ResourceContainer. Otherwise, null.
     """
     self.__name = name
     self.__path = path
@@ -969,6 +974,8 @@ class _MethodInfo(object):
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
     self.__api_key_required = api_key_required
+    self.__request_body_class = request_body_class
+    self.__request_params_class = request_params_class
 
   def __safe_name(self, method_name):
     """Restrict method name to a-zA-Z0-9_, first char lowercase."""
@@ -1051,6 +1058,16 @@ class _MethodInfo(object):
   def api_key_required(self):
     """bool whether a key is required to call the API method."""
     return self.__api_key_required
+
+  @property
+  def request_body_class(self):
+    """Type of request body when using a ResourceContainer."""
+    return self.__request_body_class
+
+  @property
+  def request_params_class(self):
+    """Type of request parameter message when using a ResourceContainer."""
+    return self.__request_params_class
 
   def is_api_key_required(self, api_info):
     if self.api_key_required is not None:
@@ -1141,9 +1158,13 @@ def method(request_message=message_types.VoidMessage,
           created remote method has been reference by the container before. This
           should never occur because a remote method is created once.
     """
+    request_body_class = None
+    request_params_class = None
     if isinstance(request_message, resource_container.ResourceContainer):
       remote_decorator = remote.method(request_message.combined_message_class,
                                        response_message)
+      request_body_class = request_message.body_message_class()
+      request_params_class = request_message.parameters_message_class()
     else:
       remote_decorator = remote.method(request_message, response_message)
     remote_method = remote_decorator(api_method)
@@ -1167,7 +1188,9 @@ def method(request_message=message_types.VoidMessage,
         http_method=http_method or DEFAULT_HTTP_METHOD,
         scopes=scopes, audiences=audiences,
         allowed_client_ids=allowed_client_ids, auth_level=auth_level,
-        api_key_required=api_key_required)
+        api_key_required=api_key_required,
+        request_body_class=request_body_class,
+        request_params_class=request_params_class)
     invoke_remote.__name__ = invoke_remote.method_info.name
     return invoke_remote
 
