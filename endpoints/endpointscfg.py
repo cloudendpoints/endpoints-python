@@ -59,7 +59,7 @@ import urllib2
 import _endpointscfg_setup  # pylint: disable=unused-import
 import api_config
 from protorpc import remote
-import swagger_generator
+import openapi_generator
 import yaml
 
 from google.appengine.ext import testbed
@@ -67,7 +67,7 @@ from google.appengine.ext import testbed
 DISCOVERY_DOC_BASE = ('https://webapis-discovery.appspot.com/_ah/api/'
                       'discovery/v1/apis/generate/')
 CLIENT_LIBRARY_BASE = 'https://google-api-client-libraries.appspot.com/generate'
-_VISIBLE_COMMANDS = ('get_client_lib', 'get_discovery_doc', 'get_swagger_spec')
+_VISIBLE_COMMANDS = ('get_client_lib', 'get_discovery_doc', 'get_openapi_spec')
 
 
 class ServerRequestException(Exception):
@@ -302,29 +302,29 @@ def _GenDiscoveryDoc(service_class_names, doc_format,
   return output_files
 
 
-def _GenSwaggerSpec(service_class_names, output_path, hostname=None,
+def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
                     application_path=None):
   """Write discovery documents generated from a cloud service to file.
 
   Args:
     service_class_names: A list of fully qualified ProtoRPC service names.
-    output_path: The directory to which to output the Swagger specs.
+    output_path: The directory to which to output the OpenAPI specs.
     hostname: A string hostname which will be used as the default version
       hostname. If no hostname is specified in the @endpoints.api decorator,
       this value is the fallback. Defaults to None.
     application_path: A string containing the path to the AppEngine app.
 
   Returns:
-    A list of Swagger spec filenames.
+    A list of Open API spec filenames.
   """
   output_files = []
   service_configs = GenApiConfig(
       service_class_names, hostname=hostname,
-      config_string_generator=swagger_generator.SwaggerGenerator(),
+      config_string_generator=openapi_generator.OpenApiGenerator(),
       application_path=application_path)
   for api_name_version, config in service_configs.iteritems():
-    swagger_name = api_name_version.replace('-', '') + 'swagger.json'
-    output_files.append(_WriteFile(output_path, swagger_name, config))
+    openapi_name = api_name_version.replace('-', '') + 'openapi.json'
+    output_files.append(_WriteFile(output_path, openapi_name, config))
 
   return output_files
 
@@ -466,19 +466,19 @@ def _GenDiscoveryDocCallback(args, discovery_func=_GenDiscoveryDoc):
     print 'API discovery document written to %s' % discovery_path
 
 
-def _GenSwaggerSpecCallback(args, swagger_func=_GenSwaggerSpec):
-  """Generate Swagger specs to files.
+def _GenOpenApiSpecCallback(args, openapi_func=_GenOpenApiSpec):
+  """Generate OpenAPI (Swagger) specs to files.
 
   Args:
     args: An argparse.Namespace object to extract parameters from
-    swagger_func: A function that generates Swagger specs and stores them to
+    openapi_func: A function that generates OpenAPI specs and stores them to
       files, accepting a list of service names and an output directory.
   """
-  swagger_paths = swagger_func(args.service, args.output,
+  openapi_paths = openapi_func(args.service, args.output,
                                hostname=args.hostname,
                                application_path=args.application)
-  for swagger_path in swagger_paths:
-    print 'Swagger spec written to %s' % swagger_path
+  for openapi_path in openapi_paths:
+    print 'OpenAPI spec written to %s' % openapi_path
 
 
 def _GenClientLibCallback(args, client_func=_GenClientLib):
@@ -558,10 +558,20 @@ def MakeParser(prog):
   AddStandardOptions(get_discovery_doc, 'application', 'format', 'hostname',
                      'output', 'service')
 
+  get_openapi_spec = subparsers.add_parser(
+      'get_openapi_spec',
+      help='Generates OpenAPI (Swagger) specs from service classes')
+  get_openapi_spec.set_defaults(callback=_GenOpenApiSpecCallback)
+  AddStandardOptions(get_openapi_spec, 'application', 'hostname', 'output',
+                     'service')
+
+  # Create an alias for get_openapi_spec called get_swagger_spec to support
+  # the old-style naming. This won't be a visible command, but it will still
+  # function to support legacy scripts.
   get_swagger_spec = subparsers.add_parser(
       'get_swagger_spec',
-      help='Generates Swagger specs from service classes')
-  get_swagger_spec.set_defaults(callback=_GenSwaggerSpecCallback)
+      help='Generates OpenAPI (Swagger) specs from service classes')
+  get_swagger_spec.set_defaults(callback=_GenOpenApiSpecCallback)
   AddStandardOptions(get_swagger_spec, 'application', 'hostname', 'output',
                      'service')
 

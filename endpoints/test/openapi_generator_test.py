@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for endpoints.swagger_generator."""
+"""Tests for endpoints.openapi_generator."""
 
 import json
 import unittest
@@ -24,11 +24,11 @@ from protorpc import messages
 from protorpc import remote
 
 import endpoints.resource_container as resource_container
-import endpoints.swagger_generator as swagger_generator
+import endpoints.openapi_generator as openapi_generator
 import test_util
 
 
-package = 'SwaggerGeneratorTest'
+package = 'OpenApiGeneratorTest'
 
 
 class Nested(messages.Message):
@@ -68,20 +68,20 @@ ALL_FIELDS_AS_PARAMETERS = resource_container.ResourceContainer(
     **{field.name: field for field in AllFields.all_fields()})
 
 
-class BaseSwaggerGeneratorTest(unittest.TestCase):
+class BaseOpenApiGeneratorTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
     cls.maxDiff = None
 
   def setUp(self):
-    self.generator = swagger_generator.SwaggerGenerator()
+    self.generator = openapi_generator.OpenApiGenerator()
 
   def _def_path(self, path):
     return '#/definitions/' + path
 
 
-class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
+class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
   def testAllFieldTypes(self):
 
@@ -193,8 +193,8 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    # Some constants to shorten line length in expected Swagger output
-    prefix = 'SwaggerGeneratorTest'
+    # Some constants to shorten line length in expected OpenAPI output
+    prefix = 'OpenApiGeneratorTest'
     boolean_response = prefix + 'BooleanMessageResponse'
     all_fields = prefix + 'AllFields'
     nested = prefix + 'Nested'
@@ -204,7 +204,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
     put_request_for_container = prefix + 'ItemsPutRequestForContainer'
     put_request = prefix + 'PutRequest'
 
-    expected_swagger = {
+    expected_openapi = {
         'swagger': '2.0',
         'info': {
             'title': 'root',
@@ -664,7 +664,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
         },
     }
 
-    test_util.AssertDictEqual(expected_swagger, api, self)
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
   def testLocalhost(self):
     @api_config.api(name='root', hostname='localhost:8080', version='v1')
@@ -678,7 +678,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    expected_swagger = {
+    expected_openapi = {
         'swagger': '2.0',
         'info': {
             'title': 'root',
@@ -714,7 +714,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
         },
     }
 
-    test_util.AssertDictEqual(expected_swagger, api, self)
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
   def testApiKeyRequired(self):
 
@@ -736,7 +736,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    expected_swagger = {
+    expected_openapi = {
         'swagger': '2.0',
         'info': {
             'title': 'root',
@@ -793,7 +793,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
         },
     }
 
-    test_util.AssertDictEqual(expected_swagger, api, self)
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
   def testCustomUrl(self):
 
@@ -809,7 +809,7 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    expected_swagger = {
+    expected_openapi = {
         'swagger': '2.0',
         'info': {
             'title': 'root',
@@ -845,19 +845,19 @@ class SwaggerGeneratorTest(BaseSwaggerGeneratorTest):
         },
     }
 
-    test_util.AssertDictEqual(expected_swagger, api, self)
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
-class DevServerSwaggerGeneratorTest(BaseSwaggerGeneratorTest,
+class DevServerOpenApiGeneratorTest(BaseOpenApiGeneratorTest,
                                     test_util.DevServerTest):
 
   def setUp(self):
-    super(DevServerSwaggerGeneratorTest, self).setUp()
+    super(DevServerOpenApiGeneratorTest, self).setUp()
     self.env_key, self.orig_env_value = (test_util.DevServerTest.
                                          setUpDevServerEnv())
     self.addCleanup(test_util.DevServerTest.restoreEnv,
                     self.env_key, self.orig_env_value)
 
-  def testDevServerSwagger(self):
+  def testDevServerOpenApi(self):
 
     @api_config.api(name='root', hostname='example.appspot.com', version='v1')
     class MyService(remote.Service):
@@ -870,7 +870,7 @@ class DevServerSwaggerGeneratorTest(BaseSwaggerGeneratorTest,
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    expected_swagger = {
+    expected_openapi = {
         'swagger': '2.0',
         'info': {
             'title': 'root',
@@ -906,7 +906,7 @@ class DevServerSwaggerGeneratorTest(BaseSwaggerGeneratorTest,
         },
     }
 
-    test_util.AssertDictEqual(expected_swagger, api, self)
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
 
 if __name__ == '__main__':
