@@ -315,7 +315,7 @@ def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
     application_path: A string containing the path to the AppEngine app.
 
   Returns:
-    A list of Open API spec filenames.
+    A list of OpenAPI spec filenames.
   """
   output_files = []
   service_configs = GenApiConfig(
