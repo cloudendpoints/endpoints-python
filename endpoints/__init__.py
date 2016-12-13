@@ -34,4 +34,4 @@ from users_id_token import get_current_user
 from users_id_token import InvalidGetUserCall
 from users_id_token import SKIP_CLIENT_ID_CHECK
 
-__version__ = '2.0.0b6'
+__version__ = '2.0.0b7'
