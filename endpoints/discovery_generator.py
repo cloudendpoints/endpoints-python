@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A library for converting service configs to Swagger (Open API) specs."""
+"""A library for converting service configs to discovery docs."""
 
 import collections
 import json
@@ -1003,7 +1003,7 @@ class DiscoveryGenerator(object):
         current service. Defaults to None.
 
     Returns:
-      string, The Swagger API descriptor document as a JSON string.
+      string, The discovery doc descriptor document as a JSON string.
     """
     descriptor = self.get_discovery_doc(services, hostname)
     return json.dumps(descriptor, sort_keys=True, indent=2,

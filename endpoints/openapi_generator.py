@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A library for converting service configs to Swagger (Open API) specs."""
+"""A library for converting service configs to OpenAPI (Swagger) specs."""
 
 import json
 import logging
@@ -40,8 +40,8 @@ _API_KEY = 'api_key'
 _API_KEY_PARAM = 'key'
 
 
-class SwaggerGenerator(object):
-  """Generates a Swagger spec from a ProtoRPC service.
+class OpenApiGenerator(object):
+  """Generates an OpenAPI spec from a ProtoRPC service.
 
   Example:
 
@@ -58,9 +58,9 @@ class SwaggerGenerator(object):
         return HelloResponse(hello='Hello there, %s!' %
                              request.my_name)
 
-    api_config = SwaggerGenerator().pretty_print_config_to_json(HelloService)
+    api_config = OpenApiGenerator().pretty_print_config_to_json(HelloService)
 
-  The resulting api_config will be a JSON Swagger document describing the API
+  The resulting api_config will be a JSON OpenAPI document describing the API
   implemented by HelloService.
   """
 
@@ -539,7 +539,7 @@ class SwaggerGenerator(object):
     return params
 
   def __definitions_descriptor(self):
-    """Describes the definitions section of the Swagger spec.
+    """Describes the definitions section of the OpenAPI spec.
 
     Returns:
       Dictionary describing the definitions of the spec.
@@ -752,8 +752,8 @@ class SwaggerGenerator(object):
 
     return merged_api_info
 
-  def __api_swagger_descriptor(self, services, hostname=None):
-    """Builds a Swagger description of an API.
+  def __api_openapi_descriptor(self, services, hostname=None):
+    """Builds an OpenAPI description of an API.
 
     Args:
       services: List of protorpc.remote.Service instances implementing an
@@ -763,7 +763,7 @@ class SwaggerGenerator(object):
 
     Returns:
       A dictionary that can be deserialized into JSON and stored as an API
-      description document in Swagger format.
+      description document in OpenAPI format.
 
     Raises:
       ApiConfigurationError: If there's something wrong with the API
@@ -886,8 +886,8 @@ class SwaggerGenerator(object):
 
     return defaults
 
-  def get_swagger_dict(self, services, hostname=None):
-    """JSON dict description of a protorpc.remote.Service in Swagger format.
+  def get_openapi_dict(self, services, hostname=None):
+    """JSON dict description of a protorpc.remote.Service in OpenAPI format.
 
     Args:
       services: Either a single protorpc.remote.Service or a list of them
@@ -896,7 +896,7 @@ class SwaggerGenerator(object):
         current service. Defaults to None.
 
     Returns:
-      dict, The Swagger API descriptor document as a JSON dict.
+      dict, The OpenAPI descriptor document as a JSON dict.
     """
 
     if not isinstance(services, (tuple, list)):
@@ -908,10 +908,10 @@ class SwaggerGenerator(object):
     util.check_list_type(services, remote._ServiceClass, 'services',
                          allow_none=False)
 
-    return self.__api_swagger_descriptor(services, hostname=hostname)
+    return self.__api_openapi_descriptor(services, hostname=hostname)
 
   def pretty_print_config_to_json(self, services, hostname=None):
-    """JSON string description of a protorpc.remote.Service in Swagger format.
+    """JSON string description of a protorpc.remote.Service in OpenAPI format.
 
     Args:
       services: Either a single protorpc.remote.Service or a list of them
@@ -920,8 +920,8 @@ class SwaggerGenerator(object):
         current service. Defaults to None.
 
     Returns:
-      string, The Swagger API descriptor document as a JSON string.
+      string, The OpenAPI descriptor document as a JSON string.
     """
-    descriptor = self.get_swagger_dict(services, hostname)
+    descriptor = self.get_openapi_dict(services, hostname)
     return json.dumps(descriptor, sort_keys=True, indent=2,
                       separators=(',', ': '))
