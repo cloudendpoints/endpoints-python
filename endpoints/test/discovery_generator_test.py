@@ -44,6 +44,11 @@ class SimpleEnum(messages.Enum):
   VAL2 = 2
 
 
+class IdField(messages.Message):
+  """Just contains an integer field."""
+  id_value = messages.IntegerField(1, variant=messages.Variant.INT32)
+
+
 class AllFields(messages.Message):
   """Contains all field types."""
 
@@ -211,6 +216,61 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
     except IOError as e:
       print 'Could not find expected output file ' + test_file
       raise e
+
+    test_util.AssertDictEqual(expected_discovery, api, self)
+
+  def testNamespace(self):
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='This is an API',
+                    namespace=api_config.Namespace('domain', 'name', 'path'))
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(IdField, message_types.VoidMessage, path='entries',
+                         http_method='GET', name='get_entry')
+      def entries_get(self, unused_request):
+        """Id (integer) field type in the query parameters."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    try:
+      pwd = os.path.dirname(os.path.realpath(__file__))
+      test_file = os.path.join(pwd, 'testdata', 'discovery', 'namespace.json')
+      with open(test_file) as f:
+        expected_discovery = json.loads(f.read())
+    except IOError as e:
+      print 'Could not find expected output file ' + test_file
+      raise e
+
+    test_util.AssertDictEqual(expected_discovery, api, self)
+
+  def testNamespaceDefaultPath(self):
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='This is an API',
+                    namespace=api_config.Namespace('domain', 'name', None))
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(IdField, message_types.VoidMessage, path='entries',
+                         http_method='GET', name='get_entry')
+      def entries_get(self, unused_request):
+        """Id (integer) field type in the query parameters."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    try:
+      pwd = os.path.dirname(os.path.realpath(__file__))
+      test_file = os.path.join(pwd, 'testdata', 'discovery', 'namespace.json')
+      with open(test_file) as f:
+        expected_discovery = json.loads(f.read())
+    except IOError as e:
+      print 'Could not find expected output file ' + test_file
+      raise e
+
+    # Clear the value of the packagePath parameter in the expected results
+    expected_discovery['packagePath'] = ''
 
     test_util.AssertDictEqual(expected_discovery, api, self)
 

@@ -862,6 +862,12 @@ class DiscoveryGenerator(object):
     descriptor['parameters'] = self.__standard_parameters_descriptor()
     descriptor['auth'] = self.__standard_auth_descriptor()
 
+    # Add namespace information, if provided
+    if merged_api_info.namespace:
+      descriptor['ownerDomain'] = merged_api_info.namespace.owner_domain
+      descriptor['ownerName'] = merged_api_info.namespace.owner_name
+      descriptor['packagePath'] = merged_api_info.namespace.package_path or ''
+
     method_map = {}
     method_collision_tracker = {}
     rest_collision_tracker = {}

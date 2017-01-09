@@ -64,6 +64,7 @@ __all__ = [
     'ApiFrontEndLimits',
     'EMAIL_SCOPE',
     'Issuer',
+    'Namespace',
     'api',
     'method',
     'AUTH_LEVEL',
@@ -80,8 +81,15 @@ _MULTICLASS_MISMATCH_ERROR_TEMPLATE = (
     'classes that aren\'t compatible. See docstring for api() for '
     'examples how to implement a multi-class API.')
 
+_INVALID_NAMESPACE_ERROR_TEMPLATE = (
+    'Invalid namespace configuration. If a namespace is set, make sure to set '
+    '%s. package_path is optional.')
+
 
 Issuer = collections.namedtuple('Issuer', ['issuer', 'jwks_uri'])
+Namespace = collections.namedtuple('Namespace', ['owner_domain',
+                                                 'owner_name',
+                                                 'package_path'])
 
 
 def _Enum(docstring, *names):
@@ -192,6 +200,21 @@ def _CheckEnum(value, check_type, name):
     return
   if value not in check_type.reverse_mapping:
     raise TypeError('%s is not a valid value for %s' % (value, name))
+
+
+def _CheckNamespace(namespace):
+  _CheckType(namespace, Namespace, 'namespace')
+  if namespace:
+    if not namespace.owner_domain:
+      raise api_exceptions.InvalidNamespaceException(
+          _INVALID_NAMESPACE_ERROR_TEMPLATE % 'owner_domain')
+    if not namespace.owner_name:
+      raise api_exceptions.InvalidNamespaceException(
+          _INVALID_NAMESPACE_ERROR_TEMPLATE % 'owner_name')
+
+    _CheckType(namespace.owner_domain, basestring, 'namespace.owner_domain')
+    _CheckType(namespace.owner_name, basestring, 'namespace.owner_name')
+    _CheckType(namespace.package_path, basestring, 'namespace.package_path')
 
 
 def _CheckAudiences(audiences):
@@ -309,6 +332,11 @@ class _ApiInfo(object):
     return self.__common_info.issuers
 
   @property
+  def namespace(self):
+    """Namespace for the API."""
+    return self.__common_info.namespace
+
+  @property
   def auth_level(self):
     """Enum from AUTH_LEVEL specifying the frontend authentication level."""
     if self.__auth_level is not None:
@@ -392,7 +420,7 @@ class _ApiDecorator(object):
                canonical_name=None, auth=None, owner_domain=None,
                owner_name=None, package_path=None, frontend_limits=None,
                title=None, documentation=None, auth_level=None, issuers=None,
-               api_key_required=None, base_path=None):
+               namespace=None, api_key_required=None, base_path=None):
     """Constructor for _ApiDecorator.
 
     Args:
@@ -425,6 +453,7 @@ class _ApiDecorator(object):
         plugin to allow users to learn about your service.
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
       issuers: list of endpoints.Issuer objects, auth issuers for this API.
+      namespace: endpoints.Namespace, the namespace for the API.
       api_key_required: bool, whether a key is required to call this API.
       base_path: string, the base path for all endpoints in this API.
     """
@@ -436,7 +465,8 @@ class _ApiDecorator(object):
         owner_name=owner_name, package_path=package_path,
         frontend_limits=frontend_limits, title=title,
         documentation=documentation, auth_level=auth_level, issuers=issuers,
-        api_key_required=api_key_required, base_path=base_path)
+        namespace=namespace, api_key_required=api_key_required,
+        base_path=base_path)
     self.__classes = []
 
   class __ApiCommonInfo(object):
@@ -461,7 +491,7 @@ class _ApiDecorator(object):
                  canonical_name=None, auth=None, owner_domain=None,
                  owner_name=None, package_path=None, frontend_limits=None,
                  title=None, documentation=None, auth_level=None, issuers=None,
-                 api_key_required=None, base_path=None):
+                 namespace=None, api_key_required=None, base_path=None):
       """Constructor for _ApiCommonInfo.
 
       Args:
@@ -494,6 +524,7 @@ class _ApiDecorator(object):
           GPE plugin to allow users to learn about your service.
         auth_level: enum from AUTH_LEVEL, Frontend authentication level.
         issuers: dict, mapping auth issuer names to endpoints.Issuer objects.
+        namespace: endpoints.Namespace, the namespace for the API.
         api_key_required: bool, whether a key is required to call into this API.
         base_path: string, the base path for all endpoints in this API.
       """
@@ -521,6 +552,8 @@ class _ApiDecorator(object):
         for issuer_name, issuer_value in issuers.items():
           _CheckType(issuer_name, basestring, 'issuer %s' % issuer_name)
           _CheckType(issuer_value, Issuer, 'issuer value for %s' % issuer_name)
+
+      _CheckNamespace(namespace)
 
       _CheckAudiences(audiences)
 
@@ -554,6 +587,7 @@ class _ApiDecorator(object):
       self.__documentation = documentation
       self.__auth_level = auth_level
       self.__issuers = issuers
+      self.__namespace = namespace
       self.__api_key_required = api_key_required
       self.__base_path = base_path
 
@@ -596,6 +630,11 @@ class _ApiDecorator(object):
     def issuers(self):
       """List of auth issuers for the API."""
       return self.__issuers
+
+    @property
+    def namespace(self):
+      """Namespace of the API."""
+      return self.__namespace
 
     @property
     def auth_level(self):
@@ -858,7 +897,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
         scopes=None, allowed_client_ids=None, canonical_name=None,
         auth=None, owner_domain=None, owner_name=None, package_path=None,
         frontend_limits=None, title=None, documentation=None, auth_level=None,
-        issuers=None, api_key_required=None, base_path=None):
+        issuers=None, namespace=None, api_key_required=None, base_path=None):
   """Decorate a ProtoRPC Service class for use by the framework above.
 
   This decorator can be used to specify an API name, version, description, and
@@ -917,6 +956,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
       plugin to allow users to learn about your service.
     auth_level: enum from AUTH_LEVEL, frontend authentication level.
     issuers: list of endpoints.Issuer objects, auth issuers for this API.
+    namespace: endpoints.Namespace, the namespace for the API.
     api_key_required: bool, whether a key is required to call into this API.
     base_path: string, the base path for all endpoints in this API.
 
@@ -932,8 +972,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
                        package_path=package_path,
                        frontend_limits=frontend_limits, title=title,
                        documentation=documentation, auth_level=auth_level,
-                       issuers=issuers, api_key_required=api_key_required,
-                       base_path=base_path)
+                       issuers=issuers, namespace=namespace,
+                       api_key_required=api_key_required, base_path=base_path)
 
 
 class _MethodInfo(object):
