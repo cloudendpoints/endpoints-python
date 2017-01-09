@@ -238,7 +238,6 @@ class _ApiServer(object):
       if isinstance(entry, api_config._ApiDecorator):
         api_services.remove(entry)
         api_services.extend(entry.get_api_classes())
-        self.base_paths.add(entry.base_path)
 
     # Record the API services for quick discovery doc generation
     self.api_services = api_services
