@@ -176,16 +176,24 @@ def GenApiConfig(service_class_names, config_string_generator=None,
   # uniquely identified by (name, version).  Order needs to be preserved here,
   # so APIs that were listed first are returned first.
   api_service_map = collections.OrderedDict()
+  resolved_services = []
+
   for service_class_name in service_class_names:
     module_name, base_service_class_name = service_class_name.rsplit('.', 1)
     module = __import__(module_name, fromlist=base_service_class_name)
     service = getattr(module, base_service_class_name)
-    if not isinstance(service, type) or not issubclass(service, remote.Service):
+    if hasattr(service, 'get_api_classes'):
+      resolved_services.extend(service.get_api_classes())
+    elif (not isinstance(service, type) or
+          not issubclass(service, remote.Service)):
       raise TypeError('%s is not a ProtoRPC service' % service_class_name)
+    else:
+      resolved_services.append(service)
 
+  for resolved_service in resolved_services:
     services = api_service_map.setdefault(
-        (service.api_info.name, service.api_info.version), [])
-    services.append(service)
+        (resolved_service.api_info.name, resolved_service.api_info.version), [])
+    services.append(resolved_service)
 
   # If hostname isn't specified in the API or on the command line, we'll
   # try to build it from information in app.yaml.
