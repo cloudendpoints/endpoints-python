@@ -76,5 +76,9 @@ class ApiConfigurationError(Exception):
   """Exception thrown if there's an error in the configuration/annotations."""
 
 
+class InvalidNamespaceException(Exception):
+  """Exception thrown if there's an invalid namespace declaration."""
+
+
 class ToolError(Exception):
   """Exception thrown if there's a general error in the endpointscfg.py tool."""

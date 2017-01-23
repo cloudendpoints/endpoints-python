@@ -1975,7 +1975,8 @@ class ApiDecoratorTest(unittest.TestCase):
 
     @api_config.api(name='CoolService', version='vX',
                     description='My Cool Service', hostname='myhost.com',
-                    canonical_name='Cool Service Name')
+                    canonical_name='Cool Service Name',
+                    namespace=api_config.Namespace('domain', 'name', 'path'))
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
       pass
@@ -1993,6 +1994,9 @@ class ApiDecoratorTest(unittest.TestCase):
     self.assertEqual(AUTH_LEVEL.NONE, api_info.auth_level)
     self.assertEqual(None, api_info.resource_name)
     self.assertEqual(None, api_info.path)
+    self.assertEqual('domain', api_info.namespace.owner_domain)
+    self.assertEqual('name', api_info.namespace.owner_name)
+    self.assertEqual('path', api_info.namespace.package_path)
 
   def testApiInfoDefaults(self):
 
@@ -2009,6 +2013,38 @@ class ApiDecoratorTest(unittest.TestCase):
     self.assertEqual(None, api_info.canonical_name)
     self.assertEqual(None, api_info.title)
     self.assertEqual(None, api_info.documentation)
+    self.assertEqual(None, api_info.namespace)
+
+  def testApiInfoInvalidNamespaceNoDomain(self):
+
+    with self.assertRaises(api_exceptions.InvalidNamespaceException):
+      @api_config.api('CoolService2', 'v2',
+                      namespace=api_config.Namespace(None, 'name', 'path'))
+      class MyDecoratedService(remote.Service):
+        """Describes MyDecoratedService."""
+        pass
+
+  def testApiInfoInvalidNamespaceNoName(self):
+
+    with self.assertRaises(api_exceptions.InvalidNamespaceException):
+      @api_config.api('CoolService2', 'v2',
+                      namespace=api_config.Namespace('domain', None, 'path'))
+      class MyDecoratedService(remote.Service):
+        """Describes MyDecoratedService."""
+        pass
+
+  def testApiInfoNamespaceDefaultPath(self):
+
+    @api_config.api('CoolService2', 'v2',
+                    namespace=api_config.Namespace('domain', 'name', None))
+    class MyDecoratedService(remote.Service):
+      """Describes MyDecoratedService."""
+      pass
+
+    api_info = MyDecoratedService.api_info
+    self.assertEqual('domain', api_info.namespace.owner_domain)
+    self.assertEqual('name', api_info.namespace.owner_name)
+    self.assertEqual(None, api_info.namespace.package_path)
 
   def testGetApiClassesSingle(self):
     """Test that get_api_classes works when one class has been decorated."""
