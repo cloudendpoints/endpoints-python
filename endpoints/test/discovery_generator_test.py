@@ -101,6 +101,22 @@ class BaseDiscoveryGeneratorTest(unittest.TestCase):
   def _def_path(self, path):
     return '#/definitions/' + path
 
+  def _get_expected_json(self, filename):
+    try:
+      pwd = os.path.dirname(os.path.realpath(__file__))
+      test_file = os.path.join(pwd, 'testdata', 'discovery', filename)
+      with open(test_file) as f:
+        expected_discovery = json.loads(f.read())
+    except IOError as e:
+      print 'Could not find expected output file ' + test_file
+      raise e
+
+    return expected_discovery
+
+  def _check_discovery(self, service, expected_doc_filename):
+    api = json.loads(self.generator.pretty_print_config_to_json(service))
+    expected_discovery = self._get_expected_json(expected_doc_filename)
+    test_util.AssertDictEqual(expected_discovery, api, self)
 
 class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
 
@@ -221,18 +237,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
         """Path has a parameter and request body is in the body field."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
-
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery', 'allfields.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
-
-    test_util.AssertDictEqual(expected_discovery, api, self)
+    self._check_discovery(MyService, 'allfields.json')
 
   def testNamespace(self):
     @api_config.api(name='root', hostname='example.appspot.com', version='v1',
@@ -247,18 +252,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
         """Id (integer) field type in the query parameters."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
-
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery', 'namespace.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
-
-    test_util.AssertDictEqual(expected_discovery, api, self)
+    self._check_discovery(MyService, 'namespace.json')
 
   def testNamespaceDefaultPath(self):
     @api_config.api(name='root', hostname='example.appspot.com', version='v1',
@@ -275,14 +269,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery', 'namespace.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
+    expected_discovery = self._get_expected_json('namespace.json')
 
     # Clear the value of the packagePath parameter in the expected results
     expected_discovery['packagePath'] = ''
@@ -303,19 +290,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
         """Testing a ResourceContainer with a repeated query param."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
-
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery',
-                               'repeated_resource_container.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
-
-    test_util.AssertDictEqual(expected_discovery, api, self)
+    self._check_discovery(MyService, 'repeated_resource_container.json')
 
   def testRepeatedSimpleField(self):
 
@@ -330,19 +305,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
         """Testing a repeated simple field body param."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
-
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery',
-                               'repeated_simple_field_param.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
-
-    test_util.AssertDictEqual(expected_discovery, api, self)
+    self._check_discovery(MyService, 'repeated_simple_field_param.json')
 
   def testRepeatedMessage(self):
 
@@ -357,19 +320,7 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
         """Testing a repeated Message body param."""
         return message_types.VoidMessage()
 
-    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
-
-    try:
-      pwd = os.path.dirname(os.path.realpath(__file__))
-      test_file = os.path.join(pwd, 'testdata', 'discovery',
-                               'repeated_message_param.json')
-      with open(test_file) as f:
-        expected_discovery = json.loads(f.read())
-    except IOError as e:
-      print 'Could not find expected output file ' + test_file
-      raise e
-
-    test_util.AssertDictEqual(expected_discovery, api, self)
+    self._check_discovery(MyService, 'repeated_message_param.json')
 
 
 
