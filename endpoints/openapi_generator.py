@@ -726,8 +726,8 @@ class OpenApiGenerator(object):
               'authorizationUrl': '',
               'flow': 'implicit',
               'type': 'oauth2',
-              'x-issuer': 'accounts.google.com',
-              'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+              'x-google-issuer': 'accounts.google.com',
+              'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
           }
       }
 
