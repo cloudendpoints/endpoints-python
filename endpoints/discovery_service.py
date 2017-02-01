@@ -19,7 +19,7 @@ import json
 import logging
 
 import api_config
-import discovery_api_proxy
+import directory_list_generator
 import discovery_generator
 import util
 
@@ -72,7 +72,6 @@ class DiscoveryService(object):
     """
     self._config_manager = config_manager
     self._backend = backend
-    self._discovery_proxy = discovery_api_proxy.DiscoveryApiProxy()
 
   def _send_success_response(self, response, start_response):
     """Sends an HTTP 200 json success response.
@@ -172,10 +171,11 @@ class DiscoveryService(object):
       A string containing the response body.
     """
     configs = []
+    generator = directory_list_generator.DirectoryListGenerator()
     for config in self._config_manager.configs.itervalues():
       if config != self.API_CONFIG:
-        configs.append(json.dumps(config))
-    directory = self._discovery_proxy.generate_directory(configs)
+        configs.append(config)
+    directory = generator.pretty_print_config_to_json(configs)
     if not directory:
       logging.error('Failed to get API directory')
       # By returning a 404, code explorer still works if you select the

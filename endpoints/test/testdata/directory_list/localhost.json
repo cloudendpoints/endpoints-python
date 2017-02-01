@@ -1,0 +1,34 @@
+{
+  "kind": "discovery#directoryList",
+  "discoveryVersion": "v1",
+  "items": [
+    {
+      "kind": "discovery#directoryItem",
+      "id": "root:v1",
+      "name": "root",
+      "version": "v1",
+      "description": "This is an API",
+      "discoveryRestUrl": "http://localhost:8080/_ah/api/discovery/v1/apis/root/v1/rest",
+      "discoveryLink": "./apis/root/v1/rest",
+      "icons": {
+        "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+        "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+       },
+      "preferred": true
+    },
+    {
+      "kind": "discovery#directoryItem",
+      "id": "myapi:v1",
+      "name": "myapi",
+      "version": "v1",
+      "description": "This is my API",
+      "discoveryRestUrl": "http://localhost:8081/_ah/api/discovery/v1/apis/myapi/v1/rest",
+      "discoveryLink": "./apis/myapi/v1/rest",
+      "icons": {
+        "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+        "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+       },
+      "preferred": true
+    }
+  ]
+}
