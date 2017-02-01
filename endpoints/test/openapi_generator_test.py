@@ -43,6 +43,22 @@ class SimpleEnum(messages.Enum):
   VAL2 = 2
 
 
+class IdField(messages.Message):
+  """Just contains an integer field."""
+  id_value = messages.IntegerField(1, variant=messages.Variant.INT32)
+
+
+class IdRepeatedField(messages.Message):
+  """Contains a repeated integer field."""
+  id_values = messages.IntegerField(1, variant=messages.Variant.INT32,
+                                    repeated=True)
+
+
+class NestedRepeatedMessage(messages.Message):
+  """Contains a repeated Message field."""
+  message_field_value = messages.MessageField(Nested, 1, repeated=True)
+
+
 class AllFields(messages.Message):
   """Contains all field types."""
 
@@ -66,6 +82,11 @@ class AllFields(messages.Message):
 # in a request.
 ALL_FIELDS_AS_PARAMETERS = resource_container.ResourceContainer(
     **{field.name: field for field in AllFields.all_fields()})
+
+
+REPEATED_CONTAINER = resource_container.ResourceContainer(
+    IdField,
+    repeated_field=messages.StringField(2, repeated=True))
 
 
 class BaseOpenApiGeneratorTest(unittest.TestCase):
@@ -846,6 +867,226 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
     }
 
     test_util.AssertDictEqual(expected_openapi, api, self)
+
+  def testRepeatedResourceContainer(self):
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='Testing repeated params')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(REPEATED_CONTAINER, message_types.VoidMessage,
+                         path='toplevel', http_method='POST')
+      def toplevel(self, unused_request):
+        """Testing a ResourceContainer with a repeated query param."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Testing repeated params',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'definitions': {
+            'OpenApiGeneratorTestIdField': {
+                'properties': {
+                    'id_value': {
+                        'format': 'int32',
+                        'type': 'integer'
+                    }
+                },
+                'type': 'object'
+            },
+        },
+        'paths': {
+            '/root/v1/toplevel': {
+                'post': {
+                    'operationId': 'MyService_toplevel',
+                    'parameters': [
+                        {
+                            "collectionFormat": "multi",
+                            "in": "query",
+                            "items": {
+                                "type": "string"
+                            },
+                            "name": "repeated_field",
+                            "type": "array"
+                        },
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
+  def testRepeatedSimpleField(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='Testing repeated simple field params')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(IdRepeatedField, message_types.VoidMessage,
+                         path='toplevel', http_method='POST')
+      def toplevel(self, unused_request):
+        """Testing a repeated simple field body param."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Testing repeated simple field params',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'definitions': {
+            'OpenApiGeneratorTestIdRepeatedField': {
+                'properties': {
+                    'id_values': {
+                        'items': {
+                            'format': 'int32',
+                            'type': 'integer'
+                        },
+                        'type': 'array'
+                    }
+                },
+                'type': 'object'
+            },
+        },
+        'paths': {
+            '/root/v1/toplevel': {
+                'post': {
+                    'operationId': 'MyService_toplevel',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
+  def testRepeatedMessage(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='Testing repeated Message params')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(NestedRepeatedMessage, message_types.VoidMessage,
+                         path='toplevel', http_method='POST')
+      def toplevel(self, unused_request):
+        """Testing a repeated Message body param."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Testing repeated Message params',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'definitions': {
+            'OpenApiGeneratorTestNested': {
+                'properties': {
+                    'int_value': {
+                        'format': 'int64',
+                        'type': 'string'
+                    },
+                    'string_value': {
+                        'type': 'string'
+                    }
+                },
+                'type': 'object'
+            },
+            "OpenApiGeneratorTestNestedRepeatedMessage": {
+                "properties": {
+                    "message_field_value": {
+                        "description": "Message class to be used in a message field.",
+                        "items": {
+                            "$ref": "#/definitions/OpenApiGeneratorTestNested"
+                        },
+                        "type": "array"
+                    },
+                },
+                'type': 'object'
+            },
+        },
+        'paths': {
+            '/root/v1/toplevel': {
+                'post': {
+                    'operationId': 'MyService_toplevel',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-issuer': 'accounts.google.com',
+                'x-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
 
 class DevServerOpenApiGeneratorTest(BaseOpenApiGeneratorTest,
                                     test_util.DevServerTest):

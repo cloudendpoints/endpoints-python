@@ -395,6 +395,28 @@ class OpenApiGenerator(object):
 
     return descriptor
 
+  def __path_parameter_descriptor(self, param):
+    descriptor = self.__parameter_descriptor(param)
+    descriptor['in'] = 'path'
+
+    return descriptor
+
+  def __query_parameter_descriptor(self, param):
+    descriptor = self.__parameter_descriptor(param)
+    descriptor['in'] = 'query'
+
+    # If this is a repeated field, convert it to the collectionFormat: multi
+    # style.
+    if param.repeated:
+      descriptor['collectionFormat'] = 'multi'
+      descriptor['items'] = {
+        'type': descriptor['type']
+      }
+      descriptor['type'] = 'array'
+      descriptor.pop('repeated', None)
+
+    return descriptor
+
   def __add_parameter(self, param, path_parameters, params):
     """Adds all parameters in a field to a method parameters descriptor.
 
@@ -413,22 +435,23 @@ class OpenApiGenerator(object):
     """
     # If this is a simple field, just build the descriptor and append it.
     # Otherwise, build a schema and assign it to this descriptor
-    descriptor = None
     if not isinstance(param, messages.MessageField):
-      descriptor = self.__parameter_descriptor(param)
-      descriptor['in'] = 'path' if param.name in path_parameters else 'query'
+      if param.name in path_parameters:
+        descriptor = self.__path_parameter_descriptor(param)
+      else:
+        descriptor = self.__query_parameter_descriptor(param)
+
+      params.append(descriptor)
     else:
       # If a subfield of a MessageField is found in the path, build a descriptor
       # for the path parameter.
       for subfield_list in self.__field_to_subfields(param):
         qualified_name = '.'.join(subfield.name for subfield in subfield_list)
         if qualified_name in path_parameters:
-          descriptor = self.__parameter_descriptor(subfield_list[-1])
+          descriptor = self.__path_parameter_descriptor(subfield_list[-1])
           descriptor['required'] = True
-          descriptor['in'] = 'path'
 
-    if descriptor:
-      params.append(descriptor)
+          params.append(descriptor)
 
   def __params_descriptor_without_container(self, message_type,
                                             request_kind, path):
