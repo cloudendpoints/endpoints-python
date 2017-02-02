@@ -135,6 +135,27 @@ class ApiRequest(object):
       url += '?' + environ['QUERY_STRING']
     return url
 
+  def reconstruct_hostname(self):
+    """Reconstruct the hostname of a request.
+
+    This is based on the URL reconstruction code in Python PEP 333:
+    http://www.python.org/dev/peps/pep-0333/#url-reconstruction.  Rebuild the
+    hostname from the pieces available in the environment.
+
+    Returns:
+      The hostname ortion of the URL from the request, not including the
+      URL scheme.
+    """
+    url = self.server
+    if self.url_scheme == 'https':
+      if self.port != '443':
+        url += ':' + self.port
+    else:
+      if self.port != '80':
+        url += ':' + self.port
+
+    return url
+
   def copy(self):
     return copy.deepcopy(self)
 

@@ -87,7 +87,7 @@ class DiscoveryGenerator(object):
   __NO_BODY = 1  # pylint: disable=invalid-name
   __HAS_BODY = 2  # pylint: disable=invalid-name
 
-  def __init__(self):
+  def __init__(self, request=None):
     self.__parser = message_parser.MessageTypeToJsonSchema()
 
     # Maps method id to the request schema id.
@@ -95,6 +95,9 @@ class DiscoveryGenerator(object):
 
     # Maps method id to the response schema id.
     self.__response_schema = {}
+
+    # The ApiRequest that called this generator
+    self.__request = request
 
   def _get_resource_path(self, method_id):
     """Return the resource path for a method or an empty array if none."""
@@ -946,10 +949,14 @@ class DiscoveryGenerator(object):
     Returns:
       A dictionary with the default configuration.
     """
-    hostname = (hostname or util.get_app_hostname() or
-                api_info.hostname)
-    protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
-                          util.is_running_on_devserver()) else 'https'
+    if self.__request:
+      hostname = self.__request.reconstruct_hostname()
+      protocol = self.__request.url_scheme
+    else:
+      hostname = (hostname or util.get_app_hostname() or
+                  api_info.hostname)
+      protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
+                            util.is_running_on_devserver()) else 'https'
     full_base_path = '{0}{1}/{2}/'.format(api_info.base_path,
                                           api_info.name,
                                           api_info.version)

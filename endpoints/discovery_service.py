@@ -104,7 +104,7 @@ class DiscoveryService(object):
     api = request.body_json['api']
     version = request.body_json['version']
 
-    generator = discovery_generator.DiscoveryGenerator()
+    generator = discovery_generator.DiscoveryGenerator(request=request)
     doc = generator.pretty_print_config_to_json(self._backend.api_services)
     if not doc:
       error_msg = ('Failed to convert .api to discovery doc for '
