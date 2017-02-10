@@ -104,7 +104,7 @@ class DiscoveryService(object):
     api = request.body_json['api']
     version = request.body_json['version']
 
-    generator = discovery_generator.DiscoveryGenerator()
+    generator = discovery_generator.DiscoveryGenerator(request=request)
     doc = generator.pretty_print_config_to_json(self._backend.api_services)
     if not doc:
       error_msg = ('Failed to convert .api to discovery doc for '
@@ -159,19 +159,20 @@ class DiscoveryService(object):
 
     return url
 
-  def _list(self, start_response):
+  def _list(self, request, start_response):
     """Sends HTTP response containing the API directory.
 
     This calls start_response and returns the response body.
 
     Args:
+      request: An ApiRequest, the transformed request sent to the Discovery API.
       start_response: A function with semantics defined in PEP-333.
 
     Returns:
       A string containing the response body.
     """
     configs = []
-    generator = directory_list_generator.DirectoryListGenerator()
+    generator = directory_list_generator.DirectoryListGenerator(request)
     for config in self._config_manager.configs.itervalues():
       if config != self.API_CONFIG:
         configs.append(config)
@@ -207,5 +208,5 @@ class DiscoveryService(object):
       logging.error('%s', error_msg)
       return util.send_wsgi_error_response(error_msg, start_response)
     elif path == self._LIST_API:
-      return self._list(start_response)
+      return self._list(request, start_response)
     return False

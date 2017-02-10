@@ -24,6 +24,7 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 
+import endpoints.api_request as api_request
 import endpoints.apiserving as apiserving
 import endpoints.directory_list_generator as directory_list_generator
 
@@ -61,9 +62,6 @@ class BaseDirectoryListGeneratorTest(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.maxDiff = None
-
-  def setUp(self):
-    self.generator = directory_list_generator.DirectoryListGenerator()
 
   def _def_path(self, path):
     return '#/definitions/' + path
@@ -107,7 +105,12 @@ class DirectoryListGeneratorTest(BaseDirectoryListGeneratorTest):
       if config != API_CONFIG:
         configs.append(config)
 
-    directory = json.loads(self.generator.pretty_print_config_to_json(configs))
+    environ = test_util.create_fake_environ(
+        'https', 'example.appspot.com', path='/_ah/api/discovery/v1/apis')
+    request = api_request.ApiRequest(environ, base_paths=['/_ah/api'])
+    generator = directory_list_generator.DirectoryListGenerator(request)
+
+    directory = json.loads(generator.pretty_print_config_to_json(configs))
 
     try:
       pwd = os.path.dirname(os.path.realpath(__file__))
@@ -167,7 +170,12 @@ class DevServerDirectoryListGeneratorTest(BaseDirectoryListGeneratorTest,
       if config != API_CONFIG:
         configs.append(config)
 
-    directory = json.loads(self.generator.pretty_print_config_to_json(configs))
+    environ = test_util.create_fake_environ(
+        'http', 'localhost', path='/_ah/api/discovery/v1/apis')
+    request = api_request.ApiRequest(environ, base_paths=['/_ah/api'])
+    generator = directory_list_generator.DirectoryListGenerator(request)
+
+    directory = json.loads(generator.pretty_print_config_to_json(configs))
 
     try:
       pwd = os.path.dirname(os.path.realpath(__file__))

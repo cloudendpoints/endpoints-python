@@ -23,6 +23,7 @@ Classes:
 import __future__
 import json
 import os
+import StringIO
 import types
 
 
@@ -193,3 +194,18 @@ class DevServerTest(object):
     else:
       os.environ[server_software_key] = server_software_value
 
+
+def create_fake_environ(protocol, server, port=None, path=None,
+                        query_string=None, body=None, http_method='GET'):
+  if port is None:
+    port = 80 if protocol.lower() == 'http' else 443
+
+  return {
+      'wsgi.url_scheme': protocol,
+      'REQUEST_METHOD': http_method,
+      'SERVER_NAME': server,
+      'SERVER_PORT': str(port),
+      'PATH_INFO': path,
+      'wsgi.input': StringIO.StringIO(body) if body else StringIO.StringIO(),
+      'QUERY_STRING': query_string,
+  }
