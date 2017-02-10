@@ -151,12 +151,9 @@ class ApiRequest(object):
     """
     url = self.server
     port = port_override or self.port
-    if self.url_scheme == 'https':
-      if port and str(port) != '443':
-        url += ':{0}'.format(port)
-    else:
-      if port and str(port) != '80':
-        url += ':{0}'.format(port)
+    if port and ((self.url_scheme == 'https' and str(port) != '443') or
+                 (self.url_scheme != 'https' and str(port) != '80')):
+      url += ':{0}'.format(port)
 
     return url
 
