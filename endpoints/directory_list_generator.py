@@ -18,6 +18,7 @@ import collections
 import json
 import logging
 import re
+import urlparse
 
 import util
 
@@ -45,6 +46,10 @@ class DirectoryListGenerator(object):
   The resulting document will be a JSON directory list describing the APIs
   implemented by HelloService.
   """
+
+  def __init__(self, request=None):
+    # The ApiRequest that called this generator
+    self.__request = request
 
   def __item_descriptor(self, config):
     """Builds an item descriptor for a service configuration.
@@ -78,8 +83,13 @@ class DirectoryListGenerator(object):
     descriptor['name'] = name
     descriptor['version'] = version
     descriptor['discoveryLink'] = '.{0}'.format(relative_path)
-    descriptor['discoveryRestUrl'] = '{0}/discovery/v1{1}'.format(
-        root_url, relative_path)
+
+    root_url_port = urlparse.urlparse(root_url).port
+
+    original_path = self.__request.reconstruct_full_url(
+        port_override=root_url_port)
+    descriptor['discoveryRestUrl'] = '{0}/{1}/{2}/rest'.format(
+        original_path, name, version)
 
     if name and version:
       descriptor['id'] = '{0}:{1}'.format(name, version)

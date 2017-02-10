@@ -124,7 +124,7 @@ class ApiRequest(object):
     URL from the pieces available in the environment.
 
     Args:
-      environ: An environ dict for the request as defined in PEP-333.
+      environ: An environ dict for the request as defined in PEP-333
 
     Returns:
       The portion of the URL from the request after the server and port.
@@ -135,26 +135,47 @@ class ApiRequest(object):
       url += '?' + environ['QUERY_STRING']
     return url
 
-  def reconstruct_hostname(self):
+  def reconstruct_hostname(self, port_override=None):
     """Reconstruct the hostname of a request.
 
     This is based on the URL reconstruction code in Python PEP 333:
     http://www.python.org/dev/peps/pep-0333/#url-reconstruction.  Rebuild the
     hostname from the pieces available in the environment.
 
+    Args:
+      port_override: str, An override for the port on the returned hostname.
+
     Returns:
-      The hostname ortion of the URL from the request, not including the
+      The hostname portion of the URL from the request, not including the
       URL scheme.
     """
     url = self.server
+    port = port_override or self.port
     if self.url_scheme == 'https':
-      if self.port != '443':
-        url += ':' + self.port
+      if port and str(port) != '443':
+        url += ':{0}'.format(port)
     else:
-      if self.port != '80':
-        url += ':' + self.port
+      if port and str(port) != '80':
+        url += ':{0}'.format(port)
 
     return url
+
+  def reconstruct_full_url(self, port_override=None):
+    """Reconstruct the full URL of a request.
+
+    This is based on the URL reconstruction code in Python PEP 333:
+    http://www.python.org/dev/peps/pep-0333/#url-reconstruction.  Rebuild the
+    hostname from the pieces available in the environment.
+
+    Args:
+      port_override: str, An override for the port on the returned full URL.
+
+    Returns:
+      The full URL from the request, including the URL scheme.
+    """
+    return '{0}://{1}{2}'.format(self.url_scheme,
+                                  self.reconstruct_hostname(port_override),
+                                  self.relative_url)
 
   def copy(self):
     return copy.deepcopy(self)
