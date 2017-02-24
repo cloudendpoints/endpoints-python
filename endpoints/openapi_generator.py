@@ -354,15 +354,14 @@ class OpenApiGenerator(object):
           param.type.to_dict().items(), key=lambda v: v[1])]
 
   def __body_parameter_descriptor(self, method_id):
-    descriptor = {
+    return {
         'name': 'body',
         'in': 'body',
+        'schema': {
+            '$ref': '#/definitions/{0}'.format(
+                self.__request_schema[method_id])
+        }
     }
-
-    descriptor['schema'] = {'$ref': '#/definitions/{0}'.format(
-        self.__request_schema[method_id])}
-
-    return descriptor
 
   def __non_body_parameter_descriptor(self, param):
     """Creates descriptor for a parameter.
