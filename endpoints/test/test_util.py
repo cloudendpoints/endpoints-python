@@ -27,6 +27,14 @@ import StringIO
 import types
 
 
+def SortListEntries(d):
+  for k, v in d.iteritems():
+    if isinstance(v, dict):
+      SortListEntries(v)
+    elif isinstance(v, list):
+      d[k] = sorted(v)
+
+
 def AssertDictEqual(expected, actual, testcase):
   """Utility method to dump diffs if the dictionaries aren't equal.
 
@@ -36,6 +44,8 @@ def AssertDictEqual(expected, actual, testcase):
     testcase: unittest.TestCase, the test case this assertion is used within.
   """
   if expected != actual:
+    SortListEntries(expected)
+    SortListEntries(actual)
     testcase.assertMultiLineEqual(
         json.dumps(expected, indent=2, sort_keys=True),
         json.dumps(actual, indent=2, sort_keys=True))
