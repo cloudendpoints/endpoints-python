@@ -353,7 +353,18 @@ class OpenApiGenerator(object):
       return [enum_entry[0] for enum_entry in sorted(
           param.type.to_dict().items(), key=lambda v: v[1])]
 
-  def __parameter_descriptor(self, param):
+  def __body_parameter_descriptor(self, method_id):
+    descriptor = {
+        'name': 'body',
+        'in': 'body',
+    }
+
+    descriptor['schema'] = {'$ref': '#/definitions/{0}'.format(
+        self.__request_schema[method_id])}
+
+    return descriptor
+
+  def __non_body_parameter_descriptor(self, param):
     """Creates descriptor for a parameter.
 
     Args:
@@ -396,13 +407,13 @@ class OpenApiGenerator(object):
     return descriptor
 
   def __path_parameter_descriptor(self, param):
-    descriptor = self.__parameter_descriptor(param)
+    descriptor = self.__non_body_parameter_descriptor(param)
     descriptor['in'] = 'path'
 
     return descriptor
 
   def __query_parameter_descriptor(self, param):
-    descriptor = self.__parameter_descriptor(param)
+    descriptor = self.__non_body_parameter_descriptor(param)
     descriptor['in'] = 'query'
 
     # If this is a repeated field, convert it to the collectionFormat: multi
@@ -454,7 +465,7 @@ class OpenApiGenerator(object):
           params.append(descriptor)
 
   def __params_descriptor_without_container(self, message_type,
-                                            request_kind, path):
+                                            request_kind, method_id, path):
     """Describe parameters of a method which does not use a ResourceContainer.
 
     Makes sure that the path parameters are included in the message definition
@@ -466,6 +477,7 @@ class OpenApiGenerator(object):
     Args:
       message_type: messages.Message class, Message with parameters to describe.
       request_kind: The type of request being made.
+      method_id: string, Unique method identifier (e.g. 'myapi.items.method')
       path: string, HTTP path to method.
 
     Returns:
@@ -477,8 +489,14 @@ class OpenApiGenerator(object):
     for field in sorted(message_type.all_fields(), key=lambda f: f.number):
       matched_path_parameters = path_parameter_dict.get(field.name, [])
       self.__validate_path_parameters(field, matched_path_parameters)
+
       if matched_path_parameters or request_kind == self.__NO_BODY:
         self.__add_parameter(field, matched_path_parameters, params)
+
+    # If the request has a body, add the body parameter
+    if (message_type != message_types.VoidMessage() and
+        request_kind == self.__HAS_BODY):
+      params.append(self.__body_parameter_descriptor(method_id))
 
     return params
 
@@ -512,20 +530,26 @@ class OpenApiGenerator(object):
                         'releases; please switch to using ResourceContainer as '
                         'soon as possible.', method_id)
       return self.__params_descriptor_without_container(
-          message_type, request_kind, path)
+          message_type, request_kind, method_id, path)
 
     # From here, we can assume message_type is a ResourceContainer.
-    message_type = message_type.parameters_message_class()
-
     params = []
+
+    # Process body parameter, if any
+    if message_type.body_message_class != message_types.VoidMessage:
+      params.append(self.__body_parameter_descriptor(method_id))
+
+    # Process path/querystring parameters
+    params_message_type = message_type.parameters_message_class()
 
     # Make sure all path parameters are covered.
     for field_name, matched_path_parameters in path_parameter_dict.iteritems():
-      field = message_type.field_by_name(field_name)
+      field = params_message_type.field_by_name(field_name)
       self.__validate_path_parameters(field, matched_path_parameters)
 
     # Add all fields, sort by field.number since we have parameterOrder.
-    for field in sorted(message_type.all_fields(), key=lambda f: f.number):
+    for field in sorted(params_message_type.all_fields(),
+                        key=lambda f: f.number):
       matched_path_parameters = path_parameter_dict.get(field.name, [])
       self.__add_parameter(field, matched_path_parameters, params)
 
@@ -548,16 +572,18 @@ class OpenApiGenerator(object):
     Raises:
       ValueError: if the method path and request required fields do not match
     """
-    params = self.__params_descriptor(message_type, request_kind, path,
-                                      method_id)
-
     if isinstance(message_type, resource_container.ResourceContainer):
-      message_type = message_type.body_message_class()
+      base_message_type = message_type.body_message_class()
+    else:
+      base_message_type = message_type
 
     if (request_kind != self.__NO_BODY and
-        message_type != message_types.VoidMessage()):
+        base_message_type != message_types.VoidMessage()):
       self.__request_schema[method_id] = self.__parser.add_message(
-          message_type.__class__)
+          base_message_type.__class__)
+
+    params = self.__params_descriptor(message_type, request_kind, path,
+                                      method_id)
 
     return params
 

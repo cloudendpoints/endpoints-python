@@ -89,6 +89,21 @@ REPEATED_CONTAINER = resource_container.ResourceContainer(
     repeated_field=messages.StringField(2, repeated=True))
 
 
+# Some constants to shorten line length in expected OpenAPI output
+PREFIX = 'OpenApiGeneratorTest'
+BOOLEAN_RESPONSE = PREFIX + 'BooleanMessageResponse'
+ALL_FIELDS = PREFIX + 'AllFields'
+NESTED = PREFIX + 'Nested'
+NESTED_REPEATED_MESSAGE = PREFIX + 'NestedRepeatedMessage'
+ENTRY_PUBLISH_REQUEST = PREFIX + 'EntryPublishRequest'
+PUBLISH_REQUEST_FOR_CONTAINER = PREFIX + 'EntryPublishRequestForContainer'
+ITEMS_PUT_REQUEST = PREFIX + 'ItemsPutRequest'
+PUT_REQUEST_FOR_CONTAINER = PREFIX + 'ItemsPutRequestForContainer'
+PUT_REQUEST = PREFIX + 'PutRequest'
+ID_FIELD = PREFIX + 'IdField'
+ID_REPEATED_FIELD = PREFIX + 'IdRepeatedField'
+
+
 class BaseOpenApiGeneratorTest(unittest.TestCase):
 
   @classmethod
@@ -103,6 +118,142 @@ class BaseOpenApiGeneratorTest(unittest.TestCase):
 
 
 class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
+
+  def testAllFieldTypesPost(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries',
+                         http_method='POST', name='entries')
+      def entries_post(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/entries': {
+                'post': {
+                    'operationId': 'MyService_entriesPost',
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ALL_FIELDS)
+                            },
+                        },
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'definitions': {
+            ALL_FIELDS: {
+                'type': 'object',
+                'properties': {
+                    'bool_value': {
+                        'type': 'boolean',
+                    },
+                    'bytes_value': {
+                        'type': 'string',
+                        'format': 'byte',
+                    },
+                    'datetime_value': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'double_value': {
+                        'type': 'number',
+                        'format': 'double',
+                    },
+                    'enum_value': {
+                        'type': 'string',
+                        'enum': [
+                            'VAL1',
+                            'VAL2',
+                        ],
+                    },
+                    'float_value': {
+                        'type': 'number',
+                        'format': 'float',
+                    },
+                    'int32_value': {
+                        'type': 'integer',
+                        'format': 'int32',
+                    },
+                    'int64_value': {
+                        'type': 'string',
+                        'format': 'int64',
+                    },
+                    'message_field_value': {
+                        '$ref': self._def_path(NESTED),
+                        'description':
+                            'Message class to be used in a message field.',
+                    },
+                    'sint32_value': {
+                        'type': 'integer',
+                        'format': 'int32',
+                    },
+                    'sint64_value': {
+                        'type': 'string',
+                        'format': 'int64',
+                    },
+                    'string_value': {
+                        'type': 'string',
+                    },
+                    'uint32_value': {
+                        'type': 'integer',
+                        'format': 'uint32',
+                    },
+                    'uint64_value': {
+                        'type': 'string',
+                        'format': 'uint64',
+                    },
+                },
+            },
+            "OpenApiGeneratorTestNested": {
+                "type": "object",
+                "properties": {
+                    "int_value": {
+                        "format": "int64",
+                        "type": "string"
+                    },
+                    "string_value": {
+                        "type": "string"
+                    },
+                },
+            },
+        },
+        "securityDefinitions": {
+            "google_id_token": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v1/certs"
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
 
   def testAllFieldTypes(self):
 
@@ -214,17 +365,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
-    # Some constants to shorten line length in expected OpenAPI output
-    prefix = 'OpenApiGeneratorTest'
-    boolean_response = prefix + 'BooleanMessageResponse'
-    all_fields = prefix + 'AllFields'
-    nested = prefix + 'Nested'
-    entry_publish_request = prefix + 'EntryPublishRequest'
-    publish_request_for_container = prefix + 'EntryPublishRequestForContainer'
-    items_put_request = prefix + 'ItemsPutRequest'
-    put_request_for_container = prefix + 'ItemsPutRequestForContainer'
-    put_request = prefix + 'PutRequest'
-
     expected_openapi = {
         'swagger': '2.0',
         'info': {
@@ -324,12 +464,21 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 },
                 'post': {
                     'operationId': 'MyService_entriesPut',
-                    'parameters': [],
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(PUT_REQUEST)
+                            }
+
+                        }
+                    ],
                     'responses': {
                         '200': {
                             'description': 'A successful response',
                             'schema': {
-                                '$ref': self._def_path(boolean_response),
+                                '$ref': self._def_path(BOOLEAN_RESPONSE),
                             },
                         },
                     },
@@ -425,6 +574,14 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     'operationId': 'MyService_itemsPutContainer',
                     'parameters': [
                         {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(
+                                    PUT_REQUEST_FOR_CONTAINER)
+                            },
+                        },
+                        {
                             'name': 'entryId',
                             'in': 'path',
                             'required': True,
@@ -442,6 +599,14 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'post': {
                     'operationId': 'MyService_entriesPublishContainer',
                     'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(
+                                    PUBLISH_REQUEST_FOR_CONTAINER)
+                            },
+                        },
                         {
                             'name': 'entryId',
                             'in': 'path',
@@ -466,6 +631,13 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                             'required': True,
                             'type': 'string',
                         },
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ITEMS_PUT_REQUEST)
+                            },
+                        },
                     ],
                     'responses': {
                         '200': {
@@ -483,6 +655,13 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                             'in': 'path',
                             'required': True,
                             'type': 'string',
+                        },
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ENTRY_PUBLISH_REQUEST)
+                            },
                         },
                     ],
                     'responses': {
@@ -506,7 +685,15 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             '/root/v1/process': {
                 'post': {
                     'operationId': 'MyService_entriesProcess',
-                    'parameters': [],
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ALL_FIELDS)
+                            },
+                        },
+                    ],
                     'responses': {
                         '200': {
                             'description': 'A successful response',
@@ -517,12 +704,20 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             '/root/v1/roundtrip': {
                 'post': {
                     'operationId': 'MyService_entriesRoundtrip',
-                    'parameters': [],
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ALL_FIELDS)
+                            },
+                        },
+                    ],
                     'responses': {
                         '200': {
                             'description': 'A successful response',
                             'schema': {
-                                '$ref': self._def_path(all_fields)
+                                '$ref': self._def_path(ALL_FIELDS)
                             },
                         },
                     },
@@ -530,7 +725,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             },
         },
         'definitions': {
-            all_fields: {
+            ALL_FIELDS: {
                 'type': 'object',
                 'properties': {
                     'bool_value': {
@@ -568,7 +763,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         'format': 'int64',
                     },
                     'message_field_value': {
-                        '$ref': self._def_path(nested),
+                        '$ref': self._def_path(NESTED),
                         'description':
                             'Message class to be used in a message field.',
                     },
@@ -593,7 +788,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     },
                 },
             },
-            boolean_response: {
+            BOOLEAN_RESPONSE: {
                 'type': 'object',
                 'properties': {
                     'result': {
@@ -602,7 +797,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 },
                 'required': ['result'],
             },
-            entry_publish_request: {
+            ENTRY_PUBLISH_REQUEST: {
                 'type': 'object',
                 'properties': {
                     'entryId': {
@@ -617,7 +812,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     'title',
                 ]
             },
-            publish_request_for_container: {
+            PUBLISH_REQUEST_FOR_CONTAINER: {
                 'type': 'object',
                 'properties': {
                     'title': {
@@ -628,11 +823,11 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     'title',
                 ]
             },
-            items_put_request: {
+            ITEMS_PUT_REQUEST: {
                 'type': 'object',
                 'properties': {
                     'body': {
-                        '$ref': self._def_path(all_fields),
+                        '$ref': self._def_path(ALL_FIELDS),
                         'description': 'Contains all field types.'
                     },
                     'entryId': {
@@ -643,7 +838,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     'entryId',
                 ]
             },
-            nested: {
+            NESTED: {
                 'type': 'object',
                 'properties': {
                     'int_value': {
@@ -655,20 +850,20 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     },
                 },
             },
-            put_request: {
+            PUT_REQUEST: {
                 'type': 'object',
                 'properties': {
                     'body': {
-                        '$ref': self._def_path(all_fields),
+                        '$ref': self._def_path(ALL_FIELDS),
                         'description': 'Contains all field types.',
                     },
                 },
             },
-            put_request_for_container: {
+            PUT_REQUEST_FOR_CONTAINER: {
                 'type': 'object',
                 'properties': {
                     'body': {
-                        '$ref': self._def_path(all_fields),
+                        '$ref': self._def_path(ALL_FIELDS),
                         'description': 'Contains all field types.',
                     },
                 },
@@ -911,6 +1106,13 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     'operationId': 'MyService_toplevel',
                     'parameters': [
                         {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ID_FIELD)
+                            },
+                        },
+                        {
                             "collectionFormat": "multi",
                             "in": "query",
                             "items": {
@@ -969,7 +1171,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
         'schemes': ['https'],
         'basePath': '/_ah/api',
         'definitions': {
-            'OpenApiGeneratorTestIdRepeatedField': {
+            ID_REPEATED_FIELD: {
                 'properties': {
                     'id_values': {
                         'items': {
@@ -986,7 +1188,15 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             '/root/v1/toplevel': {
                 'post': {
                     'operationId': 'MyService_toplevel',
-                    'parameters': [],
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ID_REPEATED_FIELD)
+                            }
+                        }
+                    ],
                     'responses': {
                         '200': {
                             'description': 'A successful response',
@@ -1053,7 +1263,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     "message_field_value": {
                         "description": "Message class to be used in a message field.",
                         "items": {
-                            "$ref": "#/definitions/OpenApiGeneratorTestNested"
+                            "$ref": self._def_path(NESTED)
                         },
                         "type": "array"
                     },
@@ -1065,7 +1275,16 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             '/root/v1/toplevel': {
                 'post': {
                     'operationId': 'MyService_toplevel',
-                    'parameters': [],
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(NESTED_REPEATED_MESSAGE)
+                            }
+                        }
+
+                    ],
                     'responses': {
                         '200': {
                             'description': 'A successful response',
