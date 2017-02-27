@@ -95,6 +95,20 @@ class EndpointsDispatcherMiddleware(object):
     """
     self._dispatchers.append((re.compile(path_regex), dispatch_function))
 
+  def _get_explorer_base_url(self, protocol, server, port, base_path):
+    show_port = ((protocol == 'http' and port != 80) or
+                 (protocol != 'http' and port != 443))
+    url = ('{0}://{1}:{2}/{3}'.format(
+      protocol, server, port, base_path) if show_port else
+      '{0}://{1}/{2}'.format(protocol, server, base_path))
+
+    return url.rstrip('/\\')
+
+  def _get_explorer_redirect_url(self, server, port, base_path):
+    protocol = 'http' if 'localhost' in server else 'https'
+    base_url = self._get_explorer_base_url(protocol, server, port, base_path)
+    return self._API_EXPLORER_URL + base_url
+
   def __call__(self, environ, start_response):
     """Handle an incoming request.
 
@@ -190,11 +204,8 @@ class EndpointsDispatcherMiddleware(object):
     Returns:
       A string containing the response body (which is empty, in this case).
     """
-    protocol = 'http' if 'localhost' in request.server else 'https'
-    base_path = request.base_path.strip('/')
-    base_url = '{0}://{1}:{2}/{3}'.format(
-        protocol, request.server, request.port, base_path)
-    redirect_url = self._API_EXPLORER_URL + base_url
+    redirect_url = self._get_explorer_redirect_url(
+        request.server, request.port, request.base_path)
     return util.send_wsgi_redirect_response(redirect_url, start_response)
 
   def handle_api_static_request(self, request, start_response):
