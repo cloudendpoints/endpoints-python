@@ -226,7 +226,7 @@ def get_app_hostname():
   # Check if this is the default version
   default_version = modules.get_default_version()
   if version == default_version:
-    return '{0}.{1}'.format(app_id, suffix)
+    return '{0}.{1}'.format(api_name, suffix)
   else:
     return '{0}-dot-{1}.{2}'.format(version, api_name, suffix)
 
