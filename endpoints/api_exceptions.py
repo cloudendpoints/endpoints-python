@@ -80,5 +80,9 @@ class InvalidNamespaceException(Exception):
   """Exception thrown if there's an invalid namespace declaration."""
 
 
+class InvalidLimitDefinitionException(Exception):
+  """Exception thrown if there's an invalid rate limit definition."""
+
+
 class ToolError(Exception):
   """Exception thrown if there's a general error in the endpointscfg.py tool."""
