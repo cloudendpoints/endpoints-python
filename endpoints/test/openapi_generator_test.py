@@ -932,6 +932,89 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
     test_util.AssertDictEqual(expected_openapi, api, self)
 
+  def testMetricCosts(self):
+
+    limit_definitions = [
+        api_config.LimitDefinition('read_requests',
+                                   'My Read API Requests per Minute',
+                                   1000),
+        api_config.LimitDefinition('list_requests',
+                                   'My List API Requests per Minute',
+                                   100),
+    ]
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    limit_definitions=limit_definitions)
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
+                         path='noop', http_method='GET', name='noop',
+                         metric_costs={'read_requests': 5,
+                                       'list_requests': 1})
+      def noop_get(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/noop': {
+                'get': {
+                    'operationId': 'MyService_noopGet',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    'x-google-quota': {
+                        'metricCosts': {
+                            'read_requests': 5,
+                            'list_requests': 1,
+                        }
+                    }
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-google-issuer': 'accounts.google.com',
+                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+        'x-google-quota-definitions': {
+            'limits': [
+                {
+                    'default_limit': 1000,
+                    'metric': 'read_requests',
+                    'display_name': 'My Read API Requests per Minute',
+                },
+                {
+                    'default_limit': 100,
+                    'metric': 'list_requests',
+                    'display_name': 'My List API Requests per Minute',
+                },
+            ],
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
   def testApiKeyRequired(self):
 
     @api_config.api(name='root', hostname='example.appspot.com', version='v1',

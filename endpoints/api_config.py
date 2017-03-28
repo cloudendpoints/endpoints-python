@@ -64,6 +64,7 @@ __all__ = [
     'ApiFrontEndLimits',
     'EMAIL_SCOPE',
     'Issuer',
+    'LimitDefinition',
     'Namespace',
     'api',
     'method',
@@ -87,6 +88,9 @@ _INVALID_NAMESPACE_ERROR_TEMPLATE = (
 
 
 Issuer = collections.namedtuple('Issuer', ['issuer', 'jwks_uri'])
+LimitDefinition = collections.namedtuple('LimitDefinition', ['metric_name',
+                                                             'display_name',
+                                                             'default_limit'])
 Namespace = collections.namedtuple('Namespace', ['owner_domain',
                                                  'owner_name',
                                                  'package_path'])
@@ -224,6 +228,22 @@ def _CheckAudiences(audiences):
     return
   else:
     endpoints_util.check_list_type(audiences, basestring, 'audiences')
+
+
+def _CheckLimitDefinitions(limit_definitions):
+  _CheckType(limit_definitions, list, 'limit_definitions')
+  if limit_definitions:
+    for ld in limit_definitions:
+      if not ld.metric_name:
+        raise api_exceptions.InvalidLimitDefinitionException(
+          "Metric name must be set in all limit definitions.")
+      if not ld.display_name:
+        raise api_exceptions.InvalidLimitDefinitionException(
+          "Display name must be set in all limit definitions.")
+
+      _CheckType(ld.metric_name, basestring, 'limit_definition.metric_name')
+      _CheckType(ld.display_name, basestring, 'limit_definition.display_name')
+      _CheckType(ld.default_limit, int, 'limit_definition.default_limit')
 
 
 # pylint: disable=g-bad-name
@@ -405,6 +425,11 @@ class _ApiInfo(object):
     """Base path for the entire API prepended before the path property."""
     return self.__common_info.base_path
 
+  @property
+  def limit_definitions(self):
+    """Rate limiting metric definitions for this API."""
+    return self.__common_info.limit_definitions
+
 
 class _ApiDecorator(object):
   """Decorator for single- or multi-class APIs.
@@ -420,7 +445,8 @@ class _ApiDecorator(object):
                canonical_name=None, auth=None, owner_domain=None,
                owner_name=None, package_path=None, frontend_limits=None,
                title=None, documentation=None, auth_level=None, issuers=None,
-               namespace=None, api_key_required=None, base_path=None):
+               namespace=None, api_key_required=None, base_path=None,
+               limit_definitions=None):
     """Constructor for _ApiDecorator.
 
     Args:
@@ -456,6 +482,7 @@ class _ApiDecorator(object):
       namespace: endpoints.Namespace, the namespace for the API.
       api_key_required: bool, whether a key is required to call this API.
       base_path: string, the base path for all endpoints in this API.
+      limit_definitions: list of LimitDefinition tuples used in this API.
     """
     self.__common_info = self.__ApiCommonInfo(
         name, version, description=description, hostname=hostname,
@@ -466,7 +493,7 @@ class _ApiDecorator(object):
         frontend_limits=frontend_limits, title=title,
         documentation=documentation, auth_level=auth_level, issuers=issuers,
         namespace=namespace, api_key_required=api_key_required,
-        base_path=base_path)
+        base_path=base_path, limit_definitions=limit_definitions)
     self.__classes = []
 
   class __ApiCommonInfo(object):
@@ -491,7 +518,8 @@ class _ApiDecorator(object):
                  canonical_name=None, auth=None, owner_domain=None,
                  owner_name=None, package_path=None, frontend_limits=None,
                  title=None, documentation=None, auth_level=None, issuers=None,
-                 namespace=None, api_key_required=None, base_path=None):
+                 namespace=None, api_key_required=None, base_path=None,
+                 limit_definitions=None):
       """Constructor for _ApiCommonInfo.
 
       Args:
@@ -527,6 +555,7 @@ class _ApiDecorator(object):
         namespace: endpoints.Namespace, the namespace for the API.
         api_key_required: bool, whether a key is required to call into this API.
         base_path: string, the base path for all endpoints in this API.
+        limit_definitions: list of LimitDefinition tuples used in this API.
       """
       _CheckType(name, basestring, 'name', allow_none=False)
       _CheckType(version, basestring, 'version', allow_none=False)
@@ -556,6 +585,8 @@ class _ApiDecorator(object):
       _CheckNamespace(namespace)
 
       _CheckAudiences(audiences)
+
+      _CheckLimitDefinitions(limit_definitions)
 
       if hostname is None:
         hostname = app_identity.get_default_version_hostname()
@@ -590,6 +621,7 @@ class _ApiDecorator(object):
       self.__namespace = namespace
       self.__api_key_required = api_key_required
       self.__base_path = base_path
+      self.__limit_definitions = limit_definitions
 
     @property
     def name(self):
@@ -690,6 +722,11 @@ class _ApiDecorator(object):
     def base_path(self):
       """The base path for all endpoints in this API."""
       return self.__base_path
+
+    @property
+    def limit_definitions(self):
+      """Rate limiting metric definitions for this API."""
+      return self.__limit_definitions
 
   def __call__(self, service_class):
     """Decorator for ProtoRPC class that configures Google's API server.
@@ -897,7 +934,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
         scopes=None, allowed_client_ids=None, canonical_name=None,
         auth=None, owner_domain=None, owner_name=None, package_path=None,
         frontend_limits=None, title=None, documentation=None, auth_level=None,
-        issuers=None, namespace=None, api_key_required=None, base_path=None):
+        issuers=None, namespace=None, api_key_required=None, base_path=None,
+        limit_definitions=None):
   """Decorate a ProtoRPC Service class for use by the framework above.
 
   This decorator can be used to specify an API name, version, description, and
@@ -959,6 +997,9 @@ def api(name, version, description=None, hostname=None, audiences=None,
     namespace: endpoints.Namespace, the namespace for the API.
     api_key_required: bool, whether a key is required to call into this API.
     base_path: string, the base path for all endpoints in this API.
+    limit_definitions: list of endpoints.LimitDefinition objects, quota metric
+      definitions for this API.
+
 
   Returns:
     Class decorated with api_info attribute, an instance of ApiInfo.
@@ -973,7 +1014,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
                        frontend_limits=frontend_limits, title=title,
                        documentation=documentation, auth_level=auth_level,
                        issuers=issuers, namespace=namespace,
-                       api_key_required=api_key_required, base_path=base_path)
+                       api_key_required=api_key_required, base_path=base_path,
+                       limit_definitions=limit_definitions)
 
 
 class _MethodInfo(object):
@@ -988,7 +1030,7 @@ class _MethodInfo(object):
   def __init__(self, name=None, path=None, http_method=None,
                scopes=None, audiences=None, allowed_client_ids=None,
                auth_level=None, api_key_required=None, request_body_class=None,
-               request_params_class=None):
+               request_params_class=None, metric_costs=None):
     """Constructor.
 
     Args:
@@ -1005,6 +1047,8 @@ class _MethodInfo(object):
         ResourceContainer. Otherwise, null.
       request_params_class: The type for the request parameters when using a
         ResourceContainer. Otherwise, null.
+      metric_costs: dict with keys matching an API limit metric and values
+        representing the cost for each successful call against that metric.
     """
     self.__name = name
     self.__path = path
@@ -1016,6 +1060,7 @@ class _MethodInfo(object):
     self.__api_key_required = api_key_required
     self.__request_body_class = request_body_class
     self.__request_params_class = request_params_class
+    self.__metric_costs = metric_costs
 
   def __safe_name(self, method_name):
     """Restrict method name to a-zA-Z0-9_, first char lowercase."""
@@ -1100,6 +1145,11 @@ class _MethodInfo(object):
     return self.__api_key_required
 
   @property
+  def metric_costs(self):
+    """Dict mapping API limit metric names to costs against that metric."""
+    return self.__metric_costs
+
+  @property
   def request_body_class(self):
     """Type of request body when using a ResourceContainer."""
     return self.__request_body_class
@@ -1138,7 +1188,8 @@ def method(request_message=message_types.VoidMessage,
            audiences=None,
            allowed_client_ids=None,
            auth_level=None,
-           api_key_required=None):
+           api_key_required=None,
+           metric_costs=None):
   """Decorate a ProtoRPC Method for use by the framework above.
 
   This decorator can be used to specify a method name, path, http method,
@@ -1164,6 +1215,8 @@ def method(request_message=message_types.VoidMessage,
       If None and auth_level is REQUIRED, no calls will be allowed.
     auth_level: enum from AUTH_LEVEL, Frontend auth level for the method.
     api_key_required: bool, whether a key is required to call the method
+    metric_costs: dict with keys matching an API limit metric and values
+      representing the cost for each successful call against that metric.
 
   Returns:
     'apiserving_method_wrapper' function.
@@ -1228,7 +1281,7 @@ def method(request_message=message_types.VoidMessage,
         http_method=http_method or DEFAULT_HTTP_METHOD,
         scopes=scopes, audiences=audiences,
         allowed_client_ids=allowed_client_ids, auth_level=auth_level,
-        api_key_required=api_key_required,
+        api_key_required=api_key_required, metric_costs=metric_costs,
         request_body_class=request_body_class,
         request_params_class=request_params_class)
     invoke_remote.__name__ = invoke_remote.method_info.name
@@ -1240,6 +1293,8 @@ def method(request_message=message_types.VoidMessage,
   _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')
 
   _CheckAudiences(audiences)
+
+  _CheckType(metric_costs, dict, 'metric_costs')
 
   return apiserving_method_decorator
 

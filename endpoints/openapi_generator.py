@@ -645,6 +645,44 @@ class OpenApiGenerator(object):
 
     return dict(descriptor)
 
+  def __x_google_quota_descriptor(self, metric_costs):
+    """Describes the metric costs for a call.
+
+    Args:
+      metric_costs: Dict of metric definitions to the integer cost value against
+        that metric.
+
+    Returns:
+      A dict descriptor describing the Quota limits for the endpoint.
+    """
+    return {
+        'metricCosts': {
+            metric: cost for (metric, cost) in metric_costs.items()
+        }
+    } if metric_costs else None
+
+  def __x_google_quota_definitions_descriptor(self, limit_definitions):
+    """Describes the quota limit definitions for an API.
+
+    Args:
+      limit_definitions: List of endpoints.LimitDefinition tuples
+
+    Returns:
+      A dict descriptor of the API's quota limit definitions.
+    """
+    if not limit_definitions:
+      return None
+
+    definitions_list = [{
+        'metric': ld.metric_name,
+        'display_name': ld.display_name,
+        'default_limit': ld.default_limit
+    } for ld in limit_definitions]
+
+    return {
+        'limits': definitions_list
+    }
+
   def __method_descriptor(self, service, method_info, operation_id,
                           protorpc_method_info, security_definitions):
     """Describes a method.
@@ -692,6 +730,11 @@ class OpenApiGenerator(object):
       descriptor['security'] = self.__security_descriptor(
           service.api_info.audiences, security_definitions,
           api_key_required=api_key_required)
+
+    # Insert the metric costs, if any
+    if method_info.metric_costs:
+      descriptor['x-google-quota'] = self.__x_google_quota_descriptor(
+          method_info.metric_costs)
 
     return descriptor
 
@@ -901,6 +944,12 @@ class OpenApiGenerator(object):
       descriptor['definitions'] = definitions
 
     descriptor['securityDefinitions'] = security_definitions
+
+    # Add quota limit metric definitions, if any
+    limit_definitions = self.__x_google_quota_definitions_descriptor(
+        merged_api_info.limit_definitions)
+    if limit_definitions:
+      descriptor['x-google-quota-definitions'] = limit_definitions
 
     return descriptor
 
