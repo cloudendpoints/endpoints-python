@@ -816,23 +816,8 @@ class DiscoveryGenerator(object):
 
     Returns:
       The _ApiInfo object to use for the API that the given services implement.
-
-    Raises:
-      ApiConfigurationError: If there's something wrong with the API
-        configuration, such as a multiclass API decorated with different API
-        descriptors (see the docstring for api()).
     """
-    merged_api_info = services[0].api_info
-
-    # Verify that, if there are multiple classes here, they're allowed to
-    # implement the same API.
-    for service in services[1:]:
-      if not merged_api_info.is_same_api(service.api_info):
-        raise api_exceptions.ApiConfigurationError(
-            _MULTICLASS_MISMATCH_ERROR_TEMPLATE % (service.api_info.name,
-                                                   service.api_info.version))
-
-    return merged_api_info
+    return services[0].api_info
 
   def __discovery_doc_descriptor(self, services, hostname=None):
     """Builds a discovery doc for an API.
