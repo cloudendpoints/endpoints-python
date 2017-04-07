@@ -71,8 +71,8 @@ import endpoints_dispatcher
 import protojson
 
 from google.appengine.api import app_identity
-from google.api.control import client as control_client
-from google.api.control import wsgi as control_wsgi
+from endpoints_management.control import client as control_client
+from endpoints_management.control import wsgi as control_wsgi
 
 from protorpc import messages
 from protorpc import remote
