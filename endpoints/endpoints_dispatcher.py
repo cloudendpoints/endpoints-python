@@ -99,8 +99,8 @@ class EndpointsDispatcherMiddleware(object):
     show_port = ((protocol == 'http' and port != 80) or
                  (protocol != 'http' and port != 443))
     url = ('{0}://{1}:{2}/{3}'.format(
-      protocol, server, port, base_path) if show_port else
-      '{0}://{1}/{2}'.format(protocol, server, base_path))
+      protocol, server, port, base_path.lstrip('/\\')) if show_port else
+      '{0}://{1}/{2}'.format(protocol, server, base_path.lstrip('/\\')))
 
     return url.rstrip('/\\')
 
