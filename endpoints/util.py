@@ -195,6 +195,37 @@ def is_running_on_localhost():
   return os.environ.get('SERVER_NAME') == 'localhost'
 
 
+def get_hostname_prefix():
+  """Returns the hostname prefix of a running Endpoints service.
+
+  The prefix is the portion of the hostname that comes before the API name.
+  For example, if a non-default version and a non-default service are in use,
+  the returned result would be '{VERSION}-dot-{SERVICE}-'.
+
+  Returns:
+    str, the hostname prefix.
+  """
+  parts = []
+
+  # Check if this is the default version
+  version = modules.get_current_version_name()
+  default_version = modules.get_default_version()
+  if version != default_version:
+    parts.append(version)
+
+  # Check if this is the default module
+  module = modules.get_current_module_name()
+  if module != 'default':
+    parts.append(module)
+
+  # If there is anything to prepend, add an extra blank entry for the trailing
+  # -dot-
+  if parts:
+    parts.append('')
+
+  return '-dot-'.join(parts)
+
+
 def get_app_hostname():
   """Return hostname of a running Endpoints service.
 
@@ -210,9 +241,9 @@ def get_app_hostname():
   if not is_running_on_app_engine() or is_running_on_localhost():
     return None
 
-  version = modules.get_current_version_name()
   app_id = app_identity.get_application_id()
 
+  prefix = get_hostname_prefix()
   suffix = 'appspot.com'
 
   if ':' in app_id:
@@ -223,12 +254,7 @@ def get_app_hostname():
   else:
     api_name = app_id
 
-  # Check if this is the default version
-  default_version = modules.get_default_version()
-  if version == default_version:
-    return '{0}.{1}'.format(api_name, suffix)
-  else:
-    return '{0}-dot-{1}.{2}'.format(version, api_name, suffix)
+  return '{0}{1}.{2}'.format(prefix, api_name, suffix)
 
 
 def check_list_type(objects, allowed_type, name, allow_none=True):
