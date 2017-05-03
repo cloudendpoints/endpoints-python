@@ -55,6 +55,7 @@ _CLOCK_SKEW_SECS = 300  # 5 minutes in seconds
 _MAX_TOKEN_LIFETIME_SECS = 86400  # 1 day in seconds
 _DEFAULT_CERT_URI = ('https://www.googleapis.com/service_accounts/v1/metadata/'
                      'raw/federated-signon@system.gserviceaccount.com')
+_ENDPOINTS_USER_INFO = 'google.api.auth.user_info'
 _ENV_USE_OAUTH_SCOPE = 'ENDPOINTS_USE_OAUTH_SCOPE'
 _ENV_AUTH_EMAIL = 'ENDPOINTS_AUTH_EMAIL'
 _ENV_AUTH_DOMAIN = 'ENDPOINTS_AUTH_DOMAIN'
@@ -81,11 +82,12 @@ def get_current_user():
   decorated with an @endpoints.method decorator.  The decorator should include
   the https://www.googleapis.com/auth/userinfo.email scope.
 
-  If the current request uses an id_token, this validates and parses the token
-  against the info in the current request handler and returns the user.
-  Or, for an Oauth token, this call validates the token against the tokeninfo
-  endpoint and oauth.get_current_user with the scopes provided in the method's
-  decorator.
+  If `google.api.control.wsgi.AuthenticationMiddleware` is enabled, this
+  returns the user info decoded by the middleware. Otherwise, if the current
+  request uses an id_token, this validates and parses the token against the
+  info in the current request handler and returns the user.  Or, for an Oauth
+  token, this call validates the token against the tokeninfo endpoint and
+  oauth.get_current_user with the scopes provided in the method's decorator.
 
   Returns:
     None if there is no token or it's invalid.  If the token was valid, this
@@ -101,6 +103,10 @@ def get_current_user():
   """
   if not _is_auth_info_available():
     raise InvalidGetUserCall('No valid endpoints user in environment.')
+
+  if _ENDPOINTS_USER_INFO in os.environ:
+    user_info = os.environ[_ENDPOINTS_USER_INFO]
+    return users.User(user_info.email)
 
   if _ENV_USE_OAUTH_SCOPE in os.environ:
     # We can get more information from the oauth.get_current_user function,
@@ -126,8 +132,8 @@ def get_current_user():
 # pylint: disable=g-bad-name
 def _is_auth_info_available():
   """Check if user auth info has been set in environment variables."""
-  return ((_ENV_AUTH_EMAIL in os.environ and
-           _ENV_AUTH_DOMAIN in os.environ) or
+  return (_ENDPOINTS_USER_INFO in os.environ or
+          (_ENV_AUTH_EMAIL in os.environ and _ENV_AUTH_DOMAIN in os.environ) or
           _ENV_USE_OAUTH_SCOPE in os.environ)
 
 
