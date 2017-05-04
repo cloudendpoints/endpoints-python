@@ -82,11 +82,11 @@ def get_current_user():
   decorated with an @endpoints.method decorator.  The decorator should include
   the https://www.googleapis.com/auth/userinfo.email scope.
 
-  If `google.api.control.wsgi.AuthenticationMiddleware` is enabled, this
-  returns the user info decoded by the middleware. Otherwise, if the current
-  request uses an id_token, this validates and parses the token against the
-  info in the current request handler and returns the user.  Or, for an Oauth
-  token, this call validates the token against the tokeninfo endpoint and
+  If `endpoints_management.control.wsgi.AuthenticationMiddleware` is enabled,
+  this returns the user info decoded by the middleware. Otherwise, if the
+  current request uses an id_token, this validates and parses the token against
+  the info in the current request handler and returns the user.  Or, for an
+  Oauth token, this call validates the token against the tokeninfo endpoint and
   oauth.get_current_user with the scopes provided in the method's decorator.
 
   Returns:
