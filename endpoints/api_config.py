@@ -86,6 +86,10 @@ _INVALID_NAMESPACE_ERROR_TEMPLATE = (
     '%s. package_path is optional.')
 
 
+_VALID_PART_RE = re.compile('^{[^{}]+}$')
+_VALID_LAST_PART_RE = re.compile('^{[^{}]+}(:)?(?(1)[^{}]+)$')
+
+
 Issuer = collections.namedtuple('Issuer', ['issuer', 'jwks_uri'])
 Namespace = collections.namedtuple('Namespace', ['owner_domain',
                                                  'owner_name',
@@ -1064,10 +1068,9 @@ class _MethodInfo(object):
     # Verify that the path seems valid.
     parts = path.split('/')
     for n, part in enumerate(parts):
+      r = _VALID_PART_RE if n < len(parts) - 1 else _VALID_LAST_PART_RE
       if part and '{' in part and '}' in part:
-        if (re.match('^{[^{}]+}$', part) is None and
-            (n < len(parts) - 1 or
-             re.match('^{[^{}]+}(:)?(?(1)[^{}]+)$', part) is None)):
+        if not r.match(part):
           raise api_exceptions.ApiConfigurationError(
               'Invalid path segment: %s (part of %s)' % (part, path))
     return path
