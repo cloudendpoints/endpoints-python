@@ -2286,8 +2286,7 @@ class MethodDecoratorTest(unittest.TestCase):
                  'invalid/mixed{param}mixed',
                  'invalid/{extra}{vars}',
                  'invalid/{}/emptyvar',
-                 'invalid/{param}:abc/emptyvar'
-                 ):
+                 'invalid/{param}:abc/emptyvar'):
 
       @api_config.api('root', 'v1')
       class MyDecoratedService(remote.Service):
