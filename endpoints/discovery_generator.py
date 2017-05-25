@@ -377,6 +377,35 @@ class DiscoveryGenerator(object):
 
     return descriptor
 
+  def __path_parameter_descriptor(self, param):
+    descriptor = self.__parameter_descriptor(param)
+
+    # Modify fields specific to path parameters
+    descriptor['required'] = True
+    descriptor['location'] = 'path'
+
+    return descriptor
+
+  def __query_parameter_descriptor(self, param):
+    descriptor = self.__parameter_descriptor(param)
+
+    # Modify fields specific to query (non-path) parameters
+    descriptor.pop('required', None)
+    descriptor['location'] = 'query'
+
+    # If this is a repeated field, convert it to the collectionFormat: multi
+    # style.
+    if param.repeated:
+      descriptor['collectionFormat'] = 'multi'
+      descriptor['items'] = {
+          'type': descriptor['type']
+      }
+      descriptor['type'] = 'array'
+      descriptor.pop('repeated', None)
+
+    return descriptor
+
+
   def __add_parameter(self, param, path_parameters, params):
     """Adds all parameters in a field to a method parameters descriptor.
 
@@ -398,21 +427,23 @@ class DiscoveryGenerator(object):
     descriptor = None
     if not isinstance(param, messages.MessageField):
       name = param.name
-      descriptor = self.__parameter_descriptor(param)
-      descriptor['location'] = 'path' if name in path_parameters else 'query'
+      is_path = name in path_parameters
+      if is_path:
+        descriptor = self.__path_parameter_descriptor(param)
+      else:
+        descriptor = self.__query_parameter_descriptor(param)
 
       if descriptor:
         params[name] = descriptor
     else:
       for subfield_list in self.__field_to_subfields(param):
         name = '.'.join(subfield.name for subfield in subfield_list)
-        descriptor = self.__parameter_descriptor(subfield_list[-1])
-        if name in path_parameters:
-          descriptor['required'] = True
-          descriptor['location'] = 'path'
+        is_path = name in path_parameters
+        cur_param = subfield_list[-1]
+        if is_path:
+          descriptor = self.__path_parameter_descriptor(cur_param)
         else:
-          descriptor.pop('required', None)
-          descriptor['location'] = 'query'
+          descriptor = self.__query_parameter_descriptor(cur_param)
 
         if descriptor:
           params[name] = descriptor
