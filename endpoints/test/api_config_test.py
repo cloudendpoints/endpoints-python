@@ -2247,7 +2247,8 @@ class MethodDecoratorTest(unittest.TestCase):
         pass
 
       @api_config.method(MyRequest, message_types.VoidMessage,
-                         path='zebras/{zebra}/pandas/{panda}/kittens/{kitten}')
+                         path='zebras/{zebra}/pandas/{panda}'
+                              '/kittens/{kitten}:human')
       def specified_path_method(self):
         pass
 
@@ -2257,7 +2258,7 @@ class MethodDecoratorTest(unittest.TestCase):
     self.assertEqual(message_types.VoidMessage,
                      specified_protorpc_info.response_type)
     self.assertEqual('specified_path_method', specified_path_info.name)
-    self.assertEqual('zebras/{zebra}/pandas/{panda}/kittens/{kitten}',
+    self.assertEqual('zebras/{zebra}/pandas/{panda}/kittens/{kitten}:human',
                      specified_path_info.get_path(MyDecoratedService.api_info))
     self.assertEqual('POST', specified_path_info.http_method)
     self.assertEqual(None, specified_path_info.scopes)
@@ -2284,7 +2285,9 @@ class MethodDecoratorTest(unittest.TestCase):
                  'invalid/{param}mixed',
                  'invalid/mixed{param}mixed',
                  'invalid/{extra}{vars}',
-                 'invalid/{}/emptyvar'):
+                 'invalid/{}/emptyvar',
+                 'invalid/{param}:abc/emptyvar'
+                 ):
 
       @api_config.api('root', 'v1')
       class MyDecoratedService(remote.Service):

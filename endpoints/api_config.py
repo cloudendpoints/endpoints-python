@@ -1062,9 +1062,12 @@ class _MethodInfo(object):
         path = '%s%s%s' % (api_info.path, '/' if path else '', path)
 
     # Verify that the path seems valid.
-    for part in path.split('/'):
+    parts = path.split('/')
+    for n, part in enumerate(parts):
       if part and '{' in part and '}' in part:
-        if re.match('^{[^{}]+}$', part) is None:
+        if (re.match('^{[^{}]+}$', part) is None and
+            (n < len(parts) - 1 or
+             re.match('^{[^{}]+}(:)?(?(1)[^{}]+)$', part) is None)):
           raise api_exceptions.ApiConfigurationError(
               'Invalid path segment: %s (part of %s)' % (part, path))
     return path
