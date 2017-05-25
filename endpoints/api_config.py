@@ -93,6 +93,10 @@ _INVALID_NAMESPACE_ERROR_TEMPLATE = (
     '%s. package_path is optional.')
 
 
+_VALID_PART_RE = re.compile('^{[^{}]+}$')
+_VALID_LAST_PART_RE = re.compile('^{[^{}]+}(:)?(?(1)[^{}]+)$')
+
+
 Issuer = attr.make_class('Issuer', ['issuer', 'jwks_uri'])
 LimitDefinition = attr.make_class('LimitDefinition', ['metric_name',
                                                       'display_name',
@@ -1127,9 +1131,11 @@ class _MethodInfo(object):
         path = '%s%s%s' % (api_info.path, '/' if path else '', path)
 
     # Verify that the path seems valid.
-    for part in path.split('/'):
+    parts = path.split('/')
+    for n, part in enumerate(parts):
+      r = _VALID_PART_RE if n < len(parts) - 1 else _VALID_LAST_PART_RE
       if part and '{' in part and '}' in part:
-        if re.match('^{[^{}]+}$', part) is None:
+        if not r.match(part):
           raise api_exceptions.ApiConfigurationError(
               'Invalid path segment: %s (part of %s)' % (part, path))
     return path
