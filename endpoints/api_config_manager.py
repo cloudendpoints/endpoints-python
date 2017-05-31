@@ -26,7 +26,7 @@ import discovery_service
 
 # Internal constants
 _PATH_VARIABLE_PATTERN = r'[a-zA-Z_][a-zA-Z_.\d]*'
-_PATH_VALUE_PATTERN = r'[^:/?#\[\]{}]*'
+_PATH_VALUE_PATTERN = r'[^/?#\[\]{}]*'
 
 
 class ApiConfigManager(object):
@@ -197,7 +197,6 @@ class ApiConfigManager(object):
         <params> is a dict of path parameters matched in the rest request.
     """
     with self._config_lock:
-      path = urllib.quote(path)
       for compiled_path_pattern, unused_path, methods in self._rest_methods:
         match = compiled_path_pattern.match(path)
         if match:
