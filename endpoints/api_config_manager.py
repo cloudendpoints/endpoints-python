@@ -279,7 +279,7 @@ class ApiConfigManager(object):
     r"""Generates a compiled regex pattern for a path pattern.
 
     e.g. '/MyApi/v1/notes/{id}'
-    returns re.compile(r'/MyApi/v1/notes/(?P<id>[^:/?#\[\]{}]*)')
+    returns re.compile(r'/MyApi/v1/notes/(?P<id>[^/?#\[\]{}]*)')
 
     Args:
       pattern: A string, the parameterized path pattern to be checked.
@@ -310,7 +310,7 @@ class ApiConfigManager(object):
                                  _PATH_VALUE_PATTERN)
       return match.group(0)
 
-    pattern = re.sub('(/|^){(%s)}(?=/|$)' % _PATH_VARIABLE_PATTERN,
+    pattern = re.sub('(/|^){(%s)}(?=/|$|:)' % _PATH_VARIABLE_PATTERN,
                      replace_variable, pattern)
     return re.compile(pattern + '/?$')
 
