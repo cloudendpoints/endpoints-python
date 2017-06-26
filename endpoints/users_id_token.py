@@ -204,7 +204,7 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
     logging.debug('Checking for id_token.')
     time_now = long(time.time())
     user = _get_id_token_user(token, audiences, allowed_client_ids, time_now,
-                              memcache)
+                              memcache, cert_uris=api_info.all_jwks_uris())
     if user:
       os.environ[_ENV_AUTH_EMAIL] = user.email()
       os.environ[_ENV_AUTH_DOMAIN] = user.auth_domain()
@@ -254,7 +254,8 @@ def _get_token(request):
         return token
 
 
-def _get_id_token_user(token, audiences, allowed_client_ids, time_now, cache):
+def _get_id_token_user(token, audiences, allowed_client_ids, time_now, cache,
+                       cert_uris=None):
   """Get a User for the given id token, if the token is valid.
 
   Args:
@@ -263,16 +264,35 @@ def _get_id_token_user(token, audiences, allowed_client_ids, time_now, cache):
     allowed_client_ids: List of client IDs that are acceptable.
     time_now: The current time as a long (eg. long(time.time())).
     cache: Cache to use (eg. the memcache module).
+    cert_uris: Set of cert URIs to check token against.
 
   Returns:
     A User if the token is valid, None otherwise.
   """
+  if not cert_uris:
+    cert_uris = set([_DEFAULT_CERT_URI])
+
   # Verify that the token is valid before we try to extract anything from it.
   # This verifies the signature and some of the basic info in the token.
-  try:
-    parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache)
-  except Exception, e:  # pylint: disable=broad-except
-    logging.debug('id_token verification failed: %s', e)
+  parsed_token = None
+  for cert_uri in cert_uris:
+    try:
+      parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache,
+                                                   cert_uri)
+    except Exception, e:  # pylint: disable=broad-except
+      pass
+
+    # If the token was successfully parsed, just break here
+    if parsed_token:
+      break
+    else:
+      logging.debug('id_token verification failed for cert_uri %s... '
+                    'continuing with next cert_uri.', cert_uri)
+
+
+  if not parsed_token:
+    logging.debug('id_token verification failed for all available '
+                  'cert_uris: %s', e)
     return None
 
   if _verify_parsed_token(parsed_token, audiences, allowed_client_ids):

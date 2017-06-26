@@ -605,7 +605,9 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN,
         self._SAMPLE_AUDIENCES,
         self._SAMPLE_ALLOWED_CLIENT_IDS,
-        1001, memcache).AndReturn(users.User('test@gmail.com'))
+        1001,
+        memcache,
+        cert_uris=None).AndReturn(users.User('test@gmail.com'))
     self.mox.ReplayAll()
 
     os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)
@@ -669,7 +671,9 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN,
         self._SAMPLE_AUDIENCES,
         self._SAMPLE_ALLOWED_CLIENT_IDS,
-        1001, memcache).MultipleTimes().AndReturn(users.User('test@gmail.com'))
+        1001,
+        memcache,
+        cert_uris=None).MultipleTimes().AndReturn(users.User('test@gmail.com'))
     self.mox.ReplayAll()
     # This token should correctly result in _get_id_token_user being called
     os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)

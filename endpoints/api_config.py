@@ -285,6 +285,13 @@ class _ApiInfo(object):
     # pylint: disable=protected-access
     return self.__common_info is other.__common_info
 
+  def all_jwks_uris(self):
+    """Return all the cert URIs of the Issuers for this API."""
+    if self.__common_info.issuers:
+      return {jwks_uri for (_, jwks_uri) in self.__common_info.issuers.items()}
+    else:
+      return None
+
   @property
   def name(self):
     """Name of the API."""
