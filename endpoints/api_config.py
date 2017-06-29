@@ -328,7 +328,7 @@ class _ApiInfo(object):
 
   @property
   def issuers(self):
-    """List of auth issuers for the API."""
+    """Dict mapping auth issuer names to auth issuers for the API."""
     return self.__common_info.issuers
 
   @property
@@ -452,7 +452,7 @@ class _ApiDecorator(object):
         version of the API. This will be surfaced in the API Explorer and GPE
         plugin to allow users to learn about your service.
       auth_level: enum from AUTH_LEVEL, Frontend authentication level.
-      issuers: list of endpoints.Issuer objects, auth issuers for this API.
+      issuers: dict, mapping auth issuer names to endpoints.Issuer objects.
       namespace: endpoints.Namespace, the namespace for the API.
       api_key_required: bool, whether a key is required to call this API.
       base_path: string, the base path for all endpoints in this API.
@@ -955,7 +955,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
       version of the API. This will be surfaced in the API Explorer and GPE
       plugin to allow users to learn about your service.
     auth_level: enum from AUTH_LEVEL, frontend authentication level.
-    issuers: list of endpoints.Issuer objects, auth issuers for this API.
+    issuers: dict, mapping auth issuer names to endpoints.Issuer objects.
     namespace: endpoints.Namespace, the namespace for the API.
     api_key_required: bool, whether a key is required to call into this API.
     base_path: string, the base path for all endpoints in this API.
