@@ -763,13 +763,13 @@ class OpenApiGenerator(object):
           'authorizationUrl': '',
           'flow': 'implicit',
           'type': 'oauth2',
-          'x-issuer': issuer_value.issuer,
+          'x-google-issuer': issuer_value.issuer,
       }
 
       # If jwks_uri is omitted, the auth library will use OpenID discovery
       # to find it. Otherwise, include it in the descriptor explicitly.
       if issuer_value.jwks_uri:
-        result[issuer_key]['x-jwks_uri'] = issuer_value.jwks_uri
+        result[issuer_key]['x-google-jwks_uri'] = issuer_value.jwks_uri
 
     return result
 
