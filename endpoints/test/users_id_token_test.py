@@ -78,9 +78,11 @@ class ModuleInterfaceTest(test_util.ModuleInterfaceTest,
 class TestCache(object):
   """Test stub to replace memcache for id_token verification."""
 
-  def __init__(self):
+  def __init__(self, cert_uri=users_id_token._DEFAULT_CERT_URI, cached_cert=_CACHED_CERT):
     self._used_cached_value = False
     self._value_was_set = False
+    self._cert_uri = cert_uri
+    self._cached_cert = cached_cert
 
   @property
   def used_cached_value(self):
@@ -92,10 +94,10 @@ class TestCache(object):
 
   # pylint: disable=g-bad-name
   def get(self, key, *unused_args, **kwargs):
-    if (key == users_id_token._DEFAULT_CERT_URI and
+    if (key == self._cert_uri and
         kwargs.get('namespace', '') == users_id_token._CERT_NAMESPACE):
       self._used_cached_value = True
-      return _CACHED_CERT
+      return self._cached_cert
     return None
 
   def set(self, *unused_args, **unused_kwargs):
@@ -176,6 +178,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
 
   def testSampleIdToken(self):
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
+                                             users_id_token._ISSUERS,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              self._SAMPLE_TIME_NOW, self.cache)
@@ -273,6 +276,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     # Also verify that this doesn't return a user when called from
     # users_id_token.
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
+                                             users_id_token._ISSUERS,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              expired_time_now, self.cache)
@@ -336,7 +340,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     parsed_token = self.GetSampleBody()
     parsed_token.update(field_update_dict)
     result = users_id_token._verify_parsed_token(
-        parsed_token, self._SAMPLE_AUDIENCES, self._SAMPLE_ALLOWED_CLIENT_IDS)
+        parsed_token, users_id_token._ISSUERS, self._SAMPLE_AUDIENCES, self._SAMPLE_ALLOWED_CLIENT_IDS)
     self.assertEqual(valid, result)
 
   def testInvalidIssuer(self):
@@ -355,7 +359,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     """Verify that SKIP_CLIENT_ID_CHECKS does not work for ID tokens."""
     parsed_token = self.GetSampleBody()
     result = users_id_token._verify_parsed_token(
-        parsed_token, self._SAMPLE_AUDIENCES,
+        parsed_token, users_id_token._ISSUERS, self._SAMPLE_AUDIENCES,
         users_id_token.SKIP_CLIENT_ID_CHECK)
     self.assertEqual(False, result)
 
@@ -363,7 +367,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     parsed_token = self.GetSampleBody()
     parsed_token.update({'aud': 'invalid.audience'})
     result = users_id_token._verify_parsed_token(
-        parsed_token, [], self._SAMPLE_ALLOWED_CLIENT_IDS)
+        parsed_token, users_id_token._ISSUERS, [], self._SAMPLE_ALLOWED_CLIENT_IDS)
     self.assertEqual(False, result)
 
   def AttemptOauth(self, client_id, allowed_client_ids=None):
@@ -603,6 +607,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     time.time().AndReturn(1001)
     users_id_token._get_id_token_user(
         self._SAMPLE_TOKEN,
+        users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
         self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001, memcache).AndReturn(users.User('test@gmail.com'))
@@ -667,6 +672,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.mox.StubOutWithMock(users_id_token, '_get_id_token_user')
     users_id_token._get_id_token_user(
         self._SAMPLE_TOKEN,
+        users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
         self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001, memcache).MultipleTimes().AndReturn(users.User('test@gmail.com'))
@@ -696,6 +702,111 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
                                                 api_info=api_instance.api_info)
     self.assertEqual(os.getenv('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
     self.mox.VerifyAll()
+
+class JwtTest(UsersIdTokenTestBase):
+  _SAMPLE_TOKEN = ('eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJlbmRwb2ludHMtand0LXNpZ25lckBlbmRwb2ludHMtand0LWRlbW8tMS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsImlhdCI6MTUwMDQ5Nzg4MSwiZXhwIjoxNTAwNDk4MTgxLCJhdWQiOiJlbmRwb2ludHMtZGVtbyIsInN1YiI6ImVuZHBvaW50cy1qd3Qtc2lnbmVyQGVuZHBvaW50cy1qd3QtZGVtby0xLmlhbS5nc2VydmljZWFjY291bnQuY29tIn0.MbNgphWQgQtBm0L5PzkLuQHN00HgSDigrk0b81PuT3LFzvP9AER3aJ3SbZMeLxrPaq46ghrJCOuhwglQjweks0Eyn0O8BJztLnr54_3oDMjufvrh3pX8omoXwyYJ4DWlv0Gp3VICTcEDg-pZQXa6VvHTWK5KFgWsoJIkmgP2OxjaTBtLrBrXZthIlhSj7OGx_FSdp69PJw4n95aahkCfAT7GGBUgyFRtGUBlYwSyo8bWBt9M-KqmL_tiUQ_FW-7hD4Sc1pIs3r2xy0_w2Do4Bcfu-stdXf9mckMFPynC-5joG_JTeh8-A0b64V6lOyg5EfD8K_wv4GCArz3XcC_k0Q')
+  _SAMPLE_ISSUERS = ('endpoints-jwt-signer@endpoints-jwt-demo-1.iam.gserviceaccount.com',)
+  _SAMPLE_AUDIENCES = ('endpoints-demo',)
+  _SAMPLE_TIME_NOW = 1500497901
+  _SAMPLE_TOKEN_INFO = {
+      'aud': 'endpoints-demo',
+      'exp': 1500498181,
+      'iat': 1500497881,
+      'iss': 'endpoints-jwt-signer@endpoints-jwt-demo-1.iam.gserviceaccount.com',
+      'sub': 'endpoints-jwt-signer@endpoints-jwt-demo-1.iam.gserviceaccount.com'
+  }
+  # This is the certificate for this jwt.
+  _VALID_CERT = {
+      'algorithm': 'RSA',
+      'exponent': 'AQAB',
+      'keyid': '351b5af566a3e17a42b1e08d3e6af4317dd1493e',
+      'modulus': ('uKEHl5YGUThvRD5i0efT8F+3e92UcPKJtIAGWzpvW0ICN6kVr1fgtk'
+                  'm99zia9Nbhe7jDXgDMLnWvcfzvP3F8Eus01w7bEt20wDSdBhfJY7uJ'
+                  'BabnPxxZCUKEPD+mqtGOH8Jk6rYMqIoUWbf6IHRdZUOCbjYBbDj5KQ'
+                  '6Mofh6Oe6mO5fHQVpE+fEV9J7Y2b82sShH/X0DCb5qcWaxh1sFKLiW'
+                  'rI+XzPKEo8+dss3GXmueatB/BV1KzCPEI3PZqxrpg31wgBrba5L4GB'
+                  'G54iEp+C9duFs+4SbRmHcFl0Y3LYw+nRyu2BP/9/LowHeXVQD+0EvM'
+                  'xR3wRDg88jxTuFfmjQ==')
+  }
+
+  _SAMPLE_CERTS = {
+      'keyvalues': [
+          # This certificate has a damaged modulus
+          {
+              'algorithm': 'RSA',
+              'exponent': 'AQAB',
+              'keyid': '6f2afae0a5eb40d94441a3633b73d126649448e7',
+              'modulus': ('onW3UvpCa7uJJlO2cQulVMd08T2T6iPwOrt63DUZxVc6Cq'
+                          '5H8Jmg0bKcPqn3JfpjDe9XxnJBy0wO7qAyrreHA5i+zMO8'
+                          '3jSRyQvs0o2CzoVMYUdmPB8e+50yxX82zNFeoOaZqLY3M2'
+                          'C5PZ43LGd3FmLtzSy/0vgtwBcn74qp1MXZfYHgjzMH13Pb'
+                          'xeuKp9Nlaf8psMJfJsaWxsAI6nrYaGP49DYhrBvDe7doDY'
+                          'B/Jv7Y6e8q2Q6GOZynLDoSS957vUppb+3X0Y9xfeivwBTk'
+                          'SbSjkcTGO4XY/EmODfX+trN1wBWW3+QNaVZwHvWATD5O0F'
+                          '2FuBrpJLi+7S8Ew==')
+          },
+          # This certificate is valid, but just isn't the one for the jwt.
+          {
+              'algorithm': 'RSA',
+              'exponent': 'AQAB',
+              'keyid': '3131226cc811b226103fc0fa58e4877e531ad6a7',
+              'modulus': ('o5uXuq14yo4URDcmjiWnVUAHJZohMzVwGLIbz4DB8YGDVu'
+                          'f6MuJzmPsUI61Uwx59t31A+5o9WUpxbej6qZ8e8SGfWqkd'
+                          'uOuTBtoID7j51k6gNlgP5Phv4wkw8QEo2Vkeg+5iE3JEC9'
+                          '+E/VlZqbOZgj8U4bcgadkapAGzXDduHybU8wFXmllrkEHk'
+                          '4M1PXy65I1UBItXz6+caKK09DYqkAJrJYi71RGAFtVUU93'
+                          'LnW+LDN531WAwc3Dq28Slam7VLu3YrD4+ycdTXElYtARW1'
+                          'BP3y3pIxn6EAdazNYebtxR7xjEOBcg8JEO+nXzRBSKwlRD'
+                          'B5uoUeufLc9i9J+YdYFQ==')
+          },
+          _VALID_CERT,
+      ]
+  }
+  _SAMPLE_CERT_URI = ('https://www.googleapis.com/service_accounts/v1/metadata/raw/'
+                      'endpoints-jwt-signer@endpoints-jwt-demo-1.iam.gserviceaccount.com')
+
+
+  def setUp(self):
+    super(JwtTest, self).setUp()
+    self.cache = TestCache(cert_uri=self._SAMPLE_CERT_URI, cached_cert=self._SAMPLE_CERTS)
+
+  def testSampleToken(self):
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        self._SAMPLE_ISSUERS, self._SAMPLE_AUDIENCES,
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+
+  # Test failure states. The cryptography and issuing/expiration times
+  # are tested above, since this function reuses
+  # _verify_signed_jwt_with_certs, but we need to test issuer and audience checks.
+  def testBadIssuer(self):
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        ('invalid-issuer@system.gserviceaccount.com',), self._SAMPLE_AUDIENCES,
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertIsNone(parsed_token)
+
+  def testMissingIssuer(self):
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        (), self._SAMPLE_AUDIENCES,
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertIsNone(parsed_token)
+
+  def testBadAudience(self):
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        self._SAMPLE_ISSUERS, ('foobar.appspot.com',),
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertIsNone(parsed_token)
+
+  def testMissingAudience(self):
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        self._SAMPLE_ISSUERS, (),
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertIsNone(parsed_token)
 
 
 if __name__ == '__main__':
