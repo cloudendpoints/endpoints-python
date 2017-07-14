@@ -27,6 +27,8 @@ import re
 import time
 import urllib
 
+from collections import Container as _Container, Iterable as _Iterable
+
 from google.appengine.api import memcache
 from google.appengine.api import oauth
 from google.appengine.api import urlfetch
@@ -47,6 +49,8 @@ except ImportError:
 
 
 __all__ = ['get_current_user',
+           'get_verified_jwt',
+           'convert_jwks_uri',
            'InvalidGetUserCall',
            'SKIP_CLIENT_ID_CHECK']
 
@@ -203,8 +207,8 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
       allowed_client_ids):
     logging.debug('Checking for id_token.')
     time_now = long(time.time())
-    user = _get_id_token_user(token, audiences, allowed_client_ids, time_now,
-                              memcache)
+    user = _get_id_token_user(token, _ISSUERS, audiences, allowed_client_ids,
+                              time_now, memcache)
     if user:
       os.environ[_ENV_AUTH_EMAIL] = user.email()
       os.environ[_ENV_AUTH_DOMAIN] = user.auth_domain()
@@ -219,7 +223,9 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
       _set_bearer_user_vars(allowed_client_ids, scopes)
 
 
-def _get_token(request):
+def _get_token(
+    request=None, allowed_auth_schemes=('OAuth', 'Bearer'),
+    allowed_query_keys=('bearer_token', 'access_token')):
   """Get the auth token for this request.
 
   Auth token may be specified in either the Authorization header or
@@ -235,10 +241,11 @@ def _get_token(request):
   Returns:
     The token in the request or None.
   """
+  allowed_auth_schemes = _listlike_guard(
+      allowed_auth_schemes, 'allowed_auth_schemes', iterable_only=True)
   # Check if the token is in the Authorization header.
   auth_header = os.environ.get('HTTP_AUTHORIZATION')
   if auth_header:
-    allowed_auth_schemes = ('OAuth', 'Bearer')
     for auth_scheme in allowed_auth_schemes:
       if auth_header.startswith(auth_scheme):
         return auth_header[len(auth_scheme) + 1:]
@@ -248,13 +255,15 @@ def _get_token(request):
 
   # Check if the token is in the query string.
   if request:
-    for key in ('bearer_token', 'access_token'):
+    allowed_query_keys = _listlike_guard(
+        allowed_query_keys, 'allowed_query_keys', iterable_only=True)
+    for key in allowed_query_keys:
       token, _ = request.get_unrecognized_field_info(key)
       if token:
         return token
 
 
-def _get_id_token_user(token, audiences, allowed_client_ids, time_now, cache):
+def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, cache):
   """Get a User for the given id token, if the token is valid.
 
   Args:
@@ -271,11 +280,11 @@ def _get_id_token_user(token, audiences, allowed_client_ids, time_now, cache):
   # This verifies the signature and some of the basic info in the token.
   try:
     parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache)
-  except Exception, e:  # pylint: disable=broad-except
+  except Exception as e:  # pylint: disable=broad-except
     logging.debug('id_token verification failed: %s', e)
     return None
 
-  if _verify_parsed_token(parsed_token, audiences, allowed_client_ids):
+  if _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
     email = parsed_token['email']
     # The token might have an id, but it's a Gaia ID that's been
     # obfuscated with the Focus key, rather than the AppEngine (igoogle)
@@ -386,7 +395,7 @@ def _is_local_dev():
   return os.environ.get('SERVER_SOFTWARE', '').startswith('Development')
 
 
-def _verify_parsed_token(parsed_token, audiences, allowed_client_ids):
+def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
   """Verify a parsed user ID token.
 
   Args:
@@ -398,7 +407,7 @@ def _verify_parsed_token(parsed_token, audiences, allowed_client_ids):
     True if the token is verified, False otherwise.
   """
   # Verify the issuer.
-  if parsed_token.get('iss') not in _ISSUERS:
+  if parsed_token.get('iss') not in issuers:
     logging.warning('Issuer was not valid: %s', parsed_token.get('iss'))
     return False
 
@@ -571,12 +580,8 @@ def _verify_signed_jwt_with_certs(
     raise _AppIdentityError('Unexpected encryption algorithm: %r' %
                             header.get('alg'))
 
-  # Parse token.
-  json_body = _urlsafe_b64decode(segments[1])
-  try:
-    parsed = json.loads(json_body)
-  except:
-    raise _AppIdentityError("Can't parse token body")
+  # Formerly we would parse the token body here.
+  # However, it's not safe to do that without first checking the signature.
 
   certs = _get_cached_certs(cert_uri, cache)
   if certs is None:
@@ -621,6 +626,13 @@ def _verify_signed_jwt_with_certs(
   if not verified:
     raise _AppIdentityError('Invalid token signature')
 
+  # Parse token.
+  json_body = _urlsafe_b64decode(segments[1])
+  try:
+    parsed = json.loads(json_body)
+  except:
+    raise _AppIdentityError("Can't parse token body")
+
   # Check creation timestamp.
   iat = parsed.get('iat')
   if iat is None:
@@ -643,3 +655,89 @@ def _verify_signed_jwt_with_certs(
                             (time_now, latest))
 
   return parsed
+
+
+_TEXT_CERT_PREFIX = 'https://www.googleapis.com/robot/v1/metadata/x509/'
+_JSON_CERT_PREFIX = 'https://www.googleapis.com/service_accounts/v1/metadata/raw/'
+
+
+def convert_jwks_uri(jwks_uri):
+  """
+  The PyCrypto library included with Google App Engine is severely limited and
+  can't read X.509 files, so we change the URI to a special URI that has the
+  public cert in modulus/exponent form in JSON.
+  """
+  if not jwks_uri.startswith(_TEXT_CERT_PREFIX):
+    raise ValueError('Unrecognized URI type')
+  return jwks_uri.replace(_TEXT_CERT_PREFIX, _JSON_CERT_PREFIX)
+
+
+def get_verified_jwt(issuers, audiences, cert_uri, cache=memcache):
+  """
+  This function will extract, verify, and parse a JWT token from the
+  Authorization header.
+
+  The JWT is assumed to contain an issuer and audience claim, as well
+  as issued-at and expiration timestamps. The signature will be
+  cryptographically verified, the claims and timestamps will be
+  checked, and the resulting parsed JWT body is returned.
+
+  If at any point the JWT is missing or found to be invalid, the
+  return result will be None.
+  """
+  token = _get_token(
+      request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=())
+  if token is None:
+    return None
+  time_now = long(time.time())
+  parsed_token = _parse_and_verify_jwt(
+      token, time_now, issuers, audiences, cert_uri, cache)
+  return parsed_token
+
+
+def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
+  try:
+    parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache, cert_uri)
+  except _AppIdentityError as e:
+    logging.debug('id_token verification failed: %s', e)
+    return None
+
+  issuers = _listlike_guard(issuers, 'issuers')
+  audiences = _listlike_guard(audiences, 'audiences')
+  # We can't use _verify_parsed_token because there's no client id (azp) or email in these JWTs
+  # Verify the issuer.
+  if parsed_token.get('iss') not in issuers:
+    logging.warning('Issuer was not valid: %s', parsed_token.get('iss'))
+    return None
+
+  # Check audiences.
+  aud = parsed_token.get('aud')
+  if not aud:
+    logging.warning('No aud field in token')
+    return None
+  if aud not in audiences:
+    logging.warning('Audience not allowed: %s', aud)
+    return None
+
+  return parsed_token
+
+
+def _listlike_guard(obj, name, iterable_only=False):
+  """
+  We frequently require passed objects to support iteration or
+  containment expressions, but not be strings. (Of course, strings
+  support iteration and containment, but not usefully.)  If the passed
+  object is a string, we'll wrap it in a tuple and return it. If it's
+  already an iterable, we'll return it as-is. Otherwise, we'll raise a
+  TypeError.
+  """
+  required_type = (_Iterable,) if iterable_only else (_Container, _Iterable)
+  required_type_name = ' or '.join(t.__name__ for t in required_type)
+
+  if not isinstance(obj, required_type):
+    raise ValueError('{} must be of type {}'.format(name, required_type_name))
+  # at this point it is definitely the right type, but might be a string
+  if isinstance(obj, basestring):
+    logging.warning('{} passed as a string; should be list-like'.format(name))
+    return (obj,)
+  return obj
