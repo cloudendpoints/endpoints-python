@@ -808,6 +808,15 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_CERT_URI, self.cache)
     self.assertIsNone(parsed_token)
 
+  def testBadBase64(self):
+    # 2.1.0 had an issue where malformed Base64 tokens would throw an
+    # exception instead of returning None
+    token = 'e' + self._SAMPLE_TOKEN
+    parsed_token = users_id_token._parse_and_verify_jwt(
+        token, self._SAMPLE_TIME_NOW,
+        self._SAMPLE_ISSUERS, self._SAMPLE_AUDIENCES,
+        self._SAMPLE_CERT_URI, self.cache)
+    self.assertIsNone(parsed_token)
 
 if __name__ == '__main__':
   unittest.main()

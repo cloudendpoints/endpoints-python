@@ -698,7 +698,7 @@ def get_verified_jwt(issuers, audiences, cert_uri, cache=memcache):
 def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
   try:
     parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache, cert_uri)
-  except _AppIdentityError as e:
+  except (_AppIdentityError, TypeError) as e:
     logging.debug('id_token verification failed: %s', e)
     return None
 
