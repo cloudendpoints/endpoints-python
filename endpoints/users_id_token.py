@@ -672,7 +672,7 @@ def convert_jwks_uri(jwks_uri):
   return jwks_uri.replace(_TEXT_CERT_PREFIX, _JSON_CERT_PREFIX)
 
 
-def get_verified_jwt(issuers, audiences, cert_uri, cache=memcache):
+def get_verified_jwt(providers, audiences, cache=memcache):
   """
   This function will extract, verify, and parse a JWT token from the
   Authorization header.
@@ -684,15 +684,23 @@ def get_verified_jwt(issuers, audiences, cert_uri, cache=memcache):
 
   If at any point the JWT is missing or found to be invalid, the
   return result will be None.
+
+  Arguments:
+  providers - An iterable of dicts each containing 'issuer' and 'cert_uri' keys
+  audiences - An iterable of valid audiences
+  cache - In testing, override the certificate cache
   """
   token = _get_token(
       request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=())
   if token is None:
     return None
   time_now = long(time.time())
-  parsed_token = _parse_and_verify_jwt(
-      token, time_now, issuers, audiences, cert_uri, cache)
-  return parsed_token
+  for provider in providers:
+    parsed_token = _parse_and_verify_jwt(
+        token, time_now, (provider['issuer'],), audiences, provider['cert_uri'], cache)
+    if parsed_token is not None:
+      return parsed_token
+  return None
 
 
 def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
