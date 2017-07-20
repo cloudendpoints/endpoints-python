@@ -777,6 +777,34 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_CERT_URI, self.cache)
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
+  def testProviderHandling(self):
+    self.mox.StubOutWithMock(time, 'time')
+    time.time().AndReturn(self._SAMPLE_TIME_NOW)
+    self.mox.StubOutWithMock(users_id_token, '_get_token')
+    users_id_token._get_token(
+        request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=()).AndReturn(self._SAMPLE_TOKEN)
+    providers = [{
+      'issuer': self._SAMPLE_ISSUERS[0][::-1],
+      'cert_uri': self._SAMPLE_CERT_URI[0][::-1],
+    }, {
+      'issuer': self._SAMPLE_ISSUERS[0],
+      'cert_uri': self._SAMPLE_CERT_URI[0],
+    }]
+    self.mox.StubOutWithMock(users_id_token, '_parse_and_verify_jwt')
+    users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        (providers[0]['issuer'],), self._SAMPLE_AUDIENCES,
+        providers[0]['cert_uri'], self.cache).AndReturn(None)
+    users_id_token._parse_and_verify_jwt(
+        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+        (providers[1]['issuer'],), self._SAMPLE_AUDIENCES,
+        providers[1]['cert_uri'], self.cache).AndReturn(self._SAMPLE_TOKEN_INFO)
+    self.mox.ReplayAll()
+    parsed_token = users_id_token.get_verified_jwt(
+        providers, self._SAMPLE_AUDIENCES, cache=self.cache)
+    self.mox.VerifyAll()
+    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+
   # Test failure states. The cryptography and issuing/expiration times
   # are tested above, since this function reuses
   # _verify_signed_jwt_with_certs, but we need to test issuer and audience checks.
