@@ -17,6 +17,7 @@
 import json
 import logging
 import re
+import hashlib
 
 import api_exceptions
 import message_parser
@@ -38,6 +39,7 @@ _INVALID_AUTH_ISSUER = 'No auth issuer named %s defined in this Endpoints API.'
 
 _API_KEY = 'api_key'
 _API_KEY_PARAM = 'key'
+_DEFAULT_SECURITY_DEFINITION = 'google_id_token'
 
 
 class OpenApiGenerator(object):
@@ -680,15 +682,10 @@ class OpenApiGenerator(object):
     # Insert the auth audiences, if any
     api_key_required = method_info.is_api_key_required(service.api_info)
     if method_info.audiences is not None:
-      descriptor['x-security'] = self.__x_security_descriptor(
-          method_info.audiences, security_definitions)
       descriptor['security'] = self.__security_descriptor(
           method_info.audiences, security_definitions,
           api_key_required=api_key_required)
     elif service.api_info.audiences is not None or api_key_required:
-      if service.api_info.audiences:
-        descriptor['x-security'] = self.__x_security_descriptor(
-            service.api_info.audiences, security_definitions)
       descriptor['security'] = self.__security_descriptor(
           service.api_info.audiences, security_definitions,
           api_key_required=api_key_required)
@@ -700,41 +697,27 @@ class OpenApiGenerator(object):
     if not audiences and not api_key_required:
       return []
 
-    result_dict = {
-        issuer_name: [] for issuer_name in security_definitions.keys()
-    }
+    if audiences and isinstance(audiences, (tuple, list)):
+      audiences = {_DEFAULT_SECURITY_DEFINITION: audiences}
+
+    result_dict = {}
+    if audiences:
+      for issuer, issuer_audiences in audiences.items():
+        if issuer not in security_definitions:
+          raise TypeError('Missing issuer {}'.format(issuer))
+        audience_string = ','.join(sorted(issuer_audiences))
+        audience_hash = hashfunc(audience_string)
+        full_definition_key = '-'.join([issuer, audience_hash])
+        result_dict[full_definition_key] = []
+        if full_definition_key not in security_definitions:
+          new_definition = dict(security_definitions[issuer])
+          new_definition['x-google-audiences'] = audience_string
+          security_definitions[full_definition_key] = new_definition
 
     if api_key_required:
       result_dict[_API_KEY] = []
-      # Remove the unnecessary implicit google_id_token issuer
-      result_dict.pop('google_id_token', None)
-    else:
-      # If the API key is not required, remove the issuer for it
-      result_dict.pop('api_key', None)
 
     return [result_dict]
-
-  def __x_security_descriptor(self, audiences, security_definitions):
-    default_auth_issuer = 'google_id_token'
-    if isinstance(audiences, list):
-      if default_auth_issuer not in security_definitions:
-        raise api_exceptions.ApiConfigurationError(
-            _INVALID_AUTH_ISSUER % default_auth_issuer)
-      return [
-          {
-              default_auth_issuer: {
-                  'audiences': audiences,
-              }
-          }
-      ]
-    elif isinstance(audiences, dict):
-      descriptor = list()
-      for audience_key, audience_value in audiences.items():
-        if audience_key not in security_definitions:
-          raise api_exceptions.ApiConfigurationError(
-              _INVALID_AUTH_ISSUER % audience_key)
-        descriptor.append({audience_key: {'audiences': audience_value}})
-      return descriptor
 
   def __security_definitions_descriptor(self, issuers):
     """Create a descriptor for the security definitions.
@@ -746,8 +729,8 @@ class OpenApiGenerator(object):
       The dict representing the security definitions descriptor.
     """
     if not issuers:
-      return {
-          'google_id_token': {
+      result = {
+          _DEFAULT_SECURITY_DEFINITION: {
               'authorizationUrl': '',
               'flow': 'implicit',
               'type': 'oauth2',
@@ -755,6 +738,7 @@ class OpenApiGenerator(object):
               'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
           }
       }
+      return result
 
     result = {}
 
@@ -763,13 +747,13 @@ class OpenApiGenerator(object):
           'authorizationUrl': '',
           'flow': 'implicit',
           'type': 'oauth2',
-          'x-issuer': issuer_value.issuer,
+          'x-google-issuer': issuer_value.issuer,
       }
 
       # If jwks_uri is omitted, the auth library will use OpenID discovery
       # to find it. Otherwise, include it in the descriptor explicitly.
       if issuer_value.jwks_uri:
-        result[issuer_key]['x-jwks_uri'] = issuer_value.jwks_uri
+        result[issuer_key]['x-google-jwks_uri'] = issuer_value.jwks_uri
 
     return result
 
@@ -839,7 +823,8 @@ class OpenApiGenerator(object):
     for service in services:
       remote_methods = service.all_remote_methods()
 
-      for protorpc_meth_name, protorpc_meth_info in remote_methods.iteritems():
+      for protorpc_meth_name in sorted(remote_methods.iterkeys()):
+        protorpc_meth_info = remote_methods[protorpc_meth_name]
         method_info = getattr(protorpc_meth_info, 'method_info', None)
         # Skip methods that are not decorated with @method
         if method_info is None:
@@ -973,3 +958,7 @@ class OpenApiGenerator(object):
     descriptor = self.get_openapi_dict(services, hostname)
     return json.dumps(descriptor, sort_keys=True, indent=2,
                       separators=(',', ': '))
+
+
+def hashfunc(string):
+    return hashlib.md5(string).hexdigest()[:8]
