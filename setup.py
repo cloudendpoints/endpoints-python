@@ -31,7 +31,8 @@ with open('endpoints/__init__.py', 'r') as f:
         raise RuntimeError("No version number found!")
 
 install_requires = [
-    'google-endpoints-api-management>=1.1.3'
+    'google-endpoints-api-management>=1.1.3',
+    'setuptools>=36.2.5',
 ]
 
 setup(
@@ -44,6 +45,7 @@ setup(
     url='https://github.com/cloudendpoints/endpoints-python',
     packages=find_packages(),
     package_dir={'google-endpoints': 'endpoints'},
+    include_package_data=True,
     license='Apache',
     classifiers=[
         'Development Status :: 4 - Beta',
