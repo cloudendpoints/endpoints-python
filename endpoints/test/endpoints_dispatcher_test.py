@@ -17,6 +17,7 @@
 import unittest
 
 from protorpc import remote
+from webtest import TestApp
 
 import endpoints.api_config as api_config
 import endpoints.apiserving as apiserving
@@ -24,7 +25,7 @@ import endpoints.endpoints_dispatcher as endpoints_dispatcher
 
 
 @api_config.api('aservice', 'v1', hostname='aservice.appspot.com',
-                description='A Service API')
+                description='A Service API', base_path='/anapi/')
 class AService(remote.Service):
 
   @api_config.method(path='noop')
@@ -63,3 +64,14 @@ class EndpointsDispatcherGetExplorerUrlTest(EndpointsDispatcherBaseTest):
           'testapp.appspot.com', 443, '_ah/api',
           'https://apis-explorer.appspot.com/apis-explorer/'
           '?base=https://testapp.appspot.com/_ah/api')
+
+class EndpointsDispatcherGetProxyHtmlTest(EndpointsDispatcherBaseTest):
+  def testGetProxyHtml(self):
+    app = TestApp(self.dispatcher)
+    resp = app.get('/anapi/static/proxy.html')
+    assert '/anapi' in resp.body
+    assert '/_ah/api' not in resp.body
+
+  def testGetProxyHtmlBadUrl(self):
+    app = TestApp(self.dispatcher)
+    resp = app.get('/anapi/static/missing.html', status=404)
