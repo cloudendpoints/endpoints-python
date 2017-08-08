@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <!--
 Copyright 2016 Google Inc. All Rights Reserved.
 
@@ -13,19 +18,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<!doctype html>
-<html>
-<head>
-<title></title>
 <script type="text/javascript">
   window['startup'] = function() {
-    googleapis.server.initWithPath('/_ah/api');
+    googleapis.server.init();
   };
 </script>
 <script type="text/javascript"
     src="https://apis.google.com/js/googleapis.proxy.js?onload=startup" async defer></script>
 </head>
 <body>
-  <div id="lcsclient" style="position: absolute; left: -10000px;"></div>
 </body>
 </html>
