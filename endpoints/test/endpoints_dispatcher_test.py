@@ -69,8 +69,8 @@ class EndpointsDispatcherGetProxyHtmlTest(EndpointsDispatcherBaseTest):
   def testGetProxyHtml(self):
     app = TestApp(self.dispatcher)
     resp = app.get('/anapi/static/proxy.html')
-    assert '/anapi' in resp.body
     assert '/_ah/api' not in resp.body
+    assert '.init()' in resp.body
 
   def testGetProxyHtmlBadUrl(self):
     app = TestApp(self.dispatcher)

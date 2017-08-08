@@ -59,8 +59,7 @@ _CORS_EXPOSED_HEADERS = frozenset(
 )
 
 PROXY_HTML = pkg_resources.resource_string('endpoints', 'proxy.html')
-PROXY_RELATIVE_URL = 'static/proxy.html'
-DEFAULT_API_PATH = '/_ah/api'
+PROXY_PATH = 'static/proxy.html'
 
 
 class EndpointsDispatcherMiddleware(object):
@@ -86,7 +85,7 @@ class EndpointsDispatcherMiddleware(object):
       self._add_dispatcher('%sexplorer/?$' % base_path,
                            self.handle_api_explorer_request)
       self._add_dispatcher('%sstatic/.*$' % base_path,
-                           self.make_static_request_handler(base_path))
+                           self.handle_api_static_request)
 
   def _add_dispatcher(self, path_regex, dispatch_function):
     """Add a request path and dispatch handler.
@@ -212,37 +211,29 @@ class EndpointsDispatcherMiddleware(object):
         request.server, request.port, request.base_path)
     return util.send_wsgi_redirect_response(redirect_url, start_response)
 
-  def make_static_request_handler(self, base_path):
-    # It's important to know the actual base_path so we can substitute it in the HTML.
-    base_path = base_path.rstrip('/')
-    proxy_url = '{}/{}'.format(base_path, PROXY_RELATIVE_URL)
-    def handle_api_static_request(request, start_response):
-      """Handler for requests to {base_path}/static/.*.
+  def handle_api_static_request(self, request, start_response):
+    """Handler for requests to {base_path}/static/.*.
 
-      This calls start_response and returns the response body.
+    This calls start_response and returns the response body.
 
-      Args:
-        request: An ApiRequest, the request from the user.
-        start_response: A function with semantics defined in PEP-333.
+    Args:
+      request: An ApiRequest, the request from the user.
+      start_response: A function with semantics defined in PEP-333.
 
-      Returns:
-        A string containing the response body.
-      """
-      if request.relative_url == proxy_url:
-        body = PROXY_HTML
-        if base_path != DEFAULT_API_PATH:
-          body = body.replace(DEFAULT_API_PATH, base_path)
-        return util.send_wsgi_response('200 OK',
-                                       [('Content-Type',
-                                         'text/html')],
-                                       body, start_response)
-      else:
-        logging.error('Unknown static url requested: %s',
-                      request.relative_url)
-        return util.send_wsgi_response('404 Not Found', [('Content-Type',
-                                         'text/plain')], 'Not Found',
-                                       start_response)
-    return handle_api_static_request
+    Returns:
+      A string containing the response body.
+    """
+    if request.path == PROXY_PATH:
+      return util.send_wsgi_response('200 OK',
+                                     [('Content-Type',
+                                       'text/html')],
+                                     PROXY_HTML, start_response)
+    else:
+      logging.error('Unknown static url requested: %s',
+                    request.relative_url)
+      return util.send_wsgi_response('404 Not Found', [('Content-Type',
+                                       'text/plain')], 'Not Found',
+                                     start_response)
 
   def get_api_configs(self):
     return self._backend.get_api_configs()
