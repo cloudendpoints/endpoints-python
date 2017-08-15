@@ -32,15 +32,11 @@ Versioning
 
 This library follows `Semantic Versioning`_
 
-It is currently in major version zero (``0.y.z``), which means that anything
-may change at any time and the public API should not be considered
-stable.
-
 
 Details
 -------
 
-For detailed documentation of the modules in google-endpoints, please watch `DOCUMENTATION`_.
+For detailed documentation of google-endpoints, please see the `Cloud Endpoints Documentation`_.
 
 
 License
@@ -60,5 +56,5 @@ Apache - See `LICENSE`_ for more information.
 .. _`hyper`: https://github.com/lukasa/hyper
 .. _`Google APIs`: https://github.com/google/googleapis/
 .. _`Semantic Versioning`: http://semver.org/
-.. _`DOCUMENTATION`: https://google-endpoints.readthedocs.org/
+.. _`Cloud Endpoints Documentation`: https://cloud.google.com/endpoints/docs/frameworks/
 .. _`App Engine vendoring`: https://cloud.google.com/appengine/docs/python/tools/using-libraries-python-27#vendoring
