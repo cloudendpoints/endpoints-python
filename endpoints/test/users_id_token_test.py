@@ -777,12 +777,11 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_CERT_URI, self.cache)
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
-  def testProviderHandling(self):
+  def _setupProviderHandlingMocks(self, **get_token_kwargs):
     self.mox.StubOutWithMock(time, 'time')
     time.time().AndReturn(self._SAMPLE_TIME_NOW)
     self.mox.StubOutWithMock(users_id_token, '_get_token')
-    users_id_token._get_token(
-        request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=()).AndReturn(self._SAMPLE_TOKEN)
+    users_id_token._get_token(**get_token_kwargs).AndReturn(self._SAMPLE_TOKEN)
     providers = [{
       'issuer': self._SAMPLE_ISSUERS[0][::-1],
       'cert_uri': self._SAMPLE_CERT_URI[0][::-1],
@@ -799,9 +798,34 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
         (providers[1]['issuer'],), self._SAMPLE_AUDIENCES,
         providers[1]['cert_uri'], self.cache).AndReturn(self._SAMPLE_TOKEN_INFO)
+    return providers
+
+  def testProviderHandlingWithBoth(self):
+    providers = self._setupProviderHandlingMocks(
+        request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=('access_token',))
     self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
         providers, self._SAMPLE_AUDIENCES, cache=self.cache)
+    self.mox.VerifyAll()
+    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+
+  def testProviderHandlingWithHeader(self):
+    providers = self._setupProviderHandlingMocks(
+        request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=())
+    self.mox.ReplayAll()
+    parsed_token = users_id_token.get_verified_jwt(
+        providers, self._SAMPLE_AUDIENCES,
+        check_authorization_header=True, check_query_arg=False, cache=self.cache)
+    self.mox.VerifyAll()
+    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+
+  def testProviderHandlingWithQueryArg(self):
+    providers = self._setupProviderHandlingMocks(
+        request=None, allowed_auth_schemes=(), allowed_query_keys=('access_token',))
+    self.mox.ReplayAll()
+    parsed_token = users_id_token.get_verified_jwt(
+        providers, self._SAMPLE_AUDIENCES,
+        check_authorization_header=False, check_query_arg=True, cache=self.cache)
     self.mox.VerifyAll()
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
