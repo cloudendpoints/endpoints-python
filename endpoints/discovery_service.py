@@ -86,7 +86,7 @@ class DiscoveryService(object):
       A string, the response body.
     """
     headers = [('Content-Type', 'application/json; charset=UTF-8')]
-    return util.send_wsgi_response('200', headers, response, start_response)
+    return util.send_wsgi_response('200 OK', headers, response, start_response)
 
   def _get_rest_doc(self, request, start_response):
     """Sends back HTTP response with API directory.
@@ -105,7 +105,9 @@ class DiscoveryService(object):
     version = request.body_json['version']
 
     generator = discovery_generator.DiscoveryGenerator(request=request)
-    doc = generator.pretty_print_config_to_json(self._backend.api_services)
+    services = [s for s in self._backend.api_services if
+                s.api_info.name == api and s.api_info.version == version]
+    doc = generator.pretty_print_config_to_json(services)
     if not doc:
       error_msg = ('Failed to convert .api to discovery doc for '
                    'version %s of api %s') % (version, api)
