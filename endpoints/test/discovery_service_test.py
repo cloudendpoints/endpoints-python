@@ -23,7 +23,10 @@ import endpoints.apiserving as apiserving
 import endpoints.discovery_service as discovery_service
 import test_util
 
+import webtest
+
 from protorpc import message_types
+from protorpc import messages
 from protorpc import remote
 
 
@@ -162,6 +165,64 @@ class DevServerDiscoveryServiceTest(DiscoveryServiceTest,
 
     self._check_api_config(expected_base_url, server, port, url_scheme, api,
                            version)
+
+
+class Airport(messages.Message):
+  iata = messages.StringField(1, required=True)
+  name = messages.StringField(2, required=True)
+
+class AirportList(messages.Message):
+  airports = messages.MessageField(Airport, 1, repeated=True)
+
+@api_config.api(name='iata', version='v1')
+class V1Service(remote.Service):
+  @api_config.method(
+      message_types.VoidMessage,
+      AirportList,
+      path='airports',
+      http_method='GET',
+      name='list_airports')
+  def list_airports(self, request):
+    return AirportList(airports=[
+        Airport(iata=u'DEN', name=u'Denver International Airport'),
+        Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+    ])
+
+@api_config.api(name='iata', version='v2')
+class V2Service(remote.Service):
+  @api_config.method(
+      message_types.VoidMessage,
+      AirportList,
+      path='airports',
+      http_method='GET',
+      name='list_airports')
+  def list_airports(self, request):
+    return AirportList(airports=[
+        Airport(iata=u'DEN', name=u'Denver International Airport'),
+        Airport(iata=u'JFK', name=u'John F Kennedy International Airport'),
+        Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+    ])
+
+class DiscoveryServiceVersionTest(unittest.TestCase):
+  def setUp(self):
+    api = apiserving.api_server([V1Service, V2Service])
+    self.app = webtest.TestApp(api)
+
+  def testListApis(self):
+    resp = self.app.get('http://localhost/_ah/api/discovery/v1/apis')
+    items = resp.json['items']
+    self.assertItemsEqual(
+        (i['id'] for i in items), [u'iata:v1', u'iata:v2'])
+    self.assertItemsEqual(
+        (i['discoveryLink'] for i in items),
+        [u'./apis/iata/v1/rest', u'./apis/iata/v2/rest'])
+
+  def testGetApis(self):
+    for version in ['v1', 'v2']:
+      resp = self.app.get(
+          'http://localhost/_ah/api/discovery/v1/apis/iata/{}/rest'.format(version))
+      self.assertEqual(resp.json['version'], version)
+      self.assertItemsEqual(resp.json['methods'].keys(), [u'list_airports'])
 
 if __name__ == '__main__':
   unittest.main()

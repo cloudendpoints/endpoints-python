@@ -19,6 +19,7 @@ import os
 import unittest
 
 import endpoints.api_config as api_config
+import endpoints.api_exceptions as api_exceptions
 
 from protorpc import message_types
 from protorpc import messages
@@ -273,6 +274,120 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
     expected_discovery['packagePath'] = ''
 
     test_util.AssertDictEqual(expected_discovery, api, self)
+
+class DiscoveryMultiClassGeneratorTest(BaseDiscoveryGeneratorTest):
+
+  def testMultipleClassService(self):
+    '''If multiple classes of a single service are passed to the
+    generator, the document should show all methods from all
+    classes.'''
+    class Airport(messages.Message):
+      iata = messages.StringField(1, required=True)
+      name = messages.StringField(2, required=True)
+
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1, required=True)
+    )
+
+    class AirportList(messages.Message):
+      airports = messages.MessageField(Airport, 1, repeated=True)
+
+    @api_config.api(name='iata', version='v1')
+    class ServicePart1(remote.Service):
+      @api_config.method(
+          message_types.VoidMessage,
+          AirportList,
+          path='airports',
+          http_method='GET',
+          name='list_airports')
+      def list_airports(self, request):
+        return AirportList(airports=[
+            Airport(iata=u'DEN', name=u'Denver International Airport'),
+            Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+        ])
+
+    @api_config.api(name='iata', version='v1')
+    class ServicePart2(remote.Service):
+      @api_config.method(
+          IATA_RESOURCE,
+          Airport,
+          path='airport/{iata}',
+          http_method='GET',
+          name='get_airport')
+      def get_airport(self, request):
+        airports = {
+          'DEN': 'Denver International Airport'
+        }
+        if request.iata not in airports:
+          raise endpoints.NotFoundException()
+        return Airport(iata=request.iata, name=airports[request.iata])
+
+    doc = self.generator.get_discovery_doc([ServicePart1, ServicePart2])
+    self.assertItemsEqual(doc['methods'].keys(), [u'get_airport', u'list_airports'])
+
+  def testMethodCollisionDetection(self):
+    '''While multiple classes can be passed to the generator at once,
+    they should all belong to the same api and version.'''
+    class Airport(messages.Message):
+      iata = messages.StringField(1, required=True)
+      name = messages.StringField(2, required=True)
+
+    class AirportList(messages.Message):
+      airports = messages.MessageField(Airport, 1, repeated=True)
+
+    @api_config.api(name='iata', version='v1')
+    class V1Service(remote.Service):
+      @api_config.method(
+          message_types.VoidMessage,
+          AirportList,
+          path='airports',
+          http_method='GET',
+          name='list_airports')
+      def list_airports(self, request):
+        return AirportList(airports=[
+            Airport(iata=u'DEN', name=u'Denver International Airport'),
+            Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+        ])
+
+    @api_config.api(name='iata', version='v2')
+    class V2Service(remote.Service):
+      @api_config.method(
+          message_types.VoidMessage,
+          AirportList,
+          path='airports',
+          http_method='GET',
+          name='list_airports')
+      def list_airports(self, request):
+        return AirportList(airports=[
+            Airport(iata=u'DEN', name=u'Denver International Airport'),
+            Airport(iata=u'JFK', name=u'John F Kennedy International Airport'),
+            Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+        ])
+
+    error = "Multiple apis/versions found: [('iata', 'v1'), ('iata', 'v2')]"
+    with self.assertRaises(api_exceptions.ApiConfigurationError) as catcher:
+      self.generator.get_discovery_doc([V1Service, V2Service])
+    self.assertEqual(catcher.exception.message, error)
+
+
+    @api_config.api(name='iata', version='v1')
+    class V1ServiceCont(remote.Service):
+      @api_config.method(
+          message_types.VoidMessage,
+          AirportList,
+          path='airports',
+          http_method='GET',
+          name='list_airports')
+      def list_airports(self, request):
+        return AirportList(airports=[
+            Airport(iata=u'JFK', name=u'John F Kennedy International Airport'),
+        ])
+
+    error = "Method iata.list_airports used multiple times"
+    with self.assertRaises(api_exceptions.ApiConfigurationError) as catcher:
+      self.generator.get_discovery_doc([V1Service, V1ServiceCont])
+    self.assertEqual(catcher.exception.message[:len(error)], error)
+
 
 
 if __name__ == '__main__':

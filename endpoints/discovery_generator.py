@@ -817,6 +817,15 @@ class DiscoveryGenerator(object):
     Returns:
       The _ApiInfo object to use for the API that the given services implement.
     """
+    base_paths = sorted(set(s.api_info.base_path for s in services))
+    if len(base_paths) != 1:
+      raise api_exceptions.ApiConfigurationError(
+          'Multiple base_paths found: {!r}'.format(base_paths))
+    names_versions = sorted(set(
+        (s.api_info.name, s.api_info.version) for s in services))
+    if len(names_versions) != 1:
+      raise api_exceptions.ApiConfigurationError(
+          'Multiple apis/versions found: {!r}'.format(names_versions))
     return services[0].api_info
 
   def __discovery_doc_descriptor(self, services, hostname=None):
