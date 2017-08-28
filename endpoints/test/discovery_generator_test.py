@@ -275,7 +275,55 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
 
     test_util.AssertDictEqual(expected_discovery, api, self)
 
-class DiscoveryVersionGeneratorTest(BaseDiscoveryGeneratorTest):
+class DiscoveryMultiClassGeneratorTest(BaseDiscoveryGeneratorTest):
+
+  def testMultipleClassService(self):
+    '''If multiple classes of a single service are passed to the
+    generator, the document should show all methods from all
+    classes.'''
+    class Airport(messages.Message):
+      iata = messages.StringField(1, required=True)
+      name = messages.StringField(2, required=True)
+
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1, required=True)
+    )
+
+    class AirportList(messages.Message):
+      airports = messages.MessageField(Airport, 1, repeated=True)
+
+    @api_config.api(name='iata', version='v1')
+    class ServicePart1(remote.Service):
+      @api_config.method(
+          message_types.VoidMessage,
+          AirportList,
+          path='airports',
+          http_method='GET',
+          name='list_airports')
+      def list_airports(self, request):
+        return AirportList(airports=[
+            Airport(iata=u'DEN', name=u'Denver International Airport'),
+            Airport(iata=u'SEA', name=u'Seattle Tacoma International Airport'),
+        ])
+
+    @api_config.api(name='iata', version='v1')
+    class ServicePart2(remote.Service):
+      @api_config.method(
+          IATA_RESOURCE,
+          Airport,
+          path='airport/{iata}',
+          http_method='GET',
+          name='get_airport')
+      def get_airport(self, request):
+        airports = {
+          'DEN': 'Denver International Airport'
+        }
+        if request.iata not in airports:
+          raise endpoints.NotFoundException()
+        return Airport(iata=request.iata, name=airports[request.iata])
+
+    doc = self.generator.get_discovery_doc([ServicePart1, ServicePart2])
+    self.assertItemsEqual(doc['methods'].keys(), [u'get_airport', u'list_airports'])
 
   def testMethodCollisionDetection(self):
     '''While multiple classes can be passed to the generator at once,
