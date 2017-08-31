@@ -675,7 +675,7 @@ def convert_jwks_uri(jwks_uri):
 def get_verified_jwt(providers, audiences, check_authorization_header=True, check_query_arg=True, cache=memcache):
   """
   This function will extract, verify, and parse a JWT token from the
-  Authorization header.
+  Authorization header or access_token query argument.
 
   The JWT is assumed to contain an issuer and audience claim, as well
   as issued-at and expiration timestamps. The signature will be
