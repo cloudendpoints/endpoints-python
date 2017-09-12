@@ -801,11 +801,13 @@ class JwtTest(UsersIdTokenTestBase):
     return providers
 
   def testProviderHandlingWithBoth(self):
+    mock_request = object()
     providers = self._setupProviderHandlingMocks(
-        request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=('access_token',))
+        request=mock_request,
+        allowed_auth_schemes=('Bearer',), allowed_query_keys=('access_token',))
     self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
-        providers, self._SAMPLE_AUDIENCES, cache=self.cache)
+        providers, self._SAMPLE_AUDIENCES, request=mock_request, cache=self.cache)
     self.mox.VerifyAll()
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
@@ -820,12 +822,15 @@ class JwtTest(UsersIdTokenTestBase):
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
   def testProviderHandlingWithQueryArg(self):
+    mock_request = object()
     providers = self._setupProviderHandlingMocks(
-        request=None, allowed_auth_schemes=(), allowed_query_keys=('access_token',))
+        request=mock_request,
+        allowed_auth_schemes=(), allowed_query_keys=('access_token',))
     self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
         providers, self._SAMPLE_AUDIENCES,
-        check_authorization_header=False, check_query_arg=True, cache=self.cache)
+        check_authorization_header=False, check_query_arg=True,
+        request=mock_request, cache=self.cache)
     self.mox.VerifyAll()
     self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
 
