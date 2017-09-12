@@ -674,13 +674,22 @@ class OpenApiGenerator(object):
       return None
 
     definitions_list = [{
+        'name': ld.metric_name,
         'metric': ld.metric_name,
-        'display_name': ld.display_name,
-        'default_limit': ld.default_limit
+        'unit': '1/min/{project}',
+        'values': {'STANDARD': ld.default_limit},
+        'displayName': ld.display_name,
+    } for ld in limit_definitions]
+
+    metrics = [{
+        'name': ld.metric_name,
+        'valueType': 'INT64',
+        'metricKind': 'GAUGE',
     } for ld in limit_definitions]
 
     return {
-        'limits': definitions_list
+        'quota': {'limits': definitions_list},
+        'metrics': metrics,
     }
 
   def __method_descriptor(self, service, method_info, operation_id,
@@ -949,7 +958,7 @@ class OpenApiGenerator(object):
     limit_definitions = self.__x_google_quota_definitions_descriptor(
         merged_api_info.limit_definitions)
     if limit_definitions:
-      descriptor['x-google-quota-definitions'] = limit_definitions
+      descriptor['x-google-management'] = limit_definitions
 
     return descriptor
 
