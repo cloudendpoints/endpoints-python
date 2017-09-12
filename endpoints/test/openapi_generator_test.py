@@ -935,10 +935,10 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
   def testMetricCosts(self):
 
     limit_definitions = [
-        api_config.LimitDefinition('read_requests',
+        api_config.LimitDefinition('example/read_requests',
                                    'My Read API Requests per Minute',
                                    1000),
-        api_config.LimitDefinition('list_requests',
+        api_config.LimitDefinition('example/list_requests',
                                    'My List API Requests per Minute',
                                    100),
     ]
@@ -950,8 +950,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
       @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
                          path='noop', http_method='GET', name='noop',
-                         metric_costs={'read_requests': 5,
-                                       'list_requests': 1})
+                         metric_costs={'example/read_requests': 5,
+                                       'example/list_requests': 1})
       def noop_get(self, unused_request):
         return message_types.VoidMessage()
 
@@ -981,8 +981,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                     },
                     'x-google-quota': {
                         'metricCosts': {
-                            'read_requests': 5,
-                            'list_requests': 1,
+                            'example/read_requests': 5,
+                            'example/list_requests': 1,
                         }
                     }
                 },
@@ -997,19 +997,41 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
             },
         },
-        'x-google-quota-definitions': {
-            'limits': [
+        'x-google-management': {
+            'quota': {
+                'limits': [
+                    {
+                        'name': 'example/read_requests',
+                        'metric': 'example/read_requests',
+                        'unit': '1/min/{project}',
+                        'values': {
+                            'STANDARD': 1000
+                        },
+                        'displayName': 'My Read API Requests per Minute',
+                    },
+                    {
+                        'name': 'example/list_requests',
+                        'metric': 'example/list_requests',
+                        'unit': '1/min/{project}',
+                        'values': {
+                            'STANDARD': 100
+                        },
+                        'displayName': 'My List API Requests per Minute',
+                    },
+                ],
+            },
+            'metrics': [
                 {
-                    'default_limit': 1000,
-                    'metric': 'read_requests',
-                    'display_name': 'My Read API Requests per Minute',
+                    'name': 'example/read_requests',
+                    'valueType': 'INT64',
+                    'metricKind': 'GAUGE',
                 },
                 {
-                    'default_limit': 100,
-                    'metric': 'list_requests',
-                    'display_name': 'My List API Requests per Minute',
+                    'name': 'example/list_requests',
+                    'valueType': 'INT64',
+                    'metricKind': 'GAUGE',
                 },
-            ],
+            ]
         },
     }
 
