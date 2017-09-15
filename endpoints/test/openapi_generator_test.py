@@ -882,6 +882,121 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
     test_util.AssertDictEqual(expected_openapi, api, self)
 
+  def testPathParamImpliedRequired(self):
+
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1)
+    )
+
+    class IataParam(messages.Message):
+        iata = messages.StringField(1)
+
+    class Airport(messages.Message):
+        iata = messages.StringField(1, required=True)
+        name = messages.StringField(2, required=True)
+
+    @api_config.api(name='iata', version='v1')
+    class IataApi(remote.Service):
+        @api_config.method(
+            IATA_RESOURCE,
+            Airport,
+            path='airport/{iata}',
+            http_method='GET',
+            name='get_airport')
+        def get_airport(self, request):
+            return Airport(iata=request.iata, name='irrelevant')
+
+        @api_config.method(
+            IataParam,
+            Airport,
+            path='airport/2/{iata}',
+            http_method='GET',
+            name='get_airport_2')
+        def get_airport_2(self, request):
+            return Airport(iata=request.iata, name='irrelevant')
+
+    api = json.loads(self.generator.pretty_print_config_to_json(IataApi))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'iata',
+            'version': 'v1',
+        },
+        'host': None,
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'definitions': {
+            'OpenApiGeneratorTestAirport': {
+                'properties': {
+                    'iata': {'type': 'string'},
+                    'name': {'type': 'string'}
+                },
+                'required': [
+                    'iata',
+                    'name'],
+                'type': 'object'
+            }
+        },
+        'paths': {
+            '/iata/v1/airport/2/{iata}': {
+                'get': {
+                    'operationId': 'IataApi_getAirport2',
+                    'parameters': [
+                        {
+                            'in': 'path',
+                            'name': 'iata',
+                            'required': True,
+                            'type': 'string'
+                        }
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                            'schema': {
+                                '$ref': '#/definitions/OpenApiGeneratorTestAirport'
+                            }
+                        }
+                    }
+                }
+            },
+            '/iata/v1/airport/{iata}': {
+                'get': {
+                    'operationId': 'IataApi_getAirport',
+                    'parameters': [
+                        {
+                            'in': 'path',
+                            'name': 'iata',
+                            'required': True,
+                            'type': 'string'
+                        }
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                            'schema': {
+                                '$ref': '#/definitions/OpenApiGeneratorTestAirport'
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                'x-google-issuer': 'accounts.google.com',
+                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
   def testLocalhost(self):
     @api_config.api(name='root', hostname='localhost:8080', version='v1')
     class MyService(remote.Service):
