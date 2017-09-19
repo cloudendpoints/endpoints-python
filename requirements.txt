@@ -1,2 +1,2 @@
-google-endpoints-api-management>=1.2.0
+google-endpoints-api-management>=1.2.1
 setuptools>=36.2.5
