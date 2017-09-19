@@ -672,7 +672,10 @@ def convert_jwks_uri(jwks_uri):
   return jwks_uri.replace(_TEXT_CERT_PREFIX, _JSON_CERT_PREFIX)
 
 
-def get_verified_jwt(providers, audiences, check_authorization_header=True, check_query_arg=True, cache=memcache):
+def get_verified_jwt(
+    providers, audiences,
+    check_authorization_header=True, check_query_arg=True,
+    request=None, cache=memcache):
   """
   This function will extract, verify, and parse a JWT token from the
   Authorization header or access_token query argument.
@@ -688,15 +691,23 @@ def get_verified_jwt(providers, audiences, check_authorization_header=True, chec
   Arguments:
   providers - An iterable of dicts each containing 'issuer' and 'cert_uri' keys
   audiences - An iterable of valid audiences
+
+  check_authorization_header - Boolean; check 'Authorization: Bearer' header
+  check_query_arg - Boolean; check 'access_token' query arg
+
+  request - Must be the request object if check_query_arg is true; otherwise ignored.
   cache - In testing, override the certificate cache
   """
   if not (check_authorization_header or check_query_arg):
       raise ValueError(
           'Either check_authorization_header or check_query_arg must be True.')
+  if check_query_arg and request is None:
+      raise ValueError(
+          'Cannot check query arg without request object.')
   schemes = ('Bearer',) if check_authorization_header else ()
   keys = ('access_token',) if check_query_arg else ()
   token = _get_token(
-      request=None, allowed_auth_schemes=schemes, allowed_query_keys=keys)
+      request=request, allowed_auth_schemes=schemes, allowed_query_keys=keys)
   if token is None:
     return None
   time_now = long(time.time())
