@@ -407,6 +407,7 @@ class OpenApiGenerator(object):
 
   def __path_parameter_descriptor(self, param):
     descriptor = self.__non_body_parameter_descriptor(param)
+    descriptor['required'] = True
     descriptor['in'] = 'path'
 
     return descriptor
