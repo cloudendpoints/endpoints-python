@@ -130,6 +130,21 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
       def entries_post(self, unused_request):
         return message_types.VoidMessage()
 
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries2',
+                         http_method='POST', name='entries2', api_key_required=True)
+      def entries_post_protected(self, unused_request):
+        return message_types.VoidMessage()
+
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries3',
+                         http_method='POST', name='entries3', audiences=['foo'])
+      def entries_post_audience(self, unused_request):
+        return message_types.VoidMessage()
+
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries4',
+                         http_method='POST', name='entries4', audiences=['foo', 'bar'])
+      def entries_post_audiences(self, unused_request):
+        return message_types.VoidMessage()
+
     api = json.loads(self.generator.pretty_print_config_to_json(MyService))
 
     expected_openapi = {
@@ -163,6 +178,78 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         },
                     },
                 },
+            },
+            "/root/v1/entries2": {
+                "post": {
+                    "operationId": "MyService_entriesPostProtected",
+                    "parameters": [
+                        {
+                            "in": "body",
+                            "name": "body",
+                            "schema": {
+                                "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A successful response"
+                        }
+                    },
+                    "security": [
+                        {
+                            "api_key": []
+                        }
+                    ]
+                }
+            },
+            "/root/v1/entries3": {
+                "post": {
+                    "operationId": "MyService_entriesPostAudience",
+                    "parameters": [
+                        {
+                            "in": "body",
+                            "name": "body",
+                            "schema": {
+                                "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A successful response"
+                        }
+                    },
+                    "security": [
+                        {
+                            "google_id_token-acbd18db": []
+                        }
+                    ],
+                }
+            },
+            "/root/v1/entries4": {
+                "post": {
+                    "operationId": "MyService_entriesPostAudiences",
+                    "parameters": [
+                        {
+                            "in": "body",
+                            "name": "body",
+                            "schema": {
+                                "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A successful response"
+                        }
+                    },
+                    "security": [
+                        {
+                            "google_id_token-eb76e999": []
+                        }
+                    ],
+                }
             },
         },
         'definitions': {
@@ -243,12 +330,33 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             },
         },
         "securityDefinitions": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "key",
+                "in": "query",
+            },
             "google_id_token": {
                 "authorizationUrl": "",
                 "flow": "implicit",
                 "type": "oauth2",
-                "x-google-issuer": "accounts.google.com",
-                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v1/certs"
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+            "google_id_token-acbd18db": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+                "x-google-audiences": "foo",
+            },
+            "google_id_token-eb76e999": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+                "x-google-audiences": "bar,foo",
             },
         },
     }
@@ -874,8 +982,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1039,8 +1147,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1218,8 +1326,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
             'api_key': {
                 'type': 'apiKey',
@@ -1275,8 +1383,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1355,8 +1463,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1430,8 +1538,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1518,8 +1626,8 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
             },
         },
     }
@@ -1580,8 +1688,203 @@ class DevServerOpenApiGeneratorTest(BaseOpenApiGeneratorTest,
                 'authorizationUrl': '',
                 'flow': 'implicit',
                 'type': 'oauth2',
-                'x-google-issuer': 'accounts.google.com',
-                'x-google-jwks_uri': 'https://www.googleapis.com/oauth2/v1/certs',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
+
+ISSUERS = {
+    'auth0': api_config.Issuer(
+        'https://test.auth0.com/authorize',
+        'https://test.auth0.com/.wellknown/jwks.json')
+}
+
+class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
+
+  def testAllFieldTypesPost(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com',
+                    version='v1', issuers=ISSUERS, audiences={'auth0': ['auth0audapi']})
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries',
+                         http_method='POST', name='entries')
+      def entries_post(self, unused_request):
+        return message_types.VoidMessage()
+      @api_config.method(AllFields, message_types.VoidMessage, path='entries3',
+                         http_method='POST', name='entries3', audiences={'auth0': ['auth0audmethod']})
+      def entries_post_audience(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/entries': {
+                'post': {
+                    'operationId': 'MyService_entriesPost',
+                    'parameters': [
+                        {
+                            'name': 'body',
+                            'in': 'body',
+                            'schema': {
+                                '$ref': self._def_path(ALL_FIELDS)
+                            },
+                        },
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    "security": [
+                        {
+                            "auth0-1af981e8": []
+                        }
+                    ],
+                },
+            },
+            "/root/v1/entries3": {
+                "post": {
+                    "operationId": "MyService_entriesPostAudience",
+                    "parameters": [
+                        {
+                            "in": "body",
+                            "name": "body",
+                            "schema": {
+                                "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A successful response"
+                        }
+                    },
+                    "security": [
+                        {
+                            "auth0-67eeef35": []
+                        }
+                    ],
+                }
+            },
+        },
+        'definitions': {
+            ALL_FIELDS: {
+                'type': 'object',
+                'properties': {
+                    'bool_value': {
+                        'type': 'boolean',
+                    },
+                    'bytes_value': {
+                        'type': 'string',
+                        'format': 'byte',
+                    },
+                    'datetime_value': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'double_value': {
+                        'type': 'number',
+                        'format': 'double',
+                    },
+                    'enum_value': {
+                        'type': 'string',
+                        'enum': [
+                            'VAL1',
+                            'VAL2',
+                        ],
+                    },
+                    'float_value': {
+                        'type': 'number',
+                        'format': 'float',
+                    },
+                    'int32_value': {
+                        'type': 'integer',
+                        'format': 'int32',
+                    },
+                    'int64_value': {
+                        'type': 'string',
+                        'format': 'int64',
+                    },
+                    'message_field_value': {
+                        '$ref': self._def_path(NESTED),
+                        'description':
+                            'Message class to be used in a message field.',
+                    },
+                    'sint32_value': {
+                        'type': 'integer',
+                        'format': 'int32',
+                    },
+                    'sint64_value': {
+                        'type': 'string',
+                        'format': 'int64',
+                    },
+                    'string_value': {
+                        'type': 'string',
+                    },
+                    'uint32_value': {
+                        'type': 'integer',
+                        'format': 'uint32',
+                    },
+                    'uint64_value': {
+                        'type': 'string',
+                        'format': 'uint64',
+                    },
+                },
+            },
+            "OpenApiGeneratorTestNested": {
+                "type": "object",
+                "properties": {
+                    "int_value": {
+                        "format": "int64",
+                        "type": "string"
+                    },
+                    "string_value": {
+                        "type": "string"
+                    },
+                },
+            },
+        },
+        "securityDefinitions": {
+            "auth0": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "auth0-1af981e8": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "auth0audapi",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "auth0-67eeef35": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "auth0audmethod",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
             },
         },
     }
