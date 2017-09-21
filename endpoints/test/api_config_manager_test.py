@@ -194,6 +194,17 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({'id': 'i'}, params)
 
+  def test_lookup_rest_method_with_colon_in_path(self):
+    fake_method = {'httpMethod': 'GET',
+                   'path': 'greetings/greeting:xmas'}
+    self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
+                                          'v1', fake_method)
+
+    method_name, method_spec, _ = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/greetings/greeting:xmas', 'GET')
+    self.assertEqual('guestbook_api.get', method_name)
+    self.assertEqual(fake_method, method_spec)
+
   def test_lookup_rest_method_with_colon_in_param(self):
     fake_method = {'httpMethod': 'GET',
                    'path': 'greetings/{id}'}
@@ -202,6 +213,28 @@ class ApiConfigManagerTest(unittest.TestCase):
 
     method_name, method_spec, _ = self.config_manager.lookup_rest_method(
         'guestbook_api/v1/greetings/greetings:testcolon', 'GET')
+    self.assertEqual('guestbook_api.get', method_name)
+    self.assertEqual(fake_method, method_spec)
+
+  def test_lookup_rest_method_with_colon_after_param(self):
+    fake_method = {'httpMethod': 'GET',
+                   'path': 'greetings/{id}:hello'}
+    self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
+                                          'v1', fake_method)
+
+    method_name, method_spec, _ = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/greetings/1:hello', 'GET')
+    self.assertEqual('guestbook_api.get', method_name)
+    self.assertEqual(fake_method, method_spec)
+
+  def test_lookup_rest_method_with_colon_in_and_after_param(self):
+    fake_method = {'httpMethod': 'GET',
+                   'path': 'greetings/{id}:hello'}
+    self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
+                                          'v1', fake_method)
+
+    method_name, method_spec, _ = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/greetings/greeting:colon:hello', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
 
@@ -331,7 +364,7 @@ class ParameterizedPathTest(unittest.TestCase):
     self.assertEqual(None, params)
 
   def test_invalid_values(self):
-    for reserved in [':', '?', '#', '[', ']', '{', '}']:
+    for reserved in ['?', '#', '[', ']', '{', '}']:
       self.assert_invalid_value('123%s' % reserved)
 
 
