@@ -75,6 +75,9 @@ __all__ = [
 
 API_EXPLORER_CLIENT_ID = '292824132082.apps.googleusercontent.com'
 EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
+_EMAIL_SCOPE_DESCRIPTION = 'View your email address'
+_EMAIL_SCOPE_OBJ = users_id_token.OAuth2Scope(
+    scope=EMAIL_SCOPE, description=_EMAIL_SCOPE_DESCRIPTION)
 _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'
 
 _MULTICLASS_MISMATCH_ERROR_TEMPLATE = (
@@ -293,7 +296,7 @@ class _ApiInfo(object):
     self.__resource_name = resource_name
     self.__path = path
     self.__audiences = audiences
-    self.__scopes = scopes
+    self.__scopes = users_id_token.OAuth2Scope.convert_list(scopes)
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
     self.__api_key_required = api_key_required
@@ -333,11 +336,17 @@ class _ApiInfo(object):
     return self.__common_info.audiences
 
   @property
-  def scopes(self):
-    """List of scopes accepted for the API, overriding the defaults."""
+  def scope_objs(self):
+    """List of scopes (as OAuth2Scopes) accepted for the API, overriding the defaults."""
     if self.__scopes is not None:
       return self.__scopes
-    return self.__common_info.scopes
+    return self.__common_info.scope_objs
+
+  @property
+  def scopes(self):
+    """List of scopes (as strings) accepted for the API, overriding the defaults."""
+    if self.scope_objs is not None:
+      return [_s.scope for _s in self.scope_objs]
 
   @property
   def allowed_client_ids(self):
@@ -561,7 +570,7 @@ class _ApiDecorator(object):
       _CheckType(version, basestring, 'version', allow_none=False)
       _CheckType(description, basestring, 'description')
       _CheckType(hostname, basestring, 'hostname')
-      endpoints_util.check_list_type(scopes, basestring, 'scopes')
+      endpoints_util.check_list_type(scopes, (basestring, users_id_token.OAuth2Scope), 'scopes')
       endpoints_util.check_list_type(allowed_client_ids, basestring,
                                      'allowed_client_ids')
       _CheckType(canonical_name, basestring, 'canonical_name')
@@ -591,7 +600,9 @@ class _ApiDecorator(object):
       if hostname is None:
         hostname = app_identity.get_default_version_hostname()
       if scopes is None:
-        scopes = [EMAIL_SCOPE]
+        scopes = [_EMAIL_SCOPE_OBJ]
+      else:
+        scopes = users_id_token.OAuth2Scope.convert_list(scopes)
       if allowed_client_ids is None:
         allowed_client_ids = [API_EXPLORER_CLIENT_ID]
       if auth_level is None:
@@ -649,9 +660,15 @@ class _ApiDecorator(object):
       return self.__audiences
 
     @property
-    def scopes(self):
-      """List of scopes accepted by default for the API."""
+    def scope_objs(self):
+      """List of scopes (as OAuth2Scopes) accepted by default for the API."""
       return self.__scopes
+
+    @property
+    def scopes(self):
+      """List of scopes (as strings) accepted by default for the API."""
+      if self.scope_objs is not None:
+        return [_s.scope for _s in self.scope_objs]
 
     @property
     def allowed_client_ids(self):
@@ -1053,7 +1070,7 @@ class _MethodInfo(object):
     self.__name = name
     self.__path = path
     self.__http_method = http_method
-    self.__scopes = scopes
+    self.__scopes = users_id_token.OAuth2Scope.convert_list(scopes)
     self.__audiences = audiences
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
@@ -1120,9 +1137,15 @@ class _MethodInfo(object):
     return self.__http_method
 
   @property
-  def scopes(self):
-    """List of scopes for the API method."""
+  def scope_objs(self):
+    """List of scopes (as OAuth2Scopes) accepted for the API method."""
     return self.__scopes
+
+  @property
+  def scopes(self):
+    """List of scopes (as strings) accepted for the API method."""
+    if self.scope_objs is not None:
+      return [_s.scope for _s in self.scope_objs]
 
   @property
   def audiences(self):
@@ -1287,7 +1310,7 @@ def method(request_message=message_types.VoidMessage,
     invoke_remote.__name__ = invoke_remote.method_info.name
     return invoke_remote
 
-  endpoints_util.check_list_type(scopes, basestring, 'scopes')
+  endpoints_util.check_list_type(scopes, (basestring, users_id_token.OAuth2Scope), 'scopes')
   endpoints_util.check_list_type(allowed_client_ids, basestring,
                                  'allowed_client_ids')
   _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')

@@ -20,6 +20,7 @@ import unittest
 
 import endpoints.api_config as api_config
 import endpoints.api_exceptions as api_exceptions
+import endpoints.users_id_token as users_id_token
 
 from protorpc import message_types
 from protorpc import messages
@@ -388,6 +389,89 @@ class DiscoveryMultiClassGeneratorTest(BaseDiscoveryGeneratorTest):
       self.generator.get_discovery_doc([V1Service, V1ServiceCont])
     self.assertEqual(catcher.exception.message[:len(error)], error)
 
+
+class DiscoveryScopeGeneratorTest(BaseDiscoveryGeneratorTest):
+
+  def testDefaultScope(self):
+    SCOPE = 'https://www.googleapis.com/auth/easyokrs'
+    SCOPE_DESCRIPTION = 'Access your EasyOKRs data'
+
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1)
+    )
+
+    class IataParam(messages.Message):
+        iata = messages.StringField(1)
+
+    class Airport(messages.Message):
+        iata = messages.StringField(1, required=True)
+        name = messages.StringField(2, required=True)
+
+    @api_config.api(
+        name='iata', version='v1',
+        auth_level=api_config.AUTH_LEVEL.REQUIRED,
+        allowed_client_ids=users_id_token.SKIP_CLIENT_ID_CHECK)
+    class IataApi(remote.Service):
+        @api_config.method(
+            IATA_RESOURCE,
+            Airport,
+            path='airport/{iata}',
+            http_method='GET',
+            name='get_airport')
+        def get_airport(self, request):
+            return Airport(iata=request.iata, name='irrelevant')
+
+    doc = self.generator.get_discovery_doc([IataApi])
+    auth = doc['auth']
+    assert auth == {
+        'oauth2': {
+            'scopes': {
+                'https://www.googleapis.com/auth/userinfo.email': {
+                    'description': 'View your email address'
+                }
+            }
+        }
+    }
+
+  def testCustomScope(self):
+    SCOPE = users_id_token.OAuth2Scope(scope='https://www.googleapis.com/auth/santa', description='Access your letter to Santa')
+
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1)
+    )
+
+    class IataParam(messages.Message):
+        iata = messages.StringField(1)
+
+    class Airport(messages.Message):
+        iata = messages.StringField(1, required=True)
+        name = messages.StringField(2, required=True)
+
+    @api_config.api(
+        name='iata', version='v1', scopes=[SCOPE],
+        auth_level=api_config.AUTH_LEVEL.REQUIRED,
+        allowed_client_ids=users_id_token.SKIP_CLIENT_ID_CHECK)
+    class IataApi(remote.Service):
+        @api_config.method(
+            IATA_RESOURCE,
+            Airport,
+            path='airport/{iata}',
+            http_method='GET',
+            name='get_airport')
+        def get_airport(self, request):
+            return Airport(iata=request.iata, name='irrelevant')
+
+    doc = self.generator.get_discovery_doc([IataApi])
+    auth = doc['auth']
+    assert auth == {
+        'oauth2': {
+            'scopes': {
+                SCOPE.scope: {
+                    'description': SCOPE.description
+                }
+            }
+        }
+    }
 
 
 if __name__ == '__main__':

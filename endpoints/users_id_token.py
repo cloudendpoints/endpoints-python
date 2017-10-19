@@ -28,6 +28,7 @@ import time
 import urllib
 
 from collections import Container as _Container, Iterable as _Iterable
+import attr
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
@@ -52,7 +53,8 @@ __all__ = ['get_current_user',
            'get_verified_jwt',
            'convert_jwks_uri',
            'InvalidGetUserCall',
-           'SKIP_CLIENT_ID_CHECK']
+           'SKIP_CLIENT_ID_CHECK',
+           'OAuth2Scope']
 
 SKIP_CLIENT_ID_CHECK = ['*']  # This needs to be a list, for comparisons.
 _CLOCK_SKEW_SECS = 300  # 5 minutes in seconds
@@ -765,3 +767,22 @@ def _listlike_guard(obj, name, iterable_only=False):
     logging.warning('{} passed as a string; should be list-like'.format(name))
     return (obj,)
   return obj
+
+
+@attr.s(frozen=True, slots=True)
+class OAuth2Scope(object):
+    scope = attr.ib(validator=attr.validators.instance_of(basestring))
+    description = attr.ib(validator=attr.validators.instance_of(basestring))
+
+    @classmethod
+    def convert_scope(cls, scope):
+        "Convert string scopes into OAuth2Scope objects."
+        if isinstance(scope, cls):
+            return scope
+        return cls(scope=scope, description=scope)
+
+    @classmethod
+    def convert_list(cls, values):
+        "Convert a list of scopes into a list of OAuth2Scope objects."
+        if values is not None:
+            return [cls.convert_scope(value) for value in values]
