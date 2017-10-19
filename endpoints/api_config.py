@@ -33,7 +33,6 @@ the API is returned.
 # pylint: disable=g-bad-name
 
 # pylint: disable=g-statement-before-imports,g-import-not-at-top
-import collections
 import json
 import logging
 import re
@@ -45,6 +44,8 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from protorpc import util
+
+import attr
 
 import resource_container
 import users_id_token
@@ -90,13 +91,13 @@ _INVALID_NAMESPACE_ERROR_TEMPLATE = (
     '%s. package_path is optional.')
 
 
-Issuer = collections.namedtuple('Issuer', ['issuer', 'jwks_uri'])
-LimitDefinition = collections.namedtuple('LimitDefinition', ['metric_name',
-                                                             'display_name',
-                                                             'default_limit'])
-Namespace = collections.namedtuple('Namespace', ['owner_domain',
-                                                 'owner_name',
-                                                 'package_path'])
+Issuer = attr.make_class('Issuer', ['issuer', 'jwks_uri'])
+LimitDefinition = attr.make_class('LimitDefinition', ['metric_name',
+                                                      'display_name',
+                                                      'default_limit'])
+Namespace = attr.make_class('Namespace', ['owner_domain',
+                                          'owner_name',
+                                          'package_path'])
 
 
 def _Enum(docstring, *names):
