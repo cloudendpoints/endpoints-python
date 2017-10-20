@@ -796,14 +796,14 @@ class DiscoveryGenerator(object):
         },
     }
 
-  def __standard_auth_descriptor(self):
+  def __standard_auth_descriptor(self, services):
+    scopes = {}
+    for service in services:
+      for scope in service.api_info.scope_objs:
+        scopes[scope.scope] = {'description': scope.description}
     return {
         'oauth2': {
-            'scopes': {
-                'https://www.googleapis.com/auth/userinfo.email': {
-                    'description': 'View your email address'
-                }
-            }
+            'scopes': scopes
         }
     }
 
@@ -857,7 +857,7 @@ class DiscoveryGenerator(object):
       descriptor['description'] = description
 
     descriptor['parameters'] = self.__standard_parameters_descriptor()
-    descriptor['auth'] = self.__standard_auth_descriptor()
+    descriptor['auth'] = self.__standard_auth_descriptor(services)
 
     # Add namespace information, if provided
     if merged_api_info.namespace:

@@ -875,5 +875,18 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_CERT_URI, self.cache)
     self.assertIsNone(parsed_token)
 
+class TestOAuth2Scope(unittest.TestCase):
+  def testScope(self):
+    sample = users_id_token.OAuth2Scope(scope='foo', description='bar')
+    converted = users_id_token.OAuth2Scope(scope='foo', description='foo')
+    self.assertEqual(sample.scope, 'foo')
+    self.assertEqual(sample.description, 'bar')
+
+    self.assertEqual(users_id_token.OAuth2Scope.convert_scope(sample), sample)
+    self.assertEqual(users_id_token.OAuth2Scope.convert_scope('foo'), converted)
+
+    self.assertIsNone(users_id_token.OAuth2Scope.convert_list(None))
+    self.assertEqual(users_id_token.OAuth2Scope.convert_list([sample, 'foo']), [sample, converted])
+
 if __name__ == '__main__':
   unittest.main()
