@@ -1391,6 +1391,58 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
     test_util.AssertDictEqual(expected_openapi, api, self)
 
+  def testRootUrl(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    base_path='/')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage, message_types.VoidMessage,
+                         path='noop', http_method='GET', name='noop')
+      def noop_get(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/',
+        'paths': {
+            '/root/v1/noop': {
+                'get': {
+                    'operationId': 'MyService_noopGet',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                },
+            },
+        },
+        'securityDefinitions': {
+            'google_id_token': {
+                'authorizationUrl': '',
+                'flow': 'implicit',
+                'type': 'oauth2',
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+        },
+    }
+
+    assert api == expected_openapi
+
   def testRepeatedResourceContainer(self):
     @api_config.api(name='root', hostname='example.appspot.com', version='v1',
                     description='Testing repeated params')

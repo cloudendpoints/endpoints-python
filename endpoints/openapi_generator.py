@@ -963,6 +963,9 @@ class OpenApiGenerator(object):
                 api_info.hostname)
     protocol = 'http' if ((hostname and hostname.startswith('localhost')) or
                           util.is_running_on_devserver()) else 'https'
+    base_path = api_info.base_path
+    if base_path != '/':
+        base_path = base_path.rstrip('/')
     defaults = {
         'swagger': '2.0',
         'info': {
@@ -973,7 +976,7 @@ class OpenApiGenerator(object):
         'consumes': ['application/json'],
         'produces': ['application/json'],
         'schemes': [protocol],
-        'basePath': api_info.base_path.rstrip('/'),
+        'basePath': base_path,
     }
 
     return defaults
