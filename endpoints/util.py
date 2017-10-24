@@ -188,7 +188,9 @@ def is_running_on_app_engine():
 
 
 def is_running_on_devserver():
-  return os.environ.get('SERVER_SOFTWARE', '').startswith('Development/')
+  server_software = os.environ.get('SERVER_SOFTWARE', '')
+  return (server_software.startswith('Development/') and
+    server_software != 'Development/1.0 (testbed)')
 
 
 def is_running_on_localhost():
