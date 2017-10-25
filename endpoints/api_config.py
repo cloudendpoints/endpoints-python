@@ -58,7 +58,6 @@ package = 'google.appengine.endpoints'
 
 
 __all__ = [
-    'API_EXPLORER_CLIENT_ID',
     'ApiAuth',
     'ApiConfigGenerator',
     'ApiFrontEndLimitRule',
@@ -74,7 +73,6 @@ __all__ = [
 ]
 
 
-API_EXPLORER_CLIENT_ID = '292824132082.apps.googleusercontent.com'
 EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 _EMAIL_SCOPE_DESCRIPTION = 'View your email address'
 _EMAIL_SCOPE_OBJ = users_id_token.OAuth2Scope(
@@ -605,7 +603,7 @@ class _ApiDecorator(object):
       else:
         scopes = users_id_token.OAuth2Scope.convert_list(scopes)
       if allowed_client_ids is None:
-        allowed_client_ids = [API_EXPLORER_CLIENT_ID]
+        allowed_client_ids = [users_id_token.API_EXPLORER_CLIENT_ID]
       if auth_level is None:
         auth_level = AUTH_LEVEL.NONE
       if api_key_required is None:

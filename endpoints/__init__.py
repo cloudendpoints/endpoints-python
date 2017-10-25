@@ -20,7 +20,6 @@
 # pylint: disable=wildcard-import
 
 from api_config import api
-from api_config import API_EXPLORER_CLIENT_ID
 from api_config import AUTH_LEVEL
 from api_config import EMAIL_SCOPE
 from api_config import Issuer
@@ -30,6 +29,7 @@ from apiserving import *
 from endpoints_dispatcher import *
 import message_parser
 from resource_container import ResourceContainer
+from users_id_token import API_EXPLORER_CLIENT_ID
 from users_id_token import get_current_user, get_verified_jwt, convert_jwks_uri
 from users_id_token import InvalidGetUserCall
 from users_id_token import SKIP_CLIENT_ID_CHECK
