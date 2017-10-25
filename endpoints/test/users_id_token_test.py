@@ -23,7 +23,7 @@ import unittest
 
 import endpoints.api_config as api_config
 
-import mox  # TODO: replace this with mock
+import mox
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -412,7 +412,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     self.assertOauthSucceeded(self._SAMPLE_ALLOWED_CLIENT_IDS[0])
 
   def testOauthExplorerClientId(self):
-    self.assertOauthFailed(users_id_token.API_EXPLORER_CLIENT_ID)
+    self.assertOauthFailed(api_config.API_EXPLORER_CLIENT_ID)
 
   def testOauthInvalidScope(self):
     self.assertOauthFailed(None)
@@ -653,8 +653,6 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     # will never be attempted
 
     self.mox.StubOutWithMock(users_id_token, '_is_local_dev')
-    # allow two calls
-    users_id_token._is_local_dev().AndReturn(False)
     users_id_token._is_local_dev().AndReturn(False)
 
     self.mox.StubOutWithMock(oauth, 'get_client_id')

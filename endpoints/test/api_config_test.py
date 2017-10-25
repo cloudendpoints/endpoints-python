@@ -22,7 +22,6 @@ import unittest
 import endpoints.api_config as api_config
 from endpoints.api_config import ApiConfigGenerator
 from endpoints.api_config import AUTH_LEVEL
-from endpoints.users_id_token import API_EXPLORER_CLIENT_ID
 import endpoints.api_exceptions as api_exceptions
 import mock
 from protorpc import message_types
@@ -279,7 +278,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_get',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.getContainer': {
@@ -348,7 +347,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_get_container',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
         },
         'root.entries.publishContainer': {
@@ -372,7 +371,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_publish_container',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.put': {
@@ -388,7 +387,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_put',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.process': {
@@ -404,7 +403,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_process',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.nested.collection.action': {
@@ -419,7 +418,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_nested_collection_action',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.roundtrip': {
@@ -436,7 +435,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.entries_roundtrip',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.publish': {
@@ -462,7 +461,7 @@ class ApiConfigTest(unittest.TestCase):
                  },
             'rosyMethod': 'MyService.entries_publish',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.items.put': {
@@ -488,7 +487,7 @@ class ApiConfigTest(unittest.TestCase):
                  },
             'rosyMethod': 'MyService.items_put',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             },
         'root.entries.items.putContainer': {
@@ -514,7 +513,7 @@ class ApiConfigTest(unittest.TestCase):
                 },
             'rosyMethod': 'MyService.items_put_container',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             }
         }
@@ -972,7 +971,7 @@ class ApiConfigTest(unittest.TestCase):
             },
         'rosyMethod': 'MySimpleService.get',
         'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-        'clientIds': [API_EXPLORER_CLIENT_ID],
+        'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
         'authLevel': 'NONE',
         }
 
@@ -1029,7 +1028,7 @@ class ApiConfigTest(unittest.TestCase):
       self.assertEqual(cls.api_info.hostname, 'example.appspot.com')
       self.assertIsNone(cls.api_info.audiences)
       self.assertEqual(cls.api_info.allowed_client_ids,
-                       [API_EXPLORER_CLIENT_ID])
+                       [api_config.API_EXPLORER_CLIENT_ID])
       self.assertEqual(cls.api_info.scopes, [api_config.EMAIL_SCOPE])
 
     # Get the config for the combination of all 3.
@@ -1168,7 +1167,7 @@ class ApiConfigTest(unittest.TestCase):
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service1.get',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1178,7 +1177,7 @@ class ApiConfigTest(unittest.TestCase):
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service2.list',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1304,7 +1303,7 @@ class ApiConfigTest(unittest.TestCase):
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service1.get',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1314,7 +1313,7 @@ class ApiConfigTest(unittest.TestCase):
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service2.get',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1371,7 +1370,7 @@ class ApiConfigTest(unittest.TestCase):
             'response': {'body': 'autoTemplate(backendResponse)',
                          'bodyName': 'resource'},
             'rosyMethod': 'Service1.get',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1389,7 +1388,7 @@ class ApiConfigTest(unittest.TestCase):
             'response': {'body': 'autoTemplate(backendResponse)',
                          'bodyName': 'resource'},
             'rosyMethod': 'Service2.get',
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
             'authLevel': 'NONE',
             },
@@ -1640,7 +1639,7 @@ class ApiConfigTest(unittest.TestCase):
         'response': {'body': 'empty'},
         'rosyMethod': 'MyService.items_update',
         'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-        'clientIds': [API_EXPLORER_CLIENT_ID],
+        'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
         'authLevel': 'NONE',
         }
 
@@ -1687,7 +1686,7 @@ class ApiConfigTest(unittest.TestCase):
             'response': {'body': 'empty'},
             'rosyMethod': 'MyService.items_get',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'NONE',
             }
         }
@@ -1723,7 +1722,7 @@ class ApiConfigTest(unittest.TestCase):
             'response': {'body': 'empty'},
             'rosyMethod': 'MyService.items_get',
             'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-            'clientIds': [API_EXPLORER_CLIENT_ID],
+            'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
             'authLevel': 'REQUIRED',
             }
         }
@@ -1990,7 +1989,7 @@ class ApiDecoratorTest(unittest.TestCase):
     self.assertEqual('Cool Service Name', api_info.canonical_name)
     self.assertIsNone(api_info.audiences)
     self.assertEqual([api_config.EMAIL_SCOPE], api_info.scopes)
-    self.assertEqual([API_EXPLORER_CLIENT_ID],
+    self.assertEqual([api_config.API_EXPLORER_CLIENT_ID],
                      api_info.allowed_client_ids)
     self.assertEqual(AUTH_LEVEL.NONE, api_info.auth_level)
     self.assertEqual(None, api_info.resource_name)
@@ -2307,7 +2306,7 @@ class MethodDecoratorTest(unittest.TestCase):
         'scopes', 'scopes',
         ['https://www.googleapis.com/auth/userinfo.email'])
     self.TryListAttributeVariations('allowed_client_ids', 'clientIds',
-                                    [API_EXPLORER_CLIENT_ID])
+                                    [api_config.API_EXPLORER_CLIENT_ID])
 
   def TryListAttributeVariations(self, attribute_name, config_name,
                                  default_expected):
@@ -2366,7 +2365,7 @@ class MethodDecoratorTest(unittest.TestCase):
               'response': {'body': 'empty'},
               'rosyMethod': 'AuthServiceImpl.baz',
               'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
-              'clientIds': [API_EXPLORER_CLIENT_ID],
+              'clientIds': [api_config.API_EXPLORER_CLIENT_ID],
               'authLevel': 'NONE'
               }
           }

@@ -49,17 +49,13 @@ except ImportError:
   _CRYPTO_LOADED = False
 
 
-__all__ = [
-    'API_EXPLORER_CLIENT_ID',
-    'convert_jwks_uri',
-    'get_current_user',
-    'get_verified_jwt',
-    'InvalidGetUserCall',
-    'OAuth2Scope',
-    'SKIP_CLIENT_ID_CHECK',
-]
+__all__ = ['get_current_user',
+           'get_verified_jwt',
+           'convert_jwks_uri',
+           'InvalidGetUserCall',
+           'SKIP_CLIENT_ID_CHECK',
+           'OAuth2Scope']
 
-API_EXPLORER_CLIENT_ID = '292824132082.apps.googleusercontent.com'
 SKIP_CLIENT_ID_CHECK = ['*']  # This needs to be a list, for comparisons.
 _CLOCK_SKEW_SECS = 300  # 5 minutes in seconds
 _MAX_TOKEN_LIFETIME_SECS = 86400  # 1 day in seconds
@@ -204,9 +200,6 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
   token = _get_token(request)
   if not token:
     return None
-
-  if allowed_client_ids and _is_local_dev():
-    allowed_client_ids = tuple(API_EXPLORER_CLIENT_ID, *allowed_client_ids)
 
   # When every item in the acceptable scopes list is
   # "https://www.googleapis.com/auth/userinfo.email", and there is a non-empty
