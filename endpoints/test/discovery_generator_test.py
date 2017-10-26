@@ -21,6 +21,7 @@ import unittest
 import endpoints.api_config as api_config
 import endpoints.api_exceptions as api_exceptions
 import endpoints.users_id_token as users_id_token
+import endpoints.types as endpoints_types
 
 from protorpc import message_types
 from protorpc import messages
@@ -393,9 +394,6 @@ class DiscoveryMultiClassGeneratorTest(BaseDiscoveryGeneratorTest):
 class DiscoveryScopeGeneratorTest(BaseDiscoveryGeneratorTest):
 
   def testDefaultScope(self):
-    SCOPE = 'https://www.googleapis.com/auth/easyokrs'
-    SCOPE_DESCRIPTION = 'Access your EasyOKRs data'
-
     IATA_RESOURCE = resource_container.ResourceContainer(
         iata=messages.StringField(1)
     )
@@ -434,7 +432,9 @@ class DiscoveryScopeGeneratorTest(BaseDiscoveryGeneratorTest):
     }
 
   def testCustomScope(self):
-    SCOPE = users_id_token.OAuth2Scope(scope='https://www.googleapis.com/auth/santa', description='Access your letter to Santa')
+    SCOPE = endpoints_types.OAuth2Scope(
+        scope='https://www.googleapis.com/auth/santa',
+        description='Access your letter to Santa')
 
     IATA_RESOURCE = resource_container.ResourceContainer(
         iata=messages.StringField(1)
