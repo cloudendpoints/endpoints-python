@@ -30,6 +30,8 @@ import urllib
 from collections import Container as _Container, Iterable as _Iterable
 import attr
 
+import constants
+
 from google.appengine.api import memcache
 from google.appengine.api import oauth
 from google.appengine.api import urlfetch
@@ -50,9 +52,9 @@ except ImportError:
 
 
 __all__ = [
+    'convert_jwks_uri',
     'get_current_user',
     'get_verified_jwt',
-    'convert_jwks_uri',
     'InvalidGetUserCall',
     'SKIP_CLIENT_ID_CHECK',
 ]
@@ -201,6 +203,9 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
   token = _get_token(request)
   if not token:
     return None
+
+  if allowed_client_ids and _is_local_dev():
+    allowed_client_ids = (constants.API_EXPLORER_CLIENT_ID,) + tuple(allowed_client_ids)
 
   # When every item in the acceptable scopes list is
   # "https://www.googleapis.com/auth/userinfo.email", and there is a non-empty
