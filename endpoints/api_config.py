@@ -50,6 +50,7 @@ import attr
 import resource_container
 import users_id_token
 import util as endpoints_util
+import types as endpoints_types
 
 from google.appengine.api import app_identity
 
@@ -77,7 +78,7 @@ __all__ = [
 API_EXPLORER_CLIENT_ID = '292824132082.apps.googleusercontent.com'
 EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 _EMAIL_SCOPE_DESCRIPTION = 'View your email address'
-_EMAIL_SCOPE_OBJ = users_id_token.OAuth2Scope(
+_EMAIL_SCOPE_OBJ = endpoints_types.OAuth2Scope(
     scope=EMAIL_SCOPE, description=_EMAIL_SCOPE_DESCRIPTION)
 _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'
 
@@ -297,7 +298,7 @@ class _ApiInfo(object):
     self.__resource_name = resource_name
     self.__path = path
     self.__audiences = audiences
-    self.__scopes = users_id_token.OAuth2Scope.convert_list(scopes)
+    self.__scopes = endpoints_types.OAuth2Scope.convert_list(scopes)
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
     self.__api_key_required = api_key_required
@@ -571,7 +572,7 @@ class _ApiDecorator(object):
       _CheckType(version, basestring, 'version', allow_none=False)
       _CheckType(description, basestring, 'description')
       _CheckType(hostname, basestring, 'hostname')
-      endpoints_util.check_list_type(scopes, (basestring, users_id_token.OAuth2Scope), 'scopes')
+      endpoints_util.check_list_type(scopes, (basestring, endpoints_types.OAuth2Scope), 'scopes')
       endpoints_util.check_list_type(allowed_client_ids, basestring,
                                      'allowed_client_ids')
       _CheckType(canonical_name, basestring, 'canonical_name')
@@ -603,7 +604,7 @@ class _ApiDecorator(object):
       if scopes is None:
         scopes = [_EMAIL_SCOPE_OBJ]
       else:
-        scopes = users_id_token.OAuth2Scope.convert_list(scopes)
+        scopes = endpoints_types.OAuth2Scope.convert_list(scopes)
       if allowed_client_ids is None:
         allowed_client_ids = [API_EXPLORER_CLIENT_ID]
       if auth_level is None:
@@ -1071,7 +1072,7 @@ class _MethodInfo(object):
     self.__name = name
     self.__path = path
     self.__http_method = http_method
-    self.__scopes = users_id_token.OAuth2Scope.convert_list(scopes)
+    self.__scopes = endpoints_types.OAuth2Scope.convert_list(scopes)
     self.__audiences = audiences
     self.__allowed_client_ids = allowed_client_ids
     self.__auth_level = auth_level
@@ -1311,7 +1312,7 @@ def method(request_message=message_types.VoidMessage,
     invoke_remote.__name__ = invoke_remote.method_info.name
     return invoke_remote
 
-  endpoints_util.check_list_type(scopes, (basestring, users_id_token.OAuth2Scope), 'scopes')
+  endpoints_util.check_list_type(scopes, (basestring, endpoints_types.OAuth2Scope), 'scopes')
   endpoints_util.check_list_type(allowed_client_ids, basestring,
                                  'allowed_client_ids')
   _CheckEnum(auth_level, AUTH_LEVEL, 'auth_level')
