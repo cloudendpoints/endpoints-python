@@ -473,6 +473,36 @@ class DiscoveryScopeGeneratorTest(BaseDiscoveryGeneratorTest):
         }
     }
 
+class DiscoveryUrlGeneratorTest(BaseDiscoveryGeneratorTest):
+
+  def testUrlGeneration(self):
+    IATA_RESOURCE = resource_container.ResourceContainer(
+        iata=messages.StringField(1)
+    )
+
+    class IataParam(messages.Message):
+        iata = messages.StringField(1)
+
+    class Airport(messages.Message):
+        iata = messages.StringField(1, required=True)
+        name = messages.StringField(2, required=True)
+
+    @api_config.api(name='iata', version='v1')
+    class IataApi(remote.Service):
+        @api_config.method(
+            IATA_RESOURCE,
+            Airport,
+            path='airport/{iata}',
+            http_method='GET',
+            name='get_airport')
+        def get_airport(self, request):
+            return Airport(iata=request.iata, name='irrelevant')
+
+    doc = self.generator.get_discovery_doc([IataApi], hostname='iata.appspot.com')
+    assert doc['baseUrl'] == 'https://iata.appspot.com/_ah/api/iata/v1/'
+    assert doc['rootUrl'] == 'https://iata.appspot.com/_ah/api/'
+    assert doc['servicePath'] == 'iata/v1/'
+
 
 if __name__ == '__main__':
   unittest.main()
