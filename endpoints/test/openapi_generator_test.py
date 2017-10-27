@@ -1944,5 +1944,196 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
     test_util.AssertDictEqual(expected_openapi, api, self)
 
 
+MULTI_ISSUERS = {
+    'google_id_token': api_config.Issuer(
+        'https://accounts.google.com',
+        'https://www.googleapis.com/oauth2/v3/certs'),
+    'auth0': api_config.Issuer(
+        'https://test.auth0.com/authorize',
+        'https://test.auth0.com/.wellknown/jwks.json')
+}
+
+
+class MultiIssuerAuthTest(BaseOpenApiGeneratorTest):
+
+  def testMultiIssuers(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com',
+                    version='v1', issuers=MULTI_ISSUERS)
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage,
+                         message_types.VoidMessage, path='entries',
+                         http_method='POST', name='entries',
+                         audiences={'auth0': ['one'], 'google_id_token': ['two']})
+      def entries_post(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/entries': {
+                'post': {
+                    'operationId': 'MyService_entriesPost',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    "security": [
+                        {
+                            "auth0-f97c5d29": []
+                        },
+                        {
+                            "google_id_token-b8a9f715": []
+                        },
+                    ],
+                },
+            },
+        },
+        "securityDefinitions": {
+            "auth0": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "auth0-f97c5d29": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "one",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "google_id_token": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+            "google_id_token-b8a9f715": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "two",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
+  def testMultiIssuersWithApiKey(self):
+
+    @api_config.api(name='root', hostname='example.appspot.com',
+                    version='v1', issuers=MULTI_ISSUERS)
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(message_types.VoidMessage,
+                         message_types.VoidMessage, path='entries',
+                         http_method='POST', name='entries',
+                         api_key_required=True,
+                         audiences={'auth0': ['one'], 'google_id_token': ['two']})
+      def entries_post(self, unused_request):
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    expected_openapi = {
+        'swagger': '2.0',
+        'info': {
+            'title': 'root',
+            'description': 'Describes MyService.',
+            'version': 'v1',
+        },
+        'host': 'example.appspot.com',
+        'consumes': ['application/json'],
+        'produces': ['application/json'],
+        'schemes': ['https'],
+        'basePath': '/_ah/api',
+        'paths': {
+            '/root/v1/entries': {
+                'post': {
+                    'operationId': 'MyService_entriesPost',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'A successful response',
+                        },
+                    },
+                    "security": [
+                        {
+                            "api_key": [],
+                            "auth0-f97c5d29": []
+                        },
+                        {
+                            "api_key": [],
+                            "google_id_token-b8a9f715": []
+                        },
+                    ],
+                },
+            },
+        },
+        "securityDefinitions": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "key",
+                "in": "query",
+            },
+            "auth0": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "auth0-f97c5d29": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "one",
+                "x-google-issuer": "https://test.auth0.com/authorize",
+                "x-google-jwks_uri": "https://test.auth0.com/.wellknown/jwks.json",
+            },
+            "google_id_token": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+            "google_id_token-b8a9f715": {
+                "authorizationUrl": "",
+                "flow": "implicit",
+                "type": "oauth2",
+                "x-google-audiences": "two",
+                "x-google-issuer": "https://accounts.google.com",
+                "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+            },
+        },
+    }
+
+    test_util.AssertDictEqual(expected_openapi, api, self)
+
+
 if __name__ == '__main__':
   unittest.main()
