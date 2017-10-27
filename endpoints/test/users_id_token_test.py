@@ -31,6 +31,7 @@ from protorpc import remote
 
 import test_util
 import endpoints.users_id_token as users_id_token
+import endpoints.constants as constants
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
@@ -412,7 +413,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     self.assertOauthSucceeded(self._SAMPLE_ALLOWED_CLIENT_IDS[0])
 
   def testOauthExplorerClientId(self):
-    self.assertOauthFailed(api_config.API_EXPLORER_CLIENT_ID)
+    self.assertOauthFailed(constants.API_EXPLORER_CLIENT_ID)
 
   def testOauthInvalidScope(self):
     self.assertOauthFailed(None)
@@ -615,7 +616,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN,
         users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
-        self._SAMPLE_ALLOWED_CLIENT_IDS,
+        (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
         memcache,
       )
@@ -660,7 +661,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     os.environ['HTTP_AUTHORIZATION'] = 'Bearer ' + dummy_token
     api_instance.method(message_types.VoidMessage())
     self.assertEqual(os.getenv('ENDPOINTS_USE_OAUTH_SCOPE'), dummy_scope)
-    mock_local.assert_called_once_with()
+    mock_local.assert_has_calls([mock.call(), mock.call()])
     mock_get_client_id.assert_called_once_with(dummy_scope)
 
   @mock.patch.object(users_id_token, '_get_id_token_user')
@@ -690,7 +691,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN,
         users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
-        self._SAMPLE_ALLOWED_CLIENT_IDS,
+        (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
         memcache)
     mock_get_id_token_user.reset_mock()
@@ -706,7 +707,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN,
         users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
-        self._SAMPLE_ALLOWED_CLIENT_IDS,
+        (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
         memcache)
 
