@@ -747,30 +747,34 @@ class OpenApiGenerator(object):
 
   def __security_descriptor(self, audiences, security_definitions,
                             api_key_required=False):
-    if not audiences and not api_key_required:
-      return []
+    if not audiences:
+      if not api_key_required:
+        # no security
+        return []
+      # api key only
+      return [{_API_KEY: []}]
 
-    if audiences and isinstance(audiences, (tuple, list)):
+    if isinstance(audiences, (tuple, list)):
       audiences = {_DEFAULT_SECURITY_DEFINITION: audiences}
 
-    result_dict = {}
-    if audiences:
-      for issuer, issuer_audiences in audiences.items():
-        if issuer not in security_definitions:
-          raise TypeError('Missing issuer {}'.format(issuer))
-        audience_string = ','.join(sorted(issuer_audiences))
-        audience_hash = hashfunc(audience_string)
-        full_definition_key = '-'.join([issuer, audience_hash])
-        result_dict[full_definition_key] = []
-        if full_definition_key not in security_definitions:
-          new_definition = dict(security_definitions[issuer])
-          new_definition['x-google-audiences'] = audience_string
-          security_definitions[full_definition_key] = new_definition
+    results = []
+    for issuer, issuer_audiences in audiences.items():
+      result_dict = {}
+      if issuer not in security_definitions:
+        raise TypeError('Missing issuer {}'.format(issuer))
+      audience_string = ','.join(sorted(issuer_audiences))
+      audience_hash = hashfunc(audience_string)
+      full_definition_key = '-'.join([issuer, audience_hash])
+      result_dict[full_definition_key] = []
+      if api_key_required:
+        result_dict[_API_KEY] = []
+      if full_definition_key not in security_definitions:
+        new_definition = dict(security_definitions[issuer])
+        new_definition['x-google-audiences'] = audience_string
+        security_definitions[full_definition_key] = new_definition
+      results.append(result_dict)
 
-    if api_key_required:
-      result_dict[_API_KEY] = []
-
-    return [result_dict]
+    return results
 
   def __security_definitions_descriptor(self, issuers):
     """Create a descriptor for the security definitions.
