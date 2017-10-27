@@ -58,6 +58,8 @@ class LogMessagesRequest(messages.Message):
       critical = logging.CRITICAL
 
     level = messages.EnumField(Level, 1)
+    # message value is silently ignored if it's a bytestring
+    # make sure it is a unicode string!
     message = messages.StringField(2, required=True)
 
   messages = messages.MessageField(LogMessage, 1, repeated=True)

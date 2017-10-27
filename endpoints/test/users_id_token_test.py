@@ -21,9 +21,10 @@ import string
 import time
 import unittest
 
+import mock
+
 import endpoints.api_config as api_config
 
-import mox
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -162,10 +163,8 @@ class UsersIdTokenTestBase(unittest.TestCase):
     self._saved_environ = os.environ.copy()
     if 'AUTH_DOMAIN' not in os.environ:
       os.environ['AUTH_DOMAIN'] = 'gmail.com'
-    self.mox = mox.Mox()
 
   def tearDown(self):
-    self.mox.UnsetStubs()
     os.environ = self._saved_environ
 
   def GetSampleBody(self):
@@ -223,9 +222,9 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
       result = users_id_token._get_cert_expiration_time(headers)
       self.assertEqual(expected_result, result)
 
-  def testCertCacheControl(self):
+  @mock.patch.object(urlfetch, 'fetch')
+  def testCertCacheControl(self, mock_fetch):
     """Test that cache control headers are respected."""
-    self.mox.StubOutWithMock(urlfetch, 'fetch')
     tests = [({'Cache-Control': 'max-age=3600', 'Age': '1200'}, True),
              ({'Cache-Control': 'max-age=100', 'Age': '100'}, False),
              ({}, False)]
@@ -236,13 +235,12 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
         content = json.dumps(self._SAMPLE_OAUTH_TOKEN_INFO)
         headers = test_headers
 
-      urlfetch.fetch(mox.IsA(basestring)).AndReturn(DummyResponse())
+      mock_fetch.return_value = DummyResponse()
       cache = TestCache()
 
-      self.mox.ReplayAll()
       users_id_token._get_cached_certs('some_uri', cache)
-      self.mox.VerifyAll()
-      self.mox.ResetAll()
+      mock_fetch.assert_called_once_with('some_uri')
+      mock_fetch.reset_mock()
 
       self.assertEqual(value_set, cache.value_was_set)
 
@@ -370,10 +368,10 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
         parsed_token, users_id_token._ISSUERS, [], self._SAMPLE_ALLOWED_CLIENT_IDS)
     self.assertEqual(False, result)
 
-  def AttemptOauth(self, client_id, allowed_client_ids=None):
+  @mock.patch.object(oauth, 'get_client_id')
+  def AttemptOauth(self, client_id, mock_get_client_id, allowed_client_ids=None):
     if allowed_client_ids is None:
       allowed_client_ids = self._SAMPLE_ALLOWED_CLIENT_IDS
-    self.mox.StubOutWithMock(oauth, 'get_client_id')
     # We have four cases:
     #  * no client ID is specified, so we raise for every scope.
     #  * the given client ID is in the whitelist or there is no
@@ -381,20 +379,22 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     #  * we have a client ID not on the whitelist, so we need a
     #    mock call for every scope.
     if client_id is None:
+      mock_get_client_id.side_effect = oauth.Error
+    else:
+      mock_get_client_id.return_value = client_id
+    users_id_token._set_bearer_user_vars(allowed_client_ids,
+                                         self._SAMPLE_OAUTH_SCOPES)
+    if client_id is None:
       for scope in self._SAMPLE_OAUTH_SCOPES:
-        oauth.get_client_id(scope).AndRaise(oauth.Error)
+        mock_get_client_id.assert_called_with(scope)
     elif (list(allowed_client_ids) == users_id_token.SKIP_CLIENT_ID_CHECK or
           client_id in allowed_client_ids):
       scope = self._SAMPLE_OAUTH_SCOPES[0]
-      oauth.get_client_id(scope).AndReturn(client_id)
+      mock_get_client_id.assert_called_with(scope)
     else:
       for scope in self._SAMPLE_OAUTH_SCOPES:
-        oauth.get_client_id(scope).AndReturn(client_id)
+        mock_get_client_id.assert_called_with(scope)
 
-    self.mox.ReplayAll()
-    users_id_token._set_bearer_user_vars(allowed_client_ids,
-                                         self._SAMPLE_OAUTH_SCOPES)
-    self.mox.VerifyAll()
 
   def assertOauthSucceeded(self, client_id):
     self.AttemptOauth(client_id)
@@ -432,14 +432,14 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
       status_code = 200
       content = json.dumps(token)
 
-    self.mox.StubOutWithMock(urlfetch, 'fetch')
-    urlfetch.fetch(mox.IsA(basestring)).AndReturn(DummyResponse())
-
-    self.mox.ReplayAll()
-    users_id_token._set_bearer_user_vars_local('unused_token',
-                                               self._SAMPLE_ALLOWED_CLIENT_IDS,
-                                               self._SAMPLE_OAUTH_SCOPES)
-    self.mox.VerifyAll()
+    expected_uri = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=unused_token'
+    with mock.patch.object(urlfetch, 'fetch') as mock_fetch:
+      mock_fetch.return_value = DummyResponse()
+      users_id_token._set_bearer_user_vars_local(
+          'unused_token',
+          self._SAMPLE_ALLOWED_CLIENT_IDS,
+          self._SAMPLE_OAUTH_SCOPES)
+      mock_fetch.assert_called_once_with(expected_uri)
 
   def testOauthLocal(self):
     self.AttemptOauthLocal()
@@ -482,15 +482,14 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     self.assertEqual(user.auth_domain(), 'gmail.com')
     self.assertIsNone(user.user_id())
 
-  def testGetCurrentUserOauth(self):
-    self.mox.StubOutWithMock(oauth, 'get_current_user')
-    oauth.get_current_user('scope').AndReturn(users.User('test@gmail.com'))
-    self.mox.ReplayAll()
+  @mock.patch.object(oauth, 'get_current_user')
+  def testGetCurrentUserOauth(self, mock_get_current_user):
+    mock_get_current_user.return_value = users.User('test@gmail.com')
 
     os.environ['ENDPOINTS_USE_OAUTH_SCOPE'] = 'scope'
     user = users_id_token.get_current_user()
     self.assertEqual(user.email(), 'test@gmail.com')
-    self.mox.VerifyAll()
+    mock_get_current_user.assert_called_once_with('scope')
 
   def testGetTokenQueryParamOauthHeader(self):
     os.environ['HTTP_AUTHORIZATION'] = 'OAuth ' + self._SAMPLE_TOKEN
@@ -514,36 +513,36 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     self.assertIsNone(token)
 
   def testGetTokenQueryParamBearer(self):
-    request = self.mox.CreateMock(messages.Message)
-    request.get_unrecognized_field_info('bearer_token').AndReturn(
-        (self._SAMPLE_TOKEN, messages.Variant.STRING))
+    request = mock.MagicMock(messages.Message)
+    request.get_unrecognized_field_info.return_value = (self._SAMPLE_TOKEN, messages.Variant.STRING)
 
-    self.mox.ReplayAll()
     token = users_id_token._get_token(request)
-    self.mox.VerifyAll()
+    request.get_unrecognized_field_info.assert_called_once_with('bearer_token')
     self.assertEqual(token, self._SAMPLE_TOKEN)
 
   def testGetTokenQueryParamAccess(self):
-    request = self.mox.CreateMock(messages.Message)
-    request.get_unrecognized_field_info('bearer_token').AndReturn(
-        (None, None))
-    request.get_unrecognized_field_info('access_token').AndReturn(
-        (self._SAMPLE_TOKEN, messages.Variant.STRING))
+    request = mock.MagicMock(messages.Message)
+    request.get_unrecognized_field_info.side_effect = [
+        (None, None),  # bearer_token
+        (self._SAMPLE_TOKEN, messages.Variant.STRING),  # access_token
+    ]
 
-    self.mox.ReplayAll()
     token = users_id_token._get_token(request)
-    self.mox.VerifyAll()
     self.assertEqual(token, self._SAMPLE_TOKEN)
+    request.get_unrecognized_field_info.assert_has_calls(
+        [mock.call('bearer_token'), mock.call('access_token')])
 
   def testGetTokenNone(self):
-    request = self.mox.CreateMock(messages.Message)
-    request.get_unrecognized_field_info('bearer_token').AndReturn((None, None))
-    request.get_unrecognized_field_info('access_token').AndReturn((None, None))
+    request = mock.MagicMock(messages.Message)
+    request.get_unrecognized_field_info.side_effect = [
+        (None, None),  # bearer_token
+        (None, None),  # access_token
+    ]
 
-    self.mox.ReplayAll()
     token = users_id_token._get_token(request)
-    self.mox.VerifyAll()
-    self.assertIsNone(token)
+    assert token is None
+    request.get_unrecognized_field_info.assert_has_calls(
+        [mock.call('bearer_token'), mock.call('access_token')])
 
 
 class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
@@ -602,24 +601,24 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.assertEqual('', os.environ.get('ENDPOINTS_AUTH_DOMAIN'))
 
   def VerifyIdToken(self, cls, *args):
-    self.mox.StubOutWithMock(time, 'time')
-    self.mox.StubOutWithMock(users_id_token, '_get_id_token_user')
-    time.time().AndReturn(1001)
-    users_id_token._get_id_token_user(
+    with mock.patch.object(time, 'time') as mock_time,\
+          mock.patch.object(users_id_token, '_get_id_token_user') as mock_get:
+      mock_time.return_value = 1001
+      mock_get.return_value = users.User('test@gmail.com')
+      os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)
+      if args:
+        cls.method(*args)
+      else:
+        users_id_token._maybe_set_current_user_vars(cls.method)
+      mock_time.assert_called_once_with()
+      mock_get.assert_called_once_with(
         self._SAMPLE_TOKEN,
         users_id_token._ISSUERS,
         self._SAMPLE_AUDIENCES,
         self._SAMPLE_ALLOWED_CLIENT_IDS,
-        1001, memcache).AndReturn(users.User('test@gmail.com'))
-    self.mox.ReplayAll()
-
-    os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)
-    if args:
-      cls.method(*args)
-    else:
-      users_id_token._maybe_set_current_user_vars(cls.method)
-    self.assertEqual(os.environ.get('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
-    self.mox.VerifyAll()
+        1001,
+        memcache,
+      )
 
   def testMaybeSetVarsIdTokenApiAnnotation(self):
     self.VerifyIdToken(self.TestApiAnnotatedAtApi())
@@ -631,7 +630,9 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.VerifyIdToken(self.TestApiAnnotatedAtApi(),
                        message_types.VoidMessage())
 
-  def testMaybeSetVarsWithActualRequestAccessToken(self):
+  @mock.patch.object(oauth, 'get_client_id')
+  @mock.patch.object(users_id_token, '_is_local_dev')
+  def testMaybeSetVarsWithActualRequestAccessToken(self, mock_local, mock_get_client_id):
     dummy_scope = 'scope'
     dummy_token = 'dummy_token'
     dummy_email = 'test@gmail.com'
@@ -652,31 +653,22 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     # because the scopes used will not be [EMAIL_SCOPE] hence _get_id_token_user
     # will never be attempted
 
-    self.mox.StubOutWithMock(users_id_token, '_is_local_dev')
-    users_id_token._is_local_dev().AndReturn(False)
-
-    self.mox.StubOutWithMock(oauth, 'get_client_id')
-    oauth.get_client_id(dummy_scope).AndReturn(dummy_client_id)
-
-    self.mox.ReplayAll()
+    mock_local.return_value = False
+    mock_get_client_id.return_value = dummy_client_id
 
     api_instance = TestApiScopes()
     os.environ['HTTP_AUTHORIZATION'] = 'Bearer ' + dummy_token
     api_instance.method(message_types.VoidMessage())
     self.assertEqual(os.getenv('ENDPOINTS_USE_OAUTH_SCOPE'), dummy_scope)
-    self.mox.VerifyAll()
+    mock_local.assert_called_once_with()
+    mock_get_client_id.assert_called_once_with(dummy_scope)
 
-  def testMaybeSetVarsFail(self):
-    self.mox.StubOutWithMock(time, 'time')
-    time.time().MultipleTimes().AndReturn(1001)
-    self.mox.StubOutWithMock(users_id_token, '_get_id_token_user')
-    users_id_token._get_id_token_user(
-        self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
-        self._SAMPLE_AUDIENCES,
-        self._SAMPLE_ALLOWED_CLIENT_IDS,
-        1001, memcache).MultipleTimes().AndReturn(users.User('test@gmail.com'))
-    self.mox.ReplayAll()
+  @mock.patch.object(users_id_token, '_get_id_token_user')
+  @mock.patch.object(time, 'time')
+  def testMaybeSetVarsFail(self, mock_time, mock_get_id_token_user):
+    mock_time.return_value = 1001
+    mock_get_id_token_user.return_value = users.User('test@gmail.com')
+
     # This token should correctly result in _get_id_token_user being called
     os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)
     api_instance = self.TestApiAnnotatedAtApi()
@@ -694,6 +686,14 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     os.environ.pop('ENDPOINTS_AUTH_DOMAIN')
     users_id_token._maybe_set_current_user_vars(api_instance.method)
     self.assertEqual(os.getenv('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
+    mock_get_id_token_user.assert_called_once_with(
+        self._SAMPLE_TOKEN,
+        users_id_token._ISSUERS,
+        self._SAMPLE_AUDIENCES,
+        self._SAMPLE_ALLOWED_CLIENT_IDS,
+        1001,
+        memcache)
+    mock_get_id_token_user.reset_mock()
 
     # Test that it works using the api info from the API
     os.environ.pop('ENDPOINTS_AUTH_EMAIL')
@@ -701,7 +701,14 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     users_id_token._maybe_set_current_user_vars(api_instance.method.im_func,
                                                 api_info=api_instance.api_info)
     self.assertEqual(os.getenv('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
-    self.mox.VerifyAll()
+
+    mock_get_id_token_user.assert_called_once_with(
+        self._SAMPLE_TOKEN,
+        users_id_token._ISSUERS,
+        self._SAMPLE_AUDIENCES,
+        self._SAMPLE_ALLOWED_CLIENT_IDS,
+        1001,
+        memcache)
 
 class JwtTest(UsersIdTokenTestBase):
   _SAMPLE_TOKEN = ('eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJlbmRwb2ludHMtand0LXNpZ25lckBlbmRwb2ludHMtand0LWRlbW8tMS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsImlhdCI6MTUwMDQ5Nzg4MSwiZXhwIjoxNTAwNDk4MTgxLCJhdWQiOiJlbmRwb2ludHMtZGVtbyIsInN1YiI6ImVuZHBvaW50cy1qd3Qtc2lnbmVyQGVuZHBvaW50cy1qd3QtZGVtby0xLmlhbS5nc2VydmljZWFjY291bnQuY29tIn0.MbNgphWQgQtBm0L5PzkLuQHN00HgSDigrk0b81PuT3LFzvP9AER3aJ3SbZMeLxrPaq46ghrJCOuhwglQjweks0Eyn0O8BJztLnr54_3oDMjufvrh3pX8omoXwyYJ4DWlv0Gp3VICTcEDg-pZQXa6VvHTWK5KFgWsoJIkmgP2OxjaTBtLrBrXZthIlhSj7OGx_FSdp69PJw4n95aahkCfAT7GGBUgyFRtGUBlYwSyo8bWBt9M-KqmL_tiUQ_FW-7hD4Sc1pIs3r2xy0_w2Do4Bcfu-stdXf9mckMFPynC-5joG_JTeh8-A0b64V6lOyg5EfD8K_wv4GCArz3XcC_k0Q')
@@ -775,13 +782,12 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
         self._SAMPLE_ISSUERS, self._SAMPLE_AUDIENCES,
         self._SAMPLE_CERT_URI, self.cache)
-    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+    assert parsed_token == self._SAMPLE_TOKEN_INFO
 
-  def _setupProviderHandlingMocks(self, **get_token_kwargs):
-    self.mox.StubOutWithMock(time, 'time')
-    time.time().AndReturn(self._SAMPLE_TIME_NOW)
-    self.mox.StubOutWithMock(users_id_token, '_get_token')
-    users_id_token._get_token(**get_token_kwargs).AndReturn(self._SAMPLE_TOKEN)
+  def _setupProviderHandlingMocks(self, mock_time, mock_get_token, mock_parse_verify, **get_token_kwargs):
+    mock_time.return_value = self._SAMPLE_TIME_NOW
+    mock_get_token.return_value = self._SAMPLE_TOKEN
+    # users_id_token._get_token(**get_token_kwargs).AndReturn(self._SAMPLE_TOKEN)
     providers = [{
       'issuer': self._SAMPLE_ISSUERS[0][::-1],
       'cert_uri': self._SAMPLE_CERT_URI[0][::-1],
@@ -789,50 +795,59 @@ class JwtTest(UsersIdTokenTestBase):
       'issuer': self._SAMPLE_ISSUERS[0],
       'cert_uri': self._SAMPLE_CERT_URI[0],
     }]
-    self.mox.StubOutWithMock(users_id_token, '_parse_and_verify_jwt')
-    users_id_token._parse_and_verify_jwt(
-        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
-        (providers[0]['issuer'],), self._SAMPLE_AUDIENCES,
-        providers[0]['cert_uri'], self.cache).AndReturn(None)
-    users_id_token._parse_and_verify_jwt(
-        self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
-        (providers[1]['issuer'],), self._SAMPLE_AUDIENCES,
-        providers[1]['cert_uri'], self.cache).AndReturn(self._SAMPLE_TOKEN_INFO)
-    return providers
+    mock_parse_verify.side_effect = [None, self._SAMPLE_TOKEN_INFO]
+    expected_verify_calls = [
+        mock.call(self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+                  (providers[0]['issuer'],), self._SAMPLE_AUDIENCES,
+                  providers[0]['cert_uri'], self.cache),
+        mock.call(self._SAMPLE_TOKEN, self._SAMPLE_TIME_NOW,
+                  (providers[1]['issuer'],), self._SAMPLE_AUDIENCES,
+                  providers[1]['cert_uri'], self.cache),
+    ]
+    return providers, expected_verify_calls
 
-  def testProviderHandlingWithBoth(self):
+  @mock.patch.object(users_id_token, '_parse_and_verify_jwt')
+  @mock.patch.object(users_id_token, '_get_token')
+  @mock.patch.object(time, 'time')
+  def testProviderHandlingWithBoth(self, mock_time, mock_get_token, mock_parse_verify):
     mock_request = object()
-    providers = self._setupProviderHandlingMocks(
+    providers, expected_verify_calls = self._setupProviderHandlingMocks(
+        mock_time, mock_get_token, mock_parse_verify,
         request=mock_request,
         allowed_auth_schemes=('Bearer',), allowed_query_keys=('access_token',))
-    self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
         providers, self._SAMPLE_AUDIENCES, request=mock_request, cache=self.cache)
-    self.mox.VerifyAll()
-    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+    assert parsed_token == self._SAMPLE_TOKEN_INFO
+    mock_parse_verify.assert_has_calls(expected_verify_calls)
 
-  def testProviderHandlingWithHeader(self):
-    providers = self._setupProviderHandlingMocks(
+  @mock.patch.object(users_id_token, '_parse_and_verify_jwt')
+  @mock.patch.object(users_id_token, '_get_token')
+  @mock.patch.object(time, 'time')
+  def testProviderHandlingWithHeader(self, mock_time, mock_get_token, mock_parse_verify):
+    providers, expected_verify_calls = self._setupProviderHandlingMocks(
+        mock_time, mock_get_token, mock_parse_verify,
         request=None, allowed_auth_schemes=('Bearer',), allowed_query_keys=())
-    self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
         providers, self._SAMPLE_AUDIENCES,
         check_authorization_header=True, check_query_arg=False, cache=self.cache)
-    self.mox.VerifyAll()
-    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+    assert parsed_token == self._SAMPLE_TOKEN_INFO
+    mock_parse_verify.assert_has_calls(expected_verify_calls)
 
-  def testProviderHandlingWithQueryArg(self):
+  @mock.patch.object(users_id_token, '_parse_and_verify_jwt')
+  @mock.patch.object(users_id_token, '_get_token')
+  @mock.patch.object(time, 'time')
+  def testProviderHandlingWithQueryArg(self, mock_time, mock_get_token, mock_parse_verify):
     mock_request = object()
-    providers = self._setupProviderHandlingMocks(
+    providers, expected_verify_calls = self._setupProviderHandlingMocks(
+        mock_time, mock_get_token, mock_parse_verify,
         request=mock_request,
         allowed_auth_schemes=(), allowed_query_keys=('access_token',))
-    self.mox.ReplayAll()
     parsed_token = users_id_token.get_verified_jwt(
         providers, self._SAMPLE_AUDIENCES,
         check_authorization_header=False, check_query_arg=True,
         request=mock_request, cache=self.cache)
-    self.mox.VerifyAll()
-    self.assertEqual(parsed_token, self._SAMPLE_TOKEN_INFO)
+    assert parsed_token == self._SAMPLE_TOKEN_INFO
+    mock_parse_verify.assert_has_calls(expected_verify_calls)
 
   # Test failure states. The cryptography and issuing/expiration times
   # are tested above, since this function reuses

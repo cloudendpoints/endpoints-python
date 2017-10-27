@@ -31,7 +31,6 @@ import endpoints.api_backend_service as api_backend_service
 import endpoints.api_config as api_config
 import endpoints.api_exceptions as api_exceptions
 import endpoints.apiserving as apiserving
-import mox
 from protorpc import message_types
 from protorpc import messages
 from protorpc import protojson

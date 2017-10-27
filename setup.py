@@ -58,6 +58,6 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     scripts=['endpoints/endpointscfg.py'],
-    tests_require=['mox', 'protobuf', 'protorpc', 'pytest', 'webtest'],
+    tests_require=['mock', 'protobuf', 'protorpc', 'pytest', 'webtest'],
     install_requires=install_requires,
 )

@@ -17,10 +17,11 @@
 import logging
 import unittest
 
+import mock
+
 import endpoints.api_backend as api_backend
 import endpoints.api_backend_service as api_backend_service
 import endpoints.api_exceptions as api_exceptions
-import mox
 import test_util
 
 
@@ -103,10 +104,6 @@ class BackedServiceImplTest(unittest.TestCase):
   def setUp(self):
     self.service = api_backend_service.BackendServiceImpl(
         api_backend_service.ApiConfigRegistry(), '1')
-    self.mox = mox.Mox()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
 
   def testGetApiConfigsWithEmptyRequest(self):
     request = api_backend.GetApiConfigsRequest()
@@ -130,36 +127,43 @@ class BackedServiceImplTest(unittest.TestCase):
   # pylint: disable=g-bad-name
   def verifyLogLevels(self, levels):
     Level = api_backend.LogMessagesRequest.LogMessage.Level
-    message = 'Test message.'
+    message = u'Test message.'
     logger_name = api_backend_service.__name__
 
-    log = mox.MockObject(logging.Logger)
-    self.mox.StubOutWithMock(logging, 'getLogger')
-    logging.getLogger(logger_name).AndReturn(log)
+    with mock.patch('logging.getLogger') as mock_getLogger:
+      log = mock_getLogger.return_value
 
-    for level in levels:
-      if level is None:
-        level = 'info'
-      record = logging.LogRecord(name=logger_name,
-                                 level=getattr(logging, level.upper()),
-                                 pathname='', lineno='', msg=message,
-                                 args=None, exc_info=None)
-      log.handle(record)
-    self.mox.ReplayAll()
+      requestMessages = []
+      for level in levels:
+        if level:
+          requestMessage = api_backend.LogMessagesRequest.LogMessage(
+              level=getattr(Level, level), message=message)
+        else:
+          requestMessage = api_backend.LogMessagesRequest.LogMessage(
+              message=message)
+        requestMessages.append(requestMessage)
 
-    requestMessages = []
-    for level in levels:
-      if level:
-        requestMessage = api_backend.LogMessagesRequest.LogMessage(
-            level=getattr(Level, level), message=message)
-      else:
-        requestMessage = api_backend.LogMessagesRequest.LogMessage(
-            message=message)
-      requestMessages.append(requestMessage)
+      request = api_backend.LogMessagesRequest(messages=requestMessages)
+      self.service.logMessages(request)
 
-    request = api_backend.LogMessagesRequest(messages=requestMessages)
-    self.service.logMessages(request)
-    self.mox.VerifyAll()
+      mock_getLogger.assert_called_once_with(logger_name)
+      mock_calls = []
+      for i, level in enumerate(levels):
+        if level is None:
+          level = 'info'
+        levelno = getattr(logging, level.upper())
+        # We can't assert equality of LogRecords because that's not
+        # supported. So instead we pull out the actual LogRecord
+        # objects and check values.
+        mock_call = log.handle.call_args_list[i]
+        actual_record = mock_call[0][0]  # first object in positional args
+        assert actual_record.name == logger_name
+        assert actual_record.levelno == levelno
+        assert actual_record.pathname == ''
+        assert actual_record.lineno == ''
+        assert actual_record.msg == message
+        assert actual_record.args is None
+        assert actual_record.exc_info is None
 
   def testLogMessagesUnspecifiedLevel(self):
     self.verifyLogLevels([None])
