@@ -19,6 +19,8 @@ as well as keep from complicating tests due to importing code that
 uses App Engine apis.
 """
 
+from __future__ import absolute_import
+
 __all__ = [
     'API_EXPLORER_CLIENT_ID',
 ]

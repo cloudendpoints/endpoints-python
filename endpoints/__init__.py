@@ -18,20 +18,21 @@
 """Google Cloud Endpoints module."""
 
 # pylint: disable=wildcard-import
+from __future__ import absolute_import
 
-from api_config import api
-from api_config import AUTH_LEVEL
-from api_config import EMAIL_SCOPE
-from api_config import Issuer
-from api_config import method
-from api_exceptions import *
-from apiserving import *
-from constants import API_EXPLORER_CLIENT_ID
-from endpoints_dispatcher import *
-import message_parser
-from resource_container import ResourceContainer
-from users_id_token import get_current_user, get_verified_jwt, convert_jwks_uri
-from users_id_token import InvalidGetUserCall
-from users_id_token import SKIP_CLIENT_ID_CHECK
+from .api_config import api
+from .api_config import AUTH_LEVEL
+from .api_config import EMAIL_SCOPE
+from .api_config import Issuer
+from .api_config import method
+from .api_exceptions import *
+from .apiserving import *
+from .constants import API_EXPLORER_CLIENT_ID
+from .endpoints_dispatcher import *
+from . import message_parser
+from .resource_container import ResourceContainer
+from .users_id_token import get_current_user, get_verified_jwt, convert_jwks_uri
+from .users_id_token import InvalidGetUserCall
+from .users_id_token import SKIP_CLIENT_ID_CHECK
 
 __version__ = '2.4.2'

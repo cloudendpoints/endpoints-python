@@ -19,6 +19,7 @@ Schema description of all the messages.
 """
 
 # pylint: disable=g-bad-name
+from __future__ import absolute_import
 
 import re
 

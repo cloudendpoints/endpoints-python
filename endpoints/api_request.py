@@ -14,7 +14,7 @@
 
 """Cloud Endpoints API request-related data and functions."""
 
-from __future__ import with_statement
+from __future__ import absolute_import
 
 # pylint: disable=g-bad-name
 import copy
@@ -24,7 +24,7 @@ import urllib
 import urlparse
 import zlib
 
-import util
+from . import util
 
 
 class ApiRequest(object):
