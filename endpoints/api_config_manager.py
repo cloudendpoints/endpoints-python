@@ -15,13 +15,15 @@
 """Configuration manager to store API configurations."""
 
 # pylint: disable=g-bad-name
+from __future__ import absolute_import
+
 import base64
 import logging
 import re
 import threading
 import urllib
 
-import discovery_service
+from . import discovery_service
 
 
 # Internal constants

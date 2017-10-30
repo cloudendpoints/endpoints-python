@@ -58,17 +58,19 @@ compatible errors, it exposes a helper service that describes your services.
       raise endpoints.UnauthorizedException("Please log in as an admin user")
 """
 
+from __future__ import absolute_import
+
 import cgi
 import httplib
 import json
 import logging
 import os
 
-import api_backend_service
-import api_config
-import api_exceptions
-import endpoints_dispatcher
-import protojson
+from . import api_backend_service
+from . import api_config
+from . import api_exceptions
+from . import endpoints_dispatcher
+from . import protojson
 
 from google.appengine.api import app_identity
 from endpoints_management.control import client as control_client
@@ -78,7 +80,7 @@ from protorpc import messages
 from protorpc import remote
 from protorpc.wsgi import service as wsgi_service
 
-import util
+from . import util
 
 
 _logger = logging.getLogger(__name__)

@@ -20,7 +20,9 @@ that conversion and some validation.
 """
 
 # pylint: disable=g-bad-name
-import errors
+from __future__ import absolute_import
+
+from . import errors
 
 
 __all__ = ['transform_parameter_value']

@@ -18,6 +18,8 @@ Contains the implementation for BackendService as defined in api_backend.py.
 """
 
 # pylint: disable=g-statement-before-imports,g-import-not-at-top
+from __future__ import absolute_import
+
 try:
   import json
 except ImportError:
@@ -25,8 +27,8 @@ except ImportError:
 
 import logging
 
-import api_backend
-import api_exceptions
+from . import api_backend
+from . import api_exceptions
 
 from protorpc import message_types
 
