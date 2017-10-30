@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Module for a class that contains a request body resource and parameters."""
+from __future__ import absolute_import
 
 from protorpc import message_types
 from protorpc import messages

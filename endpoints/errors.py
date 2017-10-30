@@ -15,10 +15,12 @@
 """Error handling and exceptions used in the local Cloud Endpoints server."""
 
 # pylint: disable=g-bad-name
+from __future__ import absolute_import
+
 import json
 import logging
 
-import generated_error_info
+from . import generated_error_info
 
 
 __all__ = ['BackendError',

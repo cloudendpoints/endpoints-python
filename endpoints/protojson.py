@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Endpoints-specific implementation of ProtoRPC's ProtoJson class."""
+from __future__ import absolute_import
 
 import base64
 

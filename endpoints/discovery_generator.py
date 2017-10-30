@@ -14,18 +14,20 @@
 
 """A library for converting service configs to discovery docs."""
 
+from __future__ import absolute_import
+
 import collections
 import json
 import logging
 import re
 
-import api_exceptions
-import message_parser
+from . import api_exceptions
+from . import message_parser
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-import resource_container
-import util
+from . import resource_container
+from . import util
 
 
 _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'

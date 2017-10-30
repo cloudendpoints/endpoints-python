@@ -16,6 +16,8 @@
 
 # pylint: disable=g-bad-name
 
+from __future__ import absolute_import
+
 import collections
 
 

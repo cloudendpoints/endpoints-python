@@ -19,6 +19,8 @@ a user from an id_token.  The functionality provided by this library
 will be provided elsewhere in the future.
 """
 
+from __future__ import absolute_import
+
 import base64
 import json
 import logging
@@ -28,9 +30,8 @@ import time
 import urllib
 
 from collections import Container as _Container, Iterable as _Iterable
-import attr
 
-import constants
+from . import constants
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth

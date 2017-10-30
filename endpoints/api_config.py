@@ -33,12 +33,14 @@ the API is returned.
 # pylint: disable=g-bad-name
 
 # pylint: disable=g-statement-before-imports,g-import-not-at-top
+from __future__ import absolute_import
+
 import json
 import logging
 import re
 
-import api_exceptions
-import message_parser
+from . import api_exceptions
+from .import message_parser
 
 from protorpc import message_types
 from protorpc import messages
@@ -47,11 +49,11 @@ from protorpc import util
 
 import attr
 
-import resource_container
-import users_id_token
-import util as endpoints_util
-import types as endpoints_types
-import constants
+from .import resource_container
+from . import users_id_token
+from . import util as endpoints_util
+from . import types as endpoints_types
+from . import constants
 
 from google.appengine.api import app_identity
 
