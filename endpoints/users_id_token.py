@@ -28,7 +28,6 @@ import time
 import urllib
 
 from collections import Container as _Container, Iterable as _Iterable
-import attr
 
 import constants
 
