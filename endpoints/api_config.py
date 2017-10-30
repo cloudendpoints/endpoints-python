@@ -50,7 +50,7 @@ import attr
 import resource_container
 import users_id_token
 import util as endpoints_util
-import types as endpoints_types
+import endpoints_types
 import constants
 
 from google.appengine.api import app_identity
