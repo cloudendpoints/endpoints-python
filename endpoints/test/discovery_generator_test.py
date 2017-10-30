@@ -21,7 +21,7 @@ import unittest
 import endpoints.api_config as api_config
 import endpoints.api_exceptions as api_exceptions
 import endpoints.users_id_token as users_id_token
-import endpoints.types as endpoints_types
+import endpoints.endpoints_types as endpoints_types
 
 from protorpc import message_types
 from protorpc import messages
