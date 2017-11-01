@@ -3,9 +3,6 @@ language: python
 python:
   - "2.7"
 
-install: pip install tox-travis codecov
+install: pip install tox-travis
 
 script: tox
-
-after_success:
-  - codecov
