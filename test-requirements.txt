@@ -6,3 +6,4 @@ pytest-timeout>=1.0.0
 webtest>=2.0.23,<3.0
 git+git://github.com/inklesspen/protorpc.git@endpoints-dependency#egg=protorpc-0.12.0a0
 protobuf>=3.0.0b3
+PyYAML==3.12
