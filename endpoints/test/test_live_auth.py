@@ -89,6 +89,11 @@ def gcloud_sdk(gcloud_driver, integration_project_id, service_account_keyfile):
     return gcloud_driver.SDKFromArgs(project=integration_project_id, service_account_keyfile=service_account_keyfile)
 
 class TestAppManager(object):
+    # This object will manage the test app. It needs to be told what
+    # kind of app to make; such methods are named `become_*_app`,
+    # because they mutate the manager object rather than returning
+    # some new object.
+
     def __init__(self):
         self.cleanup_path = tempfile.mkdtemp()
         self.app_path = os.path.join(self.cleanup_path, 'app')
