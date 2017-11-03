@@ -14,6 +14,8 @@
 
 """Interface to the BackendService that serves API configurations."""
 
+from __future__ import absolute_import
+
 import logging
 
 from protorpc import message_types

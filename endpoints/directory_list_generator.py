@@ -14,13 +14,15 @@
 
 """A library for converting service configs to discovery directory lists."""
 
+from __future__ import absolute_import
+
 import collections
 import json
 import logging
 import re
 import urlparse
 
-import util
+from . import util
 
 class DirectoryListGenerator(object):
   """Generates a discovery directory list from a ProtoRPC service.

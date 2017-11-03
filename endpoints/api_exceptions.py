@@ -14,6 +14,8 @@
 
 """A library containing exception types used by Endpoints."""
 
+from __future__ import absolute_import
+
 import httplib
 
 from protorpc import remote

@@ -15,13 +15,15 @@
 """Hook into the live Discovery service and get API configuration info."""
 
 # pylint: disable=g-bad-name
+from __future__ import absolute_import
+
 import json
 import logging
 
-import api_config
-import directory_list_generator
-import discovery_generator
-import util
+from . import api_config
+from . import directory_list_generator
+from . import discovery_generator
+from . import util
 
 
 class DiscoveryService(object):

@@ -23,6 +23,8 @@ configuration has changed.
 """
 
 # pylint: disable=g-bad-name
+from __future__ import absolute_import
+
 import cStringIO
 import httplib
 import json
@@ -32,12 +34,12 @@ import urlparse
 import wsgiref
 import pkg_resources
 
-import api_config_manager
-import api_request
-import discovery_service
-import errors
-import parameter_converter
-import util
+from . import api_config_manager
+from . import api_request
+from . import discovery_service
+from . import errors
+from . import parameter_converter
+from . import util
 
 
 __all__ = ['EndpointsDispatcherMiddleware']

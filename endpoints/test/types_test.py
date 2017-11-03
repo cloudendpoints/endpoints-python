@@ -28,7 +28,7 @@ from protorpc import messages
 from protorpc import remote
 
 import test_util
-import endpoints.endpoints_types as endpoints_types
+import endpoints.types as endpoints_types
 
 
 class ModuleInterfaceTest(test_util.ModuleInterfaceTest,
