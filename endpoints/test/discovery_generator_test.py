@@ -504,5 +504,38 @@ class DiscoveryUrlGeneratorTest(BaseDiscoveryGeneratorTest):
     assert doc['servicePath'] == 'iata/v1/'
 
 
+class Recursive(messages.Message):
+    """Message which can contain itself."""
+    desc = messages.StringField(1)
+    subrecursive = messages.MessageField('Recursive', 2, repeated=True)
+
+class ContainsRecursive(messages.Message):
+    """Message which contains a recursive message."""
+
+    id = messages.IntegerField(1)
+    recursives = messages.MessageField(Recursive, 2, repeated=True)
+
+@api_config.api(name='example', version='v1')
+class ExampleApi(remote.Service):
+    @api_config.method(
+        ContainsRecursive,
+        message_types.VoidMessage,
+        path='recursive',
+        http_method='POST',
+        name='save_recursive')
+    def save_recursive(self, request):
+        raise NotImplementedError()
+
+
+class DiscoveryRecursiveGeneratorTest(BaseDiscoveryGeneratorTest):
+  """Ensure that it's possible to generate a doc for an api which
+  accepts a recursive message structure in requests."""
+
+  def testRecursive(self):
+    doc = self.generator.get_discovery_doc([ExampleApi], hostname='example.appspot.com')
+    assert sorted(doc['schemas'].keys()) == [
+        'DiscoveryGeneratorTestContainsRecursive', 'DiscoveryGeneratorTestRecursive']
+
+
 if __name__ == '__main__':
   unittest.main()
