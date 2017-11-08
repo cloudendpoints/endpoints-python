@@ -122,7 +122,7 @@ class DiscoveryGenerator(object):
     else:
       return self.__HAS_BODY
 
-  def __field_to_subfields(self, field):
+  def __field_to_subfields(self, field, cycle=tuple()):
     """Fully describes data represented by field, including the nested case.
 
     In the case that the field is not a message field, we have no fields nested
@@ -180,10 +180,15 @@ class DiscoveryGenerator(object):
     if not isinstance(field, messages.MessageField):
       return [[field]]
 
+    if field.message_type.__name__ in cycle:
+      # We have a recursive cycle of messages. Call it quits.
+      return []
+
     result = []
     for subfield in sorted(field.message_type.all_fields(),
                            key=lambda f: f.number):
-      subfield_results = self.__field_to_subfields(subfield)
+      cycle = cycle + (field.message_type.__name__, )
+      subfield_results = self.__field_to_subfields(subfield, cycle=cycle)
       for subfields_list in subfield_results:
         subfields_list.insert(0, field)
         result.append(subfields_list)
