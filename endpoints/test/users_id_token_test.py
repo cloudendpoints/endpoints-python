@@ -602,16 +602,16 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.assertEqual('', os.environ.get('ENDPOINTS_AUTH_DOMAIN'))
 
   def VerifyIdToken(self, cls, *args):
-    with mock.patch.object(time, 'time') as mock_time,\
+    with mock.patch.object(users_id_token, 'time') as mock_time,\
           mock.patch.object(users_id_token, '_get_id_token_user') as mock_get:
-      mock_time.return_value = 1001
+      mock_time.time.return_value = 1001
       mock_get.return_value = users.User('test@gmail.com')
       os.environ['HTTP_AUTHORIZATION'] = ('Bearer ' + self._SAMPLE_TOKEN)
       if args:
         cls.method(*args)
       else:
         users_id_token._maybe_set_current_user_vars(cls.method)
-      mock_time.assert_called_once_with()
+      mock_time.time.assert_called_once_with()
       mock_get.assert_called_once_with(
         self._SAMPLE_TOKEN,
         users_id_token._ISSUERS,
