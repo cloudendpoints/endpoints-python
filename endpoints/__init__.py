@@ -20,11 +20,9 @@
 # pylint: disable=wildcard-import
 from __future__ import absolute_import
 
-from .api_config import api
-from .api_config import AUTH_LEVEL
-from .api_config import EMAIL_SCOPE
-from .api_config import Issuer
-from .api_config import method
+from .api_config import api, method
+from .api_config import AUTH_LEVEL, EMAIL_SCOPE
+from .api_config import Issuer, LimitDefinition, Namespace
 from .api_exceptions import *
 from .apiserving import *
 from .constants import API_EXPLORER_CLIENT_ID
