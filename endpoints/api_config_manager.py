@@ -28,7 +28,7 @@ from . import discovery_service
 
 # Internal constants
 _PATH_VARIABLE_PATTERN = r'[a-zA-Z_][a-zA-Z_.\d]*'
-_PATH_VALUE_PATTERN = r'[^:/?#\[\]{}]*'
+_PATH_VALUE_PATTERN = r'[^/?#\[\]{}]*'
 
 
 class ApiConfigManager(object):
@@ -199,7 +199,6 @@ class ApiConfigManager(object):
         <params> is a dict of path parameters matched in the rest request.
     """
     with self._config_lock:
-      path = urllib.quote(path)
       for compiled_path_pattern, unused_path, methods in self._rest_methods:
         match = compiled_path_pattern.match(path)
         if match:
@@ -282,7 +281,7 @@ class ApiConfigManager(object):
     r"""Generates a compiled regex pattern for a path pattern.
 
     e.g. '/MyApi/v1/notes/{id}'
-    returns re.compile(r'/MyApi/v1/notes/(?P<id>[^:/?#\[\]{}]*)')
+    returns re.compile(r'/MyApi/v1/notes/(?P<id>[^/?#\[\]{}]*)')
 
     Args:
       pattern: A string, the parameterized path pattern to be checked.
@@ -313,7 +312,7 @@ class ApiConfigManager(object):
                                  _PATH_VALUE_PATTERN)
       return match.group(0)
 
-    pattern = re.sub('(/|^){(%s)}(?=/|$)' % _PATH_VARIABLE_PATTERN,
+    pattern = re.sub('(/|^){(%s)}(?=/|$|:)' % _PATH_VARIABLE_PATTERN,
                      replace_variable, pattern)
     return re.compile(pattern + '/?$')
 
