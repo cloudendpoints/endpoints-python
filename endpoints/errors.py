@@ -30,6 +30,8 @@ __all__ = ['BackendError',
            'RequestError',
            'RequestRejectionError']
 
+_logger = logging.getLogger(__name__)
+
 _INVALID_ENUM_TEMPLATE = 'Invalid string value: %r. Allowed values: %r'
 _INVALID_BASIC_PARAM_TEMPLATE = 'Invalid %s value: %r.'
 
@@ -247,7 +249,7 @@ class BackendError(RequestError):
     try:
       return int(http_status.split(' ', 1)[0])
     except TypeError:
-      logging.warning('Unable to find status code in HTTP status %r.',
+      _logger.warning('Unable to find status code in HTTP status %r.',
                       http_status)
     return 500
 

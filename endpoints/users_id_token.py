@@ -60,6 +60,8 @@ __all__ = [
     'SKIP_CLIENT_ID_CHECK',
 ]
 
+_logger = logging.getLogger(__name__)
+
 SKIP_CLIENT_ID_CHECK = ['*']  # This needs to be a list, for comparisons.
 _CLOCK_SKEW_SECS = 300  # 5 minutes in seconds
 _MAX_TOKEN_LIFETIME_SECS = 86400  # 1 day in seconds
@@ -178,7 +180,7 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
     # We could propagate the exception, but this results in some really
     # difficult to debug behavior.  Better to log a warning and pretend
     # there are no API-level settings.
-    logging.warning('AttributeError when accessing %s.im_self.  An unbound '
+    _logger.warning('AttributeError when accessing %s.im_self.  An unbound '
                     'method was probably passed as an endpoints handler.',
                     method.__name__)
     scopes = method.method_info.scopes
@@ -214,7 +216,7 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
   # Connect ID token processing for any incoming bearer token.
   if ((scopes == [_EMAIL_SCOPE] or scopes == (_EMAIL_SCOPE,)) and
       allowed_client_ids):
-    logging.debug('Checking for id_token.')
+    _logger.debug('Checking for id_token.')
     time_now = long(time.time())
     user = _get_id_token_user(token, _ISSUERS, audiences, allowed_client_ids,
                               time_now, memcache)
@@ -225,7 +227,7 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
 
   # Check if the user is interested in an oauth token.
   if scopes:
-    logging.debug('Checking for oauth token.')
+    _logger.debug('Checking for oauth token.')
     if _is_local_dev():
       _set_bearer_user_vars_local(token, allowed_client_ids, scopes)
     else:
@@ -290,7 +292,7 @@ def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, 
   try:
     parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache)
   except Exception as e:  # pylint: disable=broad-except
-    logging.debug('id_token verification failed: %s', e)
+    _logger.debug('id_token verification failed: %s', e)
     return None
 
   if _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
@@ -307,7 +309,7 @@ def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, 
 # pylint: disable=unused-argument
 def _set_oauth_user_vars(token_info, audiences, allowed_client_ids, scopes,
                          local_dev):
-  logging.warning('_set_oauth_user_vars is deprecated and will be removed '
+  _logger.warning('_set_oauth_user_vars is deprecated and will be removed '
                   'soon.')
   return _set_bearer_user_vars(allowed_client_ids, scopes)
 # pylint: enable=unused-argument
@@ -336,14 +338,14 @@ def _set_bearer_user_vars(allowed_client_ids, scopes):
     # SKIP_CLIENT_ID_CHECK, all client IDs will be allowed.
     if (list(allowed_client_ids) != SKIP_CLIENT_ID_CHECK and
         client_id not in allowed_client_ids):
-      logging.warning('Client ID is not allowed: %s', client_id)
+      _logger.warning('Client ID is not allowed: %s', client_id)
       return
 
     os.environ[_ENV_USE_OAUTH_SCOPE] = scope
-    logging.debug('Returning user from matched oauth_user.')
+    _logger.debug('Returning user from matched oauth_user.')
     return
 
-  logging.debug('Oauth framework user didn\'t match oauth token user.')
+  _logger.debug('Oauth framework user didn\'t match oauth token user.')
   return None
 
 
@@ -368,35 +370,35 @@ def _set_bearer_user_vars_local(token, allowed_client_ids, scopes):
       error_description = json.loads(result.content)['error_description']
     except (ValueError, KeyError):
       error_description = ''
-    logging.error('Token info endpoint returned status %s: %s',
+    _logger.error('Token info endpoint returned status %s: %s',
                   result.status_code, error_description)
     return
   token_info = json.loads(result.content)
 
   # Validate email.
   if 'email' not in token_info:
-    logging.warning('Oauth token doesn\'t include an email address.')
+    _logger.warning('Oauth token doesn\'t include an email address.')
     return
   if not token_info.get('verified_email'):
-    logging.warning('Oauth token email isn\'t verified.')
+    _logger.warning('Oauth token email isn\'t verified.')
     return
 
   # Validate client ID.
   client_id = token_info.get('issued_to')
   if (list(allowed_client_ids) != SKIP_CLIENT_ID_CHECK and
       client_id not in allowed_client_ids):
-    logging.warning('Client ID is not allowed: %s', client_id)
+    _logger.warning('Client ID is not allowed: %s', client_id)
     return
 
   # Verify at least one of the scopes matches.
   token_scopes = token_info.get('scope', '').split(' ')
   if not any(scope in scopes for scope in token_scopes):
-    logging.warning('Oauth token scopes don\'t match any acceptable scopes.')
+    _logger.warning('Oauth token scopes don\'t match any acceptable scopes.')
     return
 
   os.environ[_ENV_AUTH_EMAIL] = token_info['email']
   os.environ[_ENV_AUTH_DOMAIN] = ''
-  logging.debug('Local dev returning user from token.')
+  _logger.debug('Local dev returning user from token.')
   return
 
 
@@ -417,29 +419,29 @@ def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
   """
   # Verify the issuer.
   if parsed_token.get('iss') not in issuers:
-    logging.warning('Issuer was not valid: %s', parsed_token.get('iss'))
+    _logger.warning('Issuer was not valid: %s', parsed_token.get('iss'))
     return False
 
   # Check audiences.
   aud = parsed_token.get('aud')
   if not aud:
-    logging.warning('No aud field in token')
+    _logger.warning('No aud field in token')
     return False
   # Special handling if aud == cid.  This occurs with iOS and browsers.
   # As long as audience == client_id and cid is allowed, we need to accept
   # the audience for compatibility.
   cid = parsed_token.get('azp')
   if aud != cid and aud not in audiences:
-    logging.warning('Audience not allowed: %s', aud)
+    _logger.warning('Audience not allowed: %s', aud)
     return False
 
   # Check allowed client IDs.
   if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
-    logging.warning('Client ID check can\'t be skipped for ID tokens.  '
+    _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
                     'Id_token cannot be verified.')
     return False
   elif not cid or cid not in allowed_client_ids:
-    logging.warning('Client ID is not allowed: %s', cid)
+    _logger.warning('Client ID is not allowed: %s', cid)
     return False
 
   if 'email' not in parsed_token:
@@ -507,7 +509,7 @@ def _get_cached_certs(cert_uri, cache):
   """
   certs = cache.get(cert_uri, namespace=_CERT_NAMESPACE)
   if certs is None:
-    logging.debug('Cert cache miss')
+    _logger.debug('Cert cache miss')
     try:
       result = urlfetch.fetch(cert_uri)
     except AssertionError:
@@ -521,7 +523,7 @@ def _get_cached_certs(cert_uri, cache):
         cache.set(cert_uri, certs, time=expiration_time_seconds,
                   namespace=_CERT_NAMESPACE)
     else:
-      logging.error(
+      _logger.error(
           'Certs not available, HTTP request returned %d', result.status_code)
 
   return certs
@@ -629,7 +631,7 @@ def _verify_signed_jwt_with_certs(
         break
     except Exception, e:  # pylint: disable=broad-except
       # Log the exception for debugging purpose.
-      logging.debug(
+      _logger.debug(
           'Signature verification error: %s; continuing with the next cert.', e)
       continue
   if not verified:
@@ -732,7 +734,7 @@ def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
   try:
     parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache, cert_uri)
   except (_AppIdentityError, TypeError) as e:
-    logging.debug('id_token verification failed: %s', e)
+    _logger.debug('id_token verification failed: %s', e)
     return None
 
   issuers = _listlike_guard(issuers, 'issuers')
@@ -740,16 +742,16 @@ def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
   # We can't use _verify_parsed_token because there's no client id (azp) or email in these JWTs
   # Verify the issuer.
   if parsed_token.get('iss') not in issuers:
-    logging.warning('Issuer was not valid: %s', parsed_token.get('iss'))
+    _logger.warning('Issuer was not valid: %s', parsed_token.get('iss'))
     return None
 
   # Check audiences.
   aud = parsed_token.get('aud')
   if not aud:
-    logging.warning('No aud field in token')
+    _logger.warning('No aud field in token')
     return None
   if aud not in audiences:
-    logging.warning('Audience not allowed: %s', aud)
+    _logger.warning('Audience not allowed: %s', aud)
     return None
 
   return parsed_token
@@ -771,6 +773,6 @@ def _listlike_guard(obj, name, iterable_only=False):
     raise ValueError('{} must be of type {}'.format(name, required_type_name))
   # at this point it is definitely the right type, but might be a string
   if isinstance(obj, basestring):
-    logging.warning('{} passed as a string; should be list-like'.format(name))
+    _logger.warning('{} passed as a string; should be list-like'.format(name))
     return (obj,)
   return obj

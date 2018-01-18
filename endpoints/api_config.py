@@ -58,6 +58,7 @@ from . import constants
 from google.appengine.api import app_identity
 
 
+_logger = logging.getLogger(__name__)
 package = 'google.appengine.endpoints'
 
 
@@ -1753,10 +1754,11 @@ class ApiConfigGenerator(object):
 
     if not isinstance(message_type, resource_container.ResourceContainer):
       if path_parameter_dict:
-        logging.warning('Method %s specifies path parameters but you are not '
-                        'using a ResourceContainer This will fail in future '
-                        'releases; please switch to using ResourceContainer as '
-                        'soon as possible.', method_id)
+        _logger.warning('Method %s specifies path parameters but you are not '
+                        'using a ResourceContainer; instead, you are using %r. '
+                        'This will fail in future releases; please switch to '
+                        'using ResourceContainer as soon as possible.',
+                        method_id, type(message_type))
       return self.__params_descriptor_without_container(
           message_type, request_kind, path)
 

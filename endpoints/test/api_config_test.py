@@ -16,7 +16,6 @@
 
 import itertools
 import json
-import logging
 import unittest
 
 import endpoints.api_config as api_config
@@ -1594,9 +1593,9 @@ class ApiConfigTest(unittest.TestCase):
 
     # Verify that there's a warning and the name of the method is included
     # in the warning.
-    logging.warning = mock.Mock()
+    api_config._logger.warning = mock.Mock()
     self.generator.pretty_print_config_to_json(MyApi)
-    logging.warning.assert_called_with(mock.ANY, 'myapi.test')
+    api_config._logger.warning.assert_called_with(mock.ANY, 'myapi.test', TestGetRequest)
 
   def testFieldInPathWithBodyIsRequired(self):
 
