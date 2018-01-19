@@ -42,6 +42,9 @@ from . import parameter_converter
 from . import util
 
 
+_logger = logging.getLogger(__name__)
+
+
 __all__ = ['EndpointsDispatcherMiddleware']
 
 _SERVER_SOURCE_IP = '0.2.0.3'
@@ -231,7 +234,7 @@ class EndpointsDispatcherMiddleware(object):
                                        'text/html')],
                                      PROXY_HTML, start_response)
     else:
-      logging.error('Unknown static url requested: %s',
+      _logger.error('Unknown static url requested: %s',
                     request.relative_url)
       return util.send_wsgi_response('404 Not Found', [('Content-Type',
                                        'text/plain')], 'Not Found',

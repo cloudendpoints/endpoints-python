@@ -30,6 +30,7 @@ from . import resource_container
 from . import util
 
 
+_logger = logging.getLogger(__name__)
 _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'
 
 _MULTICLASS_MISMATCH_ERROR_TEMPLATE = (
@@ -482,10 +483,11 @@ class DiscoveryGenerator(object):
 
     if request_params_class is None:
       if path_parameter_dict:
-        logging.warning('Method %s specifies path parameters but you are not '
-                        'using a ResourceContainer. This will fail in future '
-                        'releases; please switch to using ResourceContainer as '
-                        'soon as possible.', method_id)
+        _logger.warning('Method %s specifies path parameters but you are not '
+                        'using a ResourceContainer; instead, you are using %r. '
+                        'This will fail in future releases; please switch to '
+                        'using ResourceContainer as soon as possible.',
+                        method_id, type(message_type))
       return self.__params_descriptor_without_container(
           message_type, request_kind, path)
 

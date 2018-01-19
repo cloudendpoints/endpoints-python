@@ -25,6 +25,8 @@ from . import directory_list_generator
 from . import discovery_generator
 from . import util
 
+_logger = logging.getLogger(__name__)
+
 
 class DiscoveryService(object):
   """Implements the local discovery service.
@@ -113,7 +115,7 @@ class DiscoveryService(object):
     if not doc:
       error_msg = ('Failed to convert .api to discovery doc for '
                    'version %s of api %s') % (version, api)
-      logging.error('%s', error_msg)
+      _logger.error('%s', error_msg)
       return util.send_wsgi_error_response(error_msg, start_response)
     return self._send_success_response(doc, start_response)
 
@@ -182,7 +184,7 @@ class DiscoveryService(object):
         configs.append(config)
     directory = generator.pretty_print_config_to_json(configs)
     if not directory:
-      logging.error('Failed to get API directory')
+      _logger.error('Failed to get API directory')
       # By returning a 404, code explorer still works if you select the
       # API in the URL
       return util.send_wsgi_not_found_response(start_response)
@@ -209,7 +211,7 @@ class DiscoveryService(object):
       error_msg = ('RPC format documents are no longer supported with the '
                    'Endpoints Framework for Python. Please use the REST '
                    'format.')
-      logging.error('%s', error_msg)
+      _logger.error('%s', error_msg)
       return util.send_wsgi_error_response(error_msg, start_response)
     elif path == self._LIST_API:
       return self._list(request, start_response)

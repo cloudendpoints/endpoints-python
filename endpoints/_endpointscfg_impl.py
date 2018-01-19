@@ -51,6 +51,7 @@ except ImportError:
   # If we can't find json packaged with Python import simplejson, which is
   # packaged with the SDK.
   import simplejson as json
+import logging
 import os
 import re
 import sys
@@ -614,6 +615,11 @@ def _SetupStubs():
 
 
 def main(argv):
+  logging.basicConfig()
+  # silence warnings from endpoints.apiserving; they're not relevant
+  # to command-line operation.
+  logging.getLogger('endpoints.apiserving').setLevel(logging.ERROR)
+
   _SetupStubs()
 
   parser = MakeParser(argv[0])
