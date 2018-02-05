@@ -26,6 +26,8 @@ import zlib
 
 from . import util
 
+_logger = logging.getLogger(__name__)
+
 
 class ApiRequest(object):
   """Simple data object representing an API request.
@@ -90,12 +92,12 @@ class ApiRequest(object):
     # list and record the fact that we're processing a batch.
     if isinstance(self.body_json, list):
       if len(self.body_json) != 1:
-        logging.warning('Batch requests with more than 1 element aren\'t '
+        _logger.warning('Batch requests with more than 1 element aren\'t '
                         'supported in devappserver2.  Only the first element '
                         'will be handled.  Found %d elements.',
                         len(self.body_json))
       else:
-        logging.info('Converting batch request to single request.')
+        _logger.info('Converting batch request to single request.')
       self.body_json = self.body_json[0]
       self.body = json.dumps(self.body_json)
       self._is_batch = True

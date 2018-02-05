@@ -25,6 +25,7 @@ import urllib
 
 from . import discovery_service
 
+_logger = logging.getLogger(__name__)
 
 # Internal constants
 _PATH_VARIABLE_PATTERN = r'[a-zA-Z_][a-zA-Z_.\d]*'
@@ -210,7 +211,7 @@ class ApiConfigManager(object):
           if method:
             break
       else:
-        logging.warn('No endpoint found for path: %s', path)
+        _logger.warn('No endpoint found for path: %s', path)
         method_name = None
         method = None
         params = None
