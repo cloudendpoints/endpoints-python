@@ -988,7 +988,7 @@ class ApiConfigTest(unittest.TestCase):
   def testMultipleClassesSingleApi(self):
     """Test an API that's split into multiple classes."""
 
-    root_api = api_config.api('root', 'v1', hostname='example.appspot.com')
+    root_api = api_config.api('root', '1.5.6', hostname='example.appspot.com')
 
     # First class has a request that reads some arguments.
     class Response1(messages.Message):
@@ -1024,7 +1024,8 @@ class ApiConfigTest(unittest.TestCase):
     # properties are accessible.
     for cls in (RequestService, EmptyService, MySimpleService):
       self.assertEqual(cls.api_info.name, 'root')
-      self.assertEqual(cls.api_info.version, 'v1')
+      self.assertEqual(cls.api_info.api_version, '1.5.6')
+      self.assertEqual(cls.api_info.path_version, 'v1')
       self.assertEqual(cls.api_info.hostname, 'example.appspot.com')
       self.assertIsNone(cls.api_info.audiences)
       self.assertEqual(cls.api_info.allowed_client_ids,
@@ -1983,7 +1984,8 @@ class ApiDecoratorTest(unittest.TestCase):
 
     api_info = MyDecoratedService.api_info
     self.assertEqual('CoolService', api_info.name)
-    self.assertEqual('vX', api_info.version)
+    self.assertEqual('vX', api_info.api_version)
+    self.assertEqual('vX', api_info.path_version)
     self.assertEqual('My Cool Service', api_info.description)
     self.assertEqual('myhost.com', api_info.hostname)
     self.assertEqual('Cool Service Name', api_info.canonical_name)
@@ -2007,7 +2009,8 @@ class ApiDecoratorTest(unittest.TestCase):
 
     api_info = MyDecoratedService.api_info
     self.assertEqual('CoolService2', api_info.name)
-    self.assertEqual('v2', api_info.version)
+    self.assertEqual('v2', api_info.api_version)
+    self.assertEqual('v2', api_info.path_version)
     self.assertEqual(None, api_info.description)
     self.assertEqual(None, api_info.hostname)
     self.assertEqual(None, api_info.canonical_name)

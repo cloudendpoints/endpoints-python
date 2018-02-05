@@ -487,7 +487,7 @@ class DiscoveryUrlGeneratorTest(BaseDiscoveryGeneratorTest):
         iata = messages.StringField(1, required=True)
         name = messages.StringField(2, required=True)
 
-    @api_config.api(name='iata', version='v1')
+    @api_config.api(name='iata', version='1.6.9')
     class IataApi(remote.Service):
         @api_config.method(
             IATA_RESOURCE,

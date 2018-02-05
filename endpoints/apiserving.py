@@ -295,7 +295,7 @@ class _ApiServer(object):
         service_class = service_factory
         service_factory = service_class.new_factory()
 
-      key = service_class.api_info.name, service_class.api_info.version
+      key = service_class.api_info.name, service_class.api_info.api_version
       service_factories = api_name_version_map.setdefault(key, [])
       if service_factory in service_factories:
         raise api_config.ApiConfigurationError(

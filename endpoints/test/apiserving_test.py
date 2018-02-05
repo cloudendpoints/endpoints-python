@@ -190,7 +190,9 @@ TEST_SERVICE_API_CONFIG = {'items': [{
     },
     'name': 'testapi',
     'root': 'https://None/_ah/api',
-    'version': 'v3'
+    'version': 'v3',
+    'api_version': 'v3',
+    'path_version': 'v3',
 }]}
 
 
@@ -242,7 +244,9 @@ TEST_SERVICE_CUSTOM_URL_API_CONFIG = {'items': [{
     },
     'name': 'testapicustomurl',
     'root': 'https://None/my/base/path',
-    'version': 'v3'
+    'version': 'v3',
+    'api_version': 'v3',
+    'path_version': 'v3',
 }]}
 
 

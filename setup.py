@@ -33,6 +33,7 @@ with open('endpoints/__init__.py', 'r') as f:
 install_requires = [
     'attrs==17.2.0',
     'google-endpoints-api-management>=1.4.0',
+    'semver==2.7.7',
     'setuptools>=36.2.5',
 ]
 

@@ -44,6 +44,8 @@ class ApiConfigManagerTest(unittest.TestCase):
                    'rosyMethod': 'baz.bim'}
     config = {'name': 'guestbook_api',
               'version': 'X',
+              'api_version': 'X',
+              'path_version': 'X',
               'methods': {'guestbook_api.foo.bar': fake_method}}
     self.config_manager.process_api_config_response({'items': [config]})
     actual_method = self.config_manager.lookup_rpc_method(
@@ -65,6 +67,8 @@ class ApiConfigManagerTest(unittest.TestCase):
       methods[method_name] = method
     config = {'name': 'guestbook_api',
               'version': 'X',
+              'api_version': 'X',
+              'path_version': 'X',
               'methods': methods}
     self.config_manager.process_api_config_response(
         {'items': [config]})
@@ -151,6 +155,8 @@ class ApiConfigManagerTest(unittest.TestCase):
     """Test that the parsed API config has switched HTTPS to HTTP."""
     config = {'name': 'guestbook_api',
               'version': 'X',
+              'api_version': 'X',
+              'path_version': 'X',
               'adapter': {'bns': 'https://localhost/_ah/spi',
                           'type': 'lily'},
               'root': 'https://localhost/_ah/api',
