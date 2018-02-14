@@ -48,6 +48,7 @@ from protorpc import remote
 from protorpc import util
 
 import attr
+import semver
 
 from . import resource_container
 from . import users_id_token
@@ -322,9 +323,14 @@ class _ApiInfo(object):
     return self.__common_info.name
 
   @property
-  def version(self):
+  def api_version(self):
     """Version of the API."""
-    return self.__common_info.version
+    return self.__common_info.api_version
+
+  @property
+  def path_version(self):
+    """Version of the API for putting in the path."""
+    return self.__common_info.path_version
 
   @property
   def description(self):
@@ -621,7 +627,13 @@ class _ApiDecorator(object):
         base_path = '/_ah/api/'
 
       self.__name = name
-      self.__version = version
+      self.__api_version = version
+      try:
+        parsed_version = semver.parse(version)
+      except ValueError:
+        self.__path_version = version
+      else:
+        self.__path_version = 'v{0}'.format(parsed_version['major'])
       self.__description = description
       self.__hostname = hostname
       self.__audiences = audiences
@@ -648,9 +660,14 @@ class _ApiDecorator(object):
       return self.__name
 
     @property
-    def version(self):
+    def api_version(self):
       """Version of the API."""
-      return self.__version
+      return self.__api_version
+
+    @property
+    def path_version(self):
+      """Version of the API for putting in the path."""
+      return self.__path_version
 
     @property
     def description(self):
@@ -1972,7 +1989,7 @@ class ApiConfigGenerator(object):
       if not merged_api_info.is_same_api(service.api_info):
         raise api_exceptions.ApiConfigurationError(
             _MULTICLASS_MISMATCH_ERROR_TEMPLATE % (service.api_info.name,
-                                                   service.api_info.version))
+                                                   service.api_info.api_version))
 
     return merged_api_info
 
@@ -2149,7 +2166,9 @@ class ApiConfigGenerator(object):
         'extends': 'thirdParty.api',
         'root': '{0}://{1}/{2}'.format(protocol, hostname, base_path),
         'name': api_info.name,
-        'version': api_info.version,
+        'version': api_info.api_version,
+        'api_version': api_info.api_version,
+        'path_version': api_info.path_version,
         'defaultVersion': True,
         'abstract': False,
         'adapter': {

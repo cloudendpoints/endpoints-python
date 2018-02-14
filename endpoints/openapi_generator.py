@@ -841,7 +841,7 @@ class OpenApiGenerator(object):
       if not merged_api_info.is_same_api(service.api_info):
         raise api_exceptions.ApiConfigurationError(
             _MULTICLASS_MISMATCH_ERROR_TEMPLATE % (service.api_info.name,
-                                                   service.api_info.version))
+                                                   service.api_info.api_version))
 
     return merged_api_info
 
@@ -893,7 +893,7 @@ class OpenApiGenerator(object):
         method_id = method_info.method_id(service.api_info)
         is_api_key_required = method_info.is_api_key_required(service.api_info)
         path = '/{0}/{1}/{2}'.format(merged_api_info.name,
-                                     merged_api_info.version,
+                                     merged_api_info.path_version,
                                      method_info.get_path(service.api_info))
         verb = method_info.http_method.lower()
 
@@ -977,7 +977,7 @@ class OpenApiGenerator(object):
     defaults = {
         'swagger': '2.0',
         'info': {
-            'version': api_info.version,
+            'version': api_info.api_version,
             'title': api_info.name
         },
         'host': hostname,

@@ -75,7 +75,7 @@ class DirectoryListGenerator(object):
     description = config.get('description')
     root_url = config.get('root')
     name = config.get('name')
-    version = config.get('version')
+    version = config.get('api_version')
     relative_path = '/apis/{0}/{1}/rest'.format(name, version)
 
     if description:

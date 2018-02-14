@@ -192,7 +192,7 @@ def GenApiConfig(service_class_names, config_string_generator=None,
 
   for resolved_service in resolved_services:
     services = api_service_map.setdefault(
-        (resolved_service.api_info.name, resolved_service.api_info.version), [])
+        (resolved_service.api_info.name, resolved_service.api_info.api_version), [])
     services.append(resolved_service)
 
   # If hostname isn't specified in the API or on the command line, we'll

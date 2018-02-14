@@ -831,7 +831,7 @@ class DiscoveryGenerator(object):
       raise api_exceptions.ApiConfigurationError(
           'Multiple base_paths found: {!r}'.format(base_paths))
     names_versions = sorted(set(
-        (s.api_info.name, s.api_info.version) for s in services))
+        (s.api_info.name, s.api_info.api_version) for s in services))
     if len(names_versions) != 1:
       raise api_exceptions.ApiConfigurationError(
           'Multiple apis/versions found: {!r}'.format(names_versions))
@@ -962,21 +962,21 @@ class DiscoveryGenerator(object):
                             util.is_running_on_devserver()) else 'https'
     full_base_path = '{0}{1}/{2}/'.format(api_info.base_path,
                                           api_info.name,
-                                          api_info.version)
+                                          api_info.path_version)
     base_url = '{0}://{1}{2}'.format(protocol, hostname, full_base_path)
     root_url = '{0}://{1}{2}'.format(protocol, hostname, api_info.base_path)
     defaults = {
         'kind': 'discovery#restDescription',
         'discoveryVersion': 'v1',
-        'id': '{0}:{1}'.format(api_info.name, api_info.version),
+        'id': '{0}:{1}'.format(api_info.name, api_info.path_version),
         'name': api_info.name,
-        'version': api_info.version,
+        'version': api_info.api_version,
         'icons': {
             'x16': 'http://www.google.com/images/icons/product/search-16.gif',
             'x32': 'http://www.google.com/images/icons/product/search-32.gif'
         },
         'protocol': 'rest',
-        'servicePath': '{0}/{1}/'.format(api_info.name, api_info.version),
+        'servicePath': '{0}/{1}/'.format(api_info.name, api_info.path_version),
         'batchPath': 'batch',
         'basePath': full_base_path,
         'rootUrl': root_url,

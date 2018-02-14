@@ -25,6 +25,7 @@ import urllib
 
 from . import discovery_service
 
+_logger = logging.getLogger(__name__)
 
 # Internal constants
 _PATH_VARIABLE_PATTERN = r'[a-zA-Z_][a-zA-Z_.\d]*'
@@ -68,12 +69,14 @@ class ApiConfigManager(object):
 
       for config in self._configs.itervalues():
         name = config.get('name', '')
-        version = config.get('version', '')
+        api_version = config.get('api_version', '')
+        path_version = config.get('path_version', '')
         sorted_methods = self._get_sorted_methods(config.get('methods', {}))
 
+
         for method_name, method in sorted_methods:
-          self._save_rpc_method(method_name, version, method)
-          self._save_rest_method(method_name, name, version, method)
+          self._save_rpc_method(method_name, api_version, method)
+          self._save_rest_method(method_name, name, path_version, method)
 
   def _get_sorted_methods(self, methods):
     """Get a copy of 'methods' sorted the way they would be on the live server.
@@ -208,7 +211,7 @@ class ApiConfigManager(object):
           if method:
             break
       else:
-        logging.warn('No endpoint found for path: %s', path)
+        _logger.warn('No endpoint found for path: %s', path)
         method_name = None
         method = None
         params = None
