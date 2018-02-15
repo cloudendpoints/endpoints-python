@@ -22,6 +22,7 @@ will be provided elsewhere in the future.
 from __future__ import absolute_import
 
 import base64
+import hmac
 import json
 import logging
 import os
@@ -625,8 +626,8 @@ def _verify_signed_jwt_with_certs(
 
       # Check the signature on 'signed' by encrypting 'signature' with the
       # public key and confirming the result matches the SHA256 hash of
-      # 'signed'.
-      verified = (hexsig == local_hash)
+      # 'signed'. hmac.compare_digest(a, b) is used to avoid timing attacks.
+      verified = hmac.compare_digest(hexsig, local_hash)
       if verified:
         break
     except Exception, e:  # pylint: disable=broad-except
