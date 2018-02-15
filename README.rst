@@ -44,7 +44,7 @@ License
 
 Apache - See `LICENSE`_ for more information.
 
-.. _`CONTRIBUTING`: https://github.com/googleapis/google-endpoints/blob/master/CONTRIBUTING.rst
+.. _`CONTRIBUTING`: https://github.com/cloudendpoints/endpoints-python/blob/master/CONTRIBUTING.rst
 .. _`LICENSE`: https://github.com/cloudendpoints/endpoints-python/blob/master/LICENSE.txt
 .. _`Install virtualenv`: http://docs.python-guide.org/en/latest/dev/virtualenvs/
 .. _`pip`: https://pip.pypa.io
