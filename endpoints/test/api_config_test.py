@@ -212,6 +212,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'All field types in the query parameters.',
             'httpMethod': 'GET',
             'path': 'entries',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameters': {
@@ -285,6 +286,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'All field types in the query parameters.',
             'httpMethod': 'GET',
             'path': 'entries/container',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameters': {
@@ -355,6 +357,7 @@ class ApiConfigTest(unittest.TestCase):
                             'required param.'),
             'httpMethod': 'POST',
             'path': 'entries/container/{entryId}/publish',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource',
@@ -378,6 +381,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'Request body is in the body field.',
             'httpMethod': 'POST',
             'path': 'entries',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource'
@@ -394,6 +398,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'Message is the request body.',
             'httpMethod': 'POST',
             'path': 'process',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource'
@@ -410,6 +415,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'A VoidMessage for a request body.',
             'httpMethod': 'POST',
             'path': 'nested',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty'
                 },
@@ -425,6 +431,7 @@ class ApiConfigTest(unittest.TestCase):
             'description': 'All field types in the request and response.',
             'httpMethod': 'POST',
             'path': 'roundtrip',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource'
@@ -443,6 +450,7 @@ class ApiConfigTest(unittest.TestCase):
             'Path has a parameter and request body has a required param.',
             'httpMethod': 'POST',
             'path': 'entries/{entryId}/publish',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource',
@@ -469,6 +477,7 @@ class ApiConfigTest(unittest.TestCase):
                 'Path has a parameter and request body is in the body field.',
             'httpMethod': 'POST',
             'path': 'entries/{entryId}/items',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource',
@@ -495,6 +504,7 @@ class ApiConfigTest(unittest.TestCase):
                             'the body field.'),
             'httpMethod': 'POST',
             'path': 'entries/container/{entryId}/items',
+            'useRequestUri': False,
             'request': {
                 'body': 'autoTemplate(backendRequest)',
                 'bodyName': 'resource',
@@ -973,6 +983,7 @@ class ApiConfigTest(unittest.TestCase):
         'scopes': ['https://www.googleapis.com/auth/userinfo.email'],
         'clientIds': [API_EXPLORER_CLIENT_ID],
         'authLevel': 'NONE',
+        'useRequestUri': False,
         }
 
     get_container_config = get_config.copy()
@@ -1039,6 +1050,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.request.my_request': {
             'httpMethod': 'GET',
             'path': 'request_path',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {
                 'body': 'autoTemplate(backendResponse)',
@@ -1051,6 +1063,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.simple.entries.get': {
             'httpMethod': 'POST',
             'path': 'entries',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {
                 'body': 'autoTemplate(backendResponse)',
@@ -1165,6 +1178,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.repeated.get': {
             'httpMethod': 'GET',
             'path': 'get',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service1.get',
@@ -1175,6 +1189,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.repeated.list': {
             'httpMethod': 'GET',
             'path': 'list',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service2.list',
@@ -1301,6 +1316,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.resource1.get': {
             'httpMethod': 'GET',
             'path': 'get1',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service1.get',
@@ -1311,6 +1327,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.resource2.get': {
             'httpMethod': 'GET',
             'path': 'get2',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'Service2.get',
@@ -1360,6 +1377,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.resource1.get': {
             'httpMethod': 'GET',
             'path': 'get1',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameters': {
@@ -1378,6 +1396,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.resource2.get': {
             'httpMethod': 'GET',
             'path': 'get2',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameters': {
@@ -1457,6 +1476,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.donothing': {
             'httpMethod': 'GET',
             'path': 'donothing',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.donothing',
@@ -1467,6 +1487,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.alternate': {
             'httpMethod': 'POST',
             'path': 'foo',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.foo',
@@ -1507,6 +1528,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.at_base': {
             'httpMethod': 'GET',
             'path': 'base_path/at_base',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.at_base',
@@ -1517,6 +1539,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.append_to_base': {
             'httpMethod': 'GET',
             'path': 'base_path/appended',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.append_to_base',
@@ -1527,6 +1550,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.append_to_base2': {
             'httpMethod': 'GET',
             'path': 'base_path/appended/more',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.append_to_base2',
@@ -1537,6 +1561,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.absolute': {
             'httpMethod': 'GET',
             'path': 'ignore_base',
+            'useRequestUri': False,
             'request': {'body': 'empty'},
             'response': {'body': 'empty'},
             'rosyMethod': 'TestService.absolute',
@@ -1633,6 +1658,7 @@ class ApiConfigTest(unittest.TestCase):
     items_update_config = {
         'httpMethod': 'PUT',
         'path': 'items/{itemId}',
+        'useRequestUri': False,
         'request': {'body': 'autoTemplate(backendRequest)',
                     'bodyName': 'resource',
                     'parameters': params,
@@ -1681,6 +1707,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.items.get': {
             'httpMethod': 'GET',
             'path': 'items/{itemId}',
+            'useRequestUri': False,
             'request': {'body': 'empty',
                         'parameters': params,
                         'parameterOrder': param_order},
@@ -1717,6 +1744,7 @@ class ApiConfigTest(unittest.TestCase):
         'root.items.get': {
             'httpMethod': 'GET',
             'path': 'items/{itemId}',
+            'useRequestUri': False,
             'request': {'body': 'empty',
                         'parameters': params,
                         'parameterOrder': param_order},
@@ -2365,6 +2393,7 @@ class MethodDecoratorTest(unittest.TestCase):
           'authservice.baz': {
               'httpMethod': 'POST',
               'path': 'baz',
+              'useRequestUri': False,
               'request': {'body': 'empty'},
               'response': {'body': 'empty'},
               'rosyMethod': 'AuthServiceImpl.baz',

@@ -28,14 +28,14 @@ class ApiConfigManagerTest(unittest.TestCase):
 
   def test_process_api_config_empty_response(self):
     self.config_manager.process_api_config_response({})
-    actual_method = self.config_manager.lookup_rest_method('guestbook_api',
-                                                           'GET')
+    actual_method = self.config_manager.lookup_rest_method(
+        'guestbook_api', '','GET')
     self.assertEqual((None, None, None), actual_method)
 
   def test_process_api_config_invalid_response(self):
     self.config_manager.process_api_config_response({'name': 'foo'})
-    actual_method = self.config_manager.lookup_rest_method('guestbook_api',
-                                                           'GET')
+    actual_method = self.config_manager.lookup_rest_method(
+        'guestbook_api', '', 'GET')
     self.assertEqual((None, None, None), actual_method)
 
   def test_process_api_config(self):
@@ -49,7 +49,7 @@ class ApiConfigManagerTest(unittest.TestCase):
               'methods': {'guestbook_api.foo.bar': fake_method}}
     self.config_manager.process_api_config_response({'items': [config]})
     actual_method = self.config_manager.lookup_rest_method(
-        'guestbook_api/X/greetings/123', 'GET')[1]
+        'guestbook_api/X/greetings/123', '', 'GET')[1]
     self.assertEqual(fake_method, actual_method)
 
   def test_process_api_config_order_length(self):
@@ -75,23 +75,23 @@ class ApiConfigManagerTest(unittest.TestCase):
     # Make sure all methods appear in the result.
     for method_name, path, _ in test_method_info:
       request_path = 'guestbook_api/X/{}'.format(path.replace('{gid}', '123'))
-      assert (None, None, None) != self.config_manager.lookup_rest_method(request_path, 'GET')
+      assert (None, None, None) != self.config_manager.lookup_rest_method(request_path, '', 'GET')
     # Make sure paths and partial paths return the right methods.
     self.assertEqual(
         self.config_manager.lookup_rest_method(
-            'guestbook_api/X/greetings', 'GET')[0],
+            'guestbook_api/X/greetings', '', 'GET')[0],
         'guestbook_api.list')
     self.assertEqual(
         self.config_manager.lookup_rest_method(
-            'guestbook_api/X/greetings/1', 'GET')[0],
+            'guestbook_api/X/greetings/1', '', 'GET')[0],
         'guestbook_api.foo.bar')
     self.assertEqual(
         self.config_manager.lookup_rest_method(
-            'guestbook_api/X/greetings/2/sender/property/blah', 'GET')[0],
+            'guestbook_api/X/greetings/2/sender/property/blah', '', 'GET')[0],
         'guestbook_api.f3')
     self.assertEqual(
         self.config_manager.lookup_rest_method(
-            'guestbook_api/X/greet', 'GET')[0],
+            'guestbook_api/X/greet', '', 'GET')[0],
         'guestbook_api.shortgreet')
 
   def test_get_sorted_methods1(self):
@@ -173,7 +173,7 @@ class ApiConfigManagerTest(unittest.TestCase):
   def test_save_lookup_rest_method(self):
     # First attempt, guestbook.get does not exist
     method_spec = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/i', 'GET')
+        'guestbook_api/v1/greetings/i', '', 'GET')
     self.assertEqual((None, None, None), method_spec)
 
     # Now we manually save it, and should find it
@@ -182,10 +182,23 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
                                           'v1', fake_method)
     method_name, method_spec, params = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/i', 'GET')
+        'guestbook_api/v1/greetings/i', '', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({'id': 'i'}, params)
+
+  def test_lookup_rest_method_with_request_uri(self):
+    fake_method = {'httpMethod': 'GET',
+                   'useRequestUri': True,
+                   'path': 'greetings/{id}'}
+    self.config_manager._save_rest_method('guestbook_api.get', 'guestbook_api',
+                                          'v1', fake_method)
+
+    method_name, method_spec, params = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/greetings/i/i', 'guestbook_api/v1/greetings/i%2Fi', 'GET')
+    self.assertEqual('guestbook_api.get', method_name)
+    self.assertEqual(fake_method, method_spec)
+    self.assertEqual({'id': 'i/i'}, params)
 
   def test_lookup_rest_method_with_colon_in_path(self):
     fake_method = {'httpMethod': 'GET',
@@ -194,7 +207,7 @@ class ApiConfigManagerTest(unittest.TestCase):
                                           'v1', fake_method)
 
     method_name, method_spec, _ = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/greeting:xmas', 'GET')
+        'guestbook_api/v1/greetings/greeting:xmas', '', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
 
@@ -205,7 +218,7 @@ class ApiConfigManagerTest(unittest.TestCase):
                                           'v1', fake_method)
 
     method_name, method_spec, _ = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/greetings:testcolon', 'GET')
+        'guestbook_api/v1/greetings/greetings:testcolon', '', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
 
@@ -216,7 +229,7 @@ class ApiConfigManagerTest(unittest.TestCase):
                                           'v1', fake_method)
 
     method_name, method_spec, _ = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/1:hello', 'GET')
+        'guestbook_api/v1/greetings/1:hello', '', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
 
@@ -227,7 +240,7 @@ class ApiConfigManagerTest(unittest.TestCase):
                                           'v1', fake_method)
 
     method_name, method_spec, _ = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/greetings/greeting:colon:hello', 'GET')
+        'guestbook_api/v1/greetings/greeting:colon:hello', '', 'GET')
     self.assertEqual('guestbook_api.get', method_name)
     self.assertEqual(fake_method, method_spec)
 
@@ -239,14 +252,14 @@ class ApiConfigManagerTest(unittest.TestCase):
 
     # Make sure we get this method when we query without a slash.
     method_name, method_spec, params = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/trailingslash', 'GET')
+        'guestbook_api/v1/trailingslash', '', 'GET')
     self.assertEqual('guestbook_api.trailingslash', method_name)
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({}, params)
 
     # Make sure we get this method when we query with a slash.
     method_name, method_spec, params = self.config_manager.lookup_rest_method(
-        'guestbook_api/v1/trailingslash/', 'GET')
+        'guestbook_api/v1/trailingslash/', '', 'GET')
     self.assertEqual('guestbook_api.trailingslash', method_name)
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({}, params)

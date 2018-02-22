@@ -165,7 +165,7 @@ class ApiConfigManager(object):
       result[actual_var_name] = urllib.unquote_plus(value)
     return result
 
-  def lookup_rest_method(self, path, http_method):
+  def lookup_rest_method(self, path, request_uri, http_method):
     """Look up the rest method at call time.
 
     The method is looked up in self._rest_methods, the list it is saved
@@ -182,15 +182,18 @@ class ApiConfigManager(object):
         <method> is the descriptor as specified in the API configuration. -and-
         <params> is a dict of path parameters matched in the rest request.
     """
+    method_key = http_method.lower()
     with self._config_lock:
       for compiled_path_pattern, unused_path, methods in self._rest_methods:
-        match = compiled_path_pattern.match(path)
+        if method_key not in methods:
+          continue
+        candidate_method_info = methods[method_key]
+        match_against = request_uri if candidate_method_info[1].get('useRequestUri') else path
+        match = compiled_path_pattern.match(match_against)
         if match:
           params = self._get_path_params(match)
-          method_key = http_method.lower()
-          method_name, method = methods.get(method_key, (None, None))
-          if method:
-            break
+          method_name, method = candidate_method_info
+          break
       else:
         _logger.warn('No endpoint found for path: %s', path)
         method_name = None

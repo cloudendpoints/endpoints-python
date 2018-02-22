@@ -456,6 +456,11 @@ class _ApiInfo(object):
     """Rate limiting metric definitions for this API."""
     return self.__common_info.limit_definitions
 
+  @property
+  def use_request_uri(self):
+    """Match request paths based on the REQUEST_URI instead of PATH_INFO."""
+    return self.__common_info.use_request_uri
+
 
 class _ApiDecorator(object):
   """Decorator for single- or multi-class APIs.
@@ -472,7 +477,7 @@ class _ApiDecorator(object):
                owner_name=None, package_path=None, frontend_limits=None,
                title=None, documentation=None, auth_level=None, issuers=None,
                namespace=None, api_key_required=None, base_path=None,
-               limit_definitions=None):
+               limit_definitions=None, use_request_uri=None):
     """Constructor for _ApiDecorator.
 
     Args:
@@ -509,6 +514,7 @@ class _ApiDecorator(object):
       api_key_required: bool, whether a key is required to call this API.
       base_path: string, the base path for all endpoints in this API.
       limit_definitions: list of LimitDefinition tuples used in this API.
+      use_request_uri: if true, match requests against REQUEST_URI instead of PATH_INFO
     """
     self.__common_info = self.__ApiCommonInfo(
         name, version, description=description, hostname=hostname,
@@ -519,7 +525,8 @@ class _ApiDecorator(object):
         frontend_limits=frontend_limits, title=title,
         documentation=documentation, auth_level=auth_level, issuers=issuers,
         namespace=namespace, api_key_required=api_key_required,
-        base_path=base_path, limit_definitions=limit_definitions)
+        base_path=base_path, limit_definitions=limit_definitions,
+        use_request_uri=use_request_uri)
     self.__classes = []
 
   class __ApiCommonInfo(object):
@@ -545,7 +552,7 @@ class _ApiDecorator(object):
                  owner_name=None, package_path=None, frontend_limits=None,
                  title=None, documentation=None, auth_level=None, issuers=None,
                  namespace=None, api_key_required=None, base_path=None,
-                 limit_definitions=None):
+                 limit_definitions=None, use_request_uri=None):
       """Constructor for _ApiCommonInfo.
 
       Args:
@@ -582,6 +589,7 @@ class _ApiDecorator(object):
         api_key_required: bool, whether a key is required to call into this API.
         base_path: string, the base path for all endpoints in this API.
         limit_definitions: list of LimitDefinition tuples used in this API.
+        use_request_uri: if true, match requests against REQUEST_URI instead of PATH_INFO
       """
       _CheckType(name, basestring, 'name', allow_none=False)
       _CheckType(version, basestring, 'version', allow_none=False)
@@ -613,6 +621,7 @@ class _ApiDecorator(object):
       _CheckAudiences(audiences)
 
       _CheckLimitDefinitions(limit_definitions)
+      _CheckType(use_request_uri, bool, 'use_request_uri')
 
       if hostname is None:
         hostname = app_identity.get_default_version_hostname()
@@ -628,6 +637,8 @@ class _ApiDecorator(object):
         api_key_required = False
       if base_path is None:
         base_path = '/_ah/api/'
+      if use_request_uri is None:
+        use_request_uri = False
 
       self.__name = name
       self.__api_version = version
@@ -656,6 +667,7 @@ class _ApiDecorator(object):
       self.__api_key_required = api_key_required
       self.__base_path = base_path
       self.__limit_definitions = limit_definitions
+      self.__use_request_uri = use_request_uri
 
     @property
     def name(self):
@@ -772,6 +784,11 @@ class _ApiDecorator(object):
     def limit_definitions(self):
       """Rate limiting metric definitions for this API."""
       return self.__limit_definitions
+
+    @property
+    def use_request_uri(self):
+      """Match request paths based on the REQUEST_URI instead of PATH_INFO."""
+      return self.__use_request_uri
 
   def __call__(self, service_class):
     """Decorator for ProtoRPC class that configures Google's API server.
@@ -982,7 +999,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
         auth=None, owner_domain=None, owner_name=None, package_path=None,
         frontend_limits=None, title=None, documentation=None, auth_level=None,
         issuers=None, namespace=None, api_key_required=None, base_path=None,
-        limit_definitions=None):
+        limit_definitions=None, use_request_uri=None):
   """Decorate a ProtoRPC Service class for use by the framework above.
 
   This decorator can be used to specify an API name, version, description, and
@@ -1046,6 +1063,7 @@ def api(name, version, description=None, hostname=None, audiences=None,
     base_path: string, the base path for all endpoints in this API.
     limit_definitions: list of endpoints.LimitDefinition objects, quota metric
       definitions for this API.
+    use_request_uri: if true, match requests against REQUEST_URI instead of PATH_INFO
 
 
   Returns:
@@ -1064,7 +1082,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
                        documentation=documentation, auth_level=auth_level,
                        issuers=issuers, namespace=namespace,
                        api_key_required=api_key_required, base_path=base_path,
-                       limit_definitions=limit_definitions)
+                       limit_definitions=limit_definitions,
+                       use_request_uri=use_request_uri)
 
 
 class _MethodInfo(object):
@@ -1079,7 +1098,7 @@ class _MethodInfo(object):
   def __init__(self, name=None, path=None, http_method=None,
                scopes=None, audiences=None, allowed_client_ids=None,
                auth_level=None, api_key_required=None, request_body_class=None,
-               request_params_class=None, metric_costs=None):
+               request_params_class=None, metric_costs=None, use_request_uri=None):
     """Constructor.
 
     Args:
@@ -1098,6 +1117,7 @@ class _MethodInfo(object):
         ResourceContainer. Otherwise, null.
       metric_costs: dict with keys matching an API limit metric and values
         representing the cost for each successful call against that metric.
+      use_request_uri: if true, match requests against REQUEST_URI instead of PATH_INFO
     """
     self.__name = name
     self.__path = path
@@ -1110,6 +1130,7 @@ class _MethodInfo(object):
     self.__request_body_class = request_body_class
     self.__request_params_class = request_params_class
     self.__metric_costs = metric_costs
+    self.__use_request_uri = use_request_uri
 
   def __safe_name(self, method_name):
     """Restrict method name to a-zA-Z0-9_, first char lowercase."""
@@ -1222,6 +1243,12 @@ class _MethodInfo(object):
     else:
       return api_info.api_key_required
 
+  def use_request_uri(self, api_info):
+    if self.__use_request_uri is not None:
+      return self.__use_request_uri
+    else:
+      return api_info.use_request_uri
+
   def method_id(self, api_info):
     """Computed method name."""
     # This is done here for now because at __init__ time, the method is known
@@ -1246,7 +1273,8 @@ def method(request_message=message_types.VoidMessage,
            allowed_client_ids=None,
            auth_level=None,
            api_key_required=None,
-           metric_costs=None):
+           metric_costs=None,
+           use_request_uri=None):
   """Decorate a ProtoRPC Method for use by the framework above.
 
   This decorator can be used to specify a method name, path, http method,
@@ -1274,6 +1302,7 @@ def method(request_message=message_types.VoidMessage,
     api_key_required: bool, whether a key is required to call the method
     metric_costs: dict with keys matching an API limit metric and values
       representing the cost for each successful call against that metric.
+    use_request_uri: if true, match requests against REQUEST_URI instead of PATH_INFO
 
   Returns:
     'apiserving_method_wrapper' function.
@@ -1341,6 +1370,7 @@ def method(request_message=message_types.VoidMessage,
         scopes=scopes, audiences=audiences,
         allowed_client_ids=allowed_client_ids, auth_level=auth_level,
         api_key_required=api_key_required, metric_costs=metric_costs,
+        use_request_uri=use_request_uri,
         request_body_class=request_body_class,
         request_params_class=request_params_class)
     invoke_remote.__name__ = invoke_remote.method_info.name
@@ -1931,6 +1961,8 @@ class ApiConfigGenerator(object):
                   else service.api_info.auth_level)
     if auth_level is not None:
       descriptor['authLevel'] = AUTH_LEVEL.reverse_mapping[auth_level]
+
+    descriptor['useRequestUri'] = method_info.use_request_uri(service.api_info)
 
     return descriptor
 
