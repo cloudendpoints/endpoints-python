@@ -550,7 +550,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
 
   # pylint: disable=g-bad-name
 
-  @api_config.api('TestApi', 'v1')
+  @api_config.api('testapi', 'v1')
   class TestApiAnnotatedAtMethod(remote.Service):
     """Describes TestApi."""
 
@@ -563,7 +563,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
       pass
 
   @api_config.api(
-      'TestApi', 'v1', audiences=UsersIdTokenTestBase._SAMPLE_AUDIENCES,
+      'testapi', 'v1', audiences=UsersIdTokenTestBase._SAMPLE_AUDIENCES,
       allowed_client_ids=UsersIdTokenTestBase._SAMPLE_ALLOWED_CLIENT_IDS)
   class TestApiAnnotatedAtApi(remote.Service):
     """Describes TestApi."""
@@ -639,7 +639,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     dummy_email = 'test@gmail.com'
     dummy_client_id = self._SAMPLE_ALLOWED_CLIENT_IDS[0]
 
-    @api_config.api('TestApi', 'v1',
+    @api_config.api('testapi', 'v1',
                     allowed_client_ids=self._SAMPLE_ALLOWED_CLIENT_IDS,
                     scopes=[dummy_scope])
     class TestApiScopes(remote.Service):

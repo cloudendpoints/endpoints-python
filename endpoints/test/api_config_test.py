@@ -17,6 +17,7 @@
 import itertools
 import json
 import unittest
+import pytest
 
 import endpoints.api_config as api_config
 from endpoints.api_config import ApiConfigGenerator
@@ -1974,7 +1975,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testApiInfoPopulated(self):
 
-    @api_config.api(name='CoolService', version='vX',
+    @api_config.api(name='coolservice', version='vX',
                     description='My Cool Service', hostname='myhost.com',
                     canonical_name='Cool Service Name',
                     namespace=api_config.Namespace('domain', 'name', 'path'))
@@ -1983,7 +1984,7 @@ class ApiDecoratorTest(unittest.TestCase):
       pass
 
     api_info = MyDecoratedService.api_info
-    self.assertEqual('CoolService', api_info.name)
+    self.assertEqual('coolservice', api_info.name)
     self.assertEqual('vX', api_info.api_version)
     self.assertEqual('vX', api_info.path_version)
     self.assertEqual('My Cool Service', api_info.description)
@@ -2002,13 +2003,13 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testApiInfoDefaults(self):
 
-    @api_config.api('CoolService2', 'v2')
+    @api_config.api('coolservice2', 'v2')
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
       pass
 
     api_info = MyDecoratedService.api_info
-    self.assertEqual('CoolService2', api_info.name)
+    self.assertEqual('coolservice2', api_info.name)
     self.assertEqual('v2', api_info.api_version)
     self.assertEqual('v2', api_info.path_version)
     self.assertEqual(None, api_info.description)
@@ -2021,7 +2022,7 @@ class ApiDecoratorTest(unittest.TestCase):
   def testApiInfoInvalidNamespaceNoDomain(self):
 
     with self.assertRaises(api_exceptions.InvalidNamespaceException):
-      @api_config.api('CoolService2', 'v2',
+      @api_config.api('coolservice2', 'v2',
                       namespace=api_config.Namespace(None, 'name', 'path'))
       class MyDecoratedService(remote.Service):
         """Describes MyDecoratedService."""
@@ -2030,7 +2031,7 @@ class ApiDecoratorTest(unittest.TestCase):
   def testApiInfoInvalidNamespaceNoName(self):
 
     with self.assertRaises(api_exceptions.InvalidNamespaceException):
-      @api_config.api('CoolService2', 'v2',
+      @api_config.api('coolservice2', 'v2',
                       namespace=api_config.Namespace('domain', None, 'path'))
       class MyDecoratedService(remote.Service):
         """Describes MyDecoratedService."""
@@ -2038,7 +2039,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testApiInfoNamespaceDefaultPath(self):
 
-    @api_config.api('CoolService2', 'v2',
+    @api_config.api('coolservice2', 'v2',
                     namespace=api_config.Namespace('domain', 'name', None))
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
@@ -2051,7 +2052,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testGetApiClassesSingle(self):
     """Test that get_api_classes works when one class has been decorated."""
-    my_api = api_config.api(name='My Service', version='v1')
+    my_api = api_config.api(name='myservice', version='v1')
 
     @my_api
     class MyDecoratedService(remote.Service):
@@ -2061,7 +2062,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testGetApiClassesSingleCollection(self):
     """Test that get_api_classes works with the collection() decorator."""
-    my_api = api_config.api(name='My Service', version='v1')
+    my_api = api_config.api(name='myservice', version='v1')
 
     @my_api.api_class(resource_name='foo')
     class MyDecoratedService(remote.Service):
@@ -2071,7 +2072,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testGetApiClassesMultiple(self):
     """Test that get_api_classes works with multiple classes."""
-    my_api = api_config.api(name='My Service', version='v1')
+    my_api = api_config.api(name='myservice', version='v1')
 
     @my_api.api_class(resource_name='foo')
     class MyDecoratedService1(remote.Service):
@@ -2090,7 +2091,7 @@ class ApiDecoratorTest(unittest.TestCase):
 
   def testGetApiClassesMixedStyles(self):
     """Test that get_api_classes works when decorated differently."""
-    my_api = api_config.api(name='My Service', version='v1')
+    my_api = api_config.api(name='myservice', version='v1')
 
     # @my_api is equivalent to @my_api.api_class().  This is allowed, though
     # mixing styles like this shouldn't be encouraged.
@@ -2109,6 +2110,27 @@ class ApiDecoratorTest(unittest.TestCase):
     self.assertEqual([MyDecoratedService1, MyDecoratedService2,
                       MyDecoratedService3], my_api.get_api_classes())
 
+  def testApiNameRestrictions(self):
+
+    @api_config.api(name='coolservice', version='vX')
+    class MyDecoratedService(remote.Service):
+      """Describes MyDecoratedService."""
+      pass
+
+    api_info = MyDecoratedService.api_info
+    assert 'coolservice' == api_info.name
+
+    with pytest.raises(api_exceptions.InvalidApiNameException):
+      @api_config.api('CoolService2', 'v2')
+      class MyDecoratedService(remote.Service):
+        """Describes MyDecoratedService."""
+        pass
+
+    with pytest.raises(api_exceptions.InvalidApiNameException):
+      @api_config.api('c' + 'o'*40 + 'l', 'v2')
+      class MyDecoratedService(remote.Service):
+        """Describes MyDecoratedService."""
+        pass
 
 class MethodDecoratorTest(unittest.TestCase):
 
@@ -2180,7 +2202,7 @@ class MethodDecoratorTest(unittest.TestCase):
 
   def testMethodInfoPopulated(self):
 
-    @api_config.api(name='CoolService', version='vX',
+    @api_config.api(name='coolservice', version='vX',
                     description='My Cool Service', hostname='myhost.com')
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
@@ -2211,7 +2233,7 @@ class MethodDecoratorTest(unittest.TestCase):
 
   def testMethodInfoDefaults(self):
 
-    @api_config.api('CoolService2', 'v2')
+    @api_config.api('coolservice2', 'v2')
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
 
@@ -2241,7 +2263,7 @@ class MethodDecoratorTest(unittest.TestCase):
       dog = messages.StringField(3)
       panda = messages.StringField(4, required=True)
 
-    @api_config.api('CoolService3', 'v3')
+    @api_config.api('coolservice3', 'v3')
     class MyDecoratedService(remote.Service):
       """Describes MyDecoratedService."""
 
@@ -2346,7 +2368,7 @@ class MethodDecoratorTest(unittest.TestCase):
       api_kwargs = {attribute_name: api_value}
       method_kwargs = {attribute_name: method_value}
 
-      @api_config.api('AuthService', 'v1', hostname='example.appspot.com',
+      @api_config.api('authservice', 'v1', hostname='example.appspot.com',
                       **api_kwargs)
       class AuthServiceImpl(remote.Service):
         """Describes AuthServiceImpl."""
@@ -2363,7 +2385,7 @@ class MethodDecoratorTest(unittest.TestCase):
       generator = ApiConfigGenerator()
       api = json.loads(generator.pretty_print_config_to_json(AuthServiceImpl))
       expected = {
-          'authService.baz': {
+          'authservice.baz': {
               'httpMethod': 'POST',
               'path': 'baz',
               'request': {'body': 'empty'},
@@ -2375,9 +2397,9 @@ class MethodDecoratorTest(unittest.TestCase):
               }
           }
       if expected_value:
-        expected['authService.baz'][config_name] = expected_value
-      elif config_name in expected['authService.baz']:
-        del expected['authService.baz'][config_name]
+        expected['authservice.baz'][config_name] = expected_value
+      elif config_name in expected['authservice.baz']:
+        del expected['authservice.baz'][config_name]
 
       test_util.AssertDictEqual(expected, api['methods'], self)
 

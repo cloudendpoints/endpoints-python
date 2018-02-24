@@ -86,5 +86,9 @@ class InvalidLimitDefinitionException(Exception):
   """Exception thrown if there's an invalid rate limit definition."""
 
 
+class InvalidApiNameException(Exception):
+  """Exception thrown if the api name does not match the required character set."""
+
+
 class ToolError(Exception):
   """Exception thrown if there's a general error in the endpointscfg.py tool."""
