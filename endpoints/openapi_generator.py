@@ -980,6 +980,7 @@ class OpenApiGenerator(object):
             'version': api_info.api_version,
             'title': api_info.name
         },
+        'x-google-api-name': api_info.name,
         'host': hostname,
         'consumes': ['application/json'],
         'produces': ['application/json'],

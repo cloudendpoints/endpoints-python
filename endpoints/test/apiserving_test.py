@@ -123,7 +123,7 @@ class TestServiceCustomUrl(remote.Service):
     return message_types.VoidMessage()
 
 
-my_api = api_config.api(name='My Service', version='v1')
+my_api = api_config.api(name='myservice', version='v1')
 
 
 @my_api.api_class()
