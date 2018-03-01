@@ -264,6 +264,26 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.assertEqual(fake_method, method_spec)
     self.assertEqual({}, params)
 
+  def test_trailing_slash_could_be_omitted(self):
+    # Create a get resource URL with trailing slash.
+    fake_method = {'httpMethod': 'GET', 'path': 'with-trailing-slash/'}
+    self.config_manager._save_rest_method('guestbook_api.withtrailingslash',
+                                          'guestbook_api', 'v1', fake_method)
+
+    # Make sure we get the method when we query with a slash.
+    method_name, method_spec, params = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/with-trailing-slash/', 'GET')
+    self.assertEqual('guestbook_api.withtrailingslash', method_name)
+    self.assertEqual(fake_method, method_spec)
+    self.assertEqual({}, params)
+
+    # Make sure we get the method when we query without a slash.
+    method_name, method_spec, params = self.config_manager.lookup_rest_method(
+        'guestbook_api/v1/with-trailing-slash', 'GET')
+    self.assertEqual('guestbook_api.withtrailingslash', method_name)
+    self.assertEqual(fake_method, method_spec)
+    self.assertEqual({}, params)
+
 
 class ParameterizedPathTest(unittest.TestCase):
 
