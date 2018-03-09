@@ -151,7 +151,7 @@ def _WriteFile(output_path, name, content):
 
 
 def GenApiConfig(service_class_names, config_string_generator=None,
-                 hostname=None, application_path=None):
+                 hostname=None, application_path=None, **additional_kwargs):
   """Write an API configuration for endpoints annotated ProtoRPC services.
 
   Args:
@@ -211,7 +211,7 @@ def GenApiConfig(service_class_names, config_string_generator=None,
     # Map each API by name-version.
     service_map['%s-%s' % api_info] = (
         config_string_generator.pretty_print_config_to_json(
-            services, hostname=hostname))
+            services, hostname=hostname, **additional_kwargs))
 
   return service_map
 
@@ -311,7 +311,7 @@ def _GenDiscoveryDoc(service_class_names, doc_format,
 
 
 def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
-                    application_path=None):
+                    application_path=None, x_google_api_name=False):
   """Write discovery documents generated from a cloud service to file.
 
   Args:
@@ -329,7 +329,8 @@ def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
   service_configs = GenApiConfig(
       service_class_names, hostname=hostname,
       config_string_generator=openapi_generator.OpenApiGenerator(),
-      application_path=application_path)
+      application_path=application_path,
+      x_google_api_name=x_google_api_name)
   for api_name_version, config in service_configs.iteritems():
     openapi_name = api_name_version.replace('-', '') + 'openapi.json'
     output_files.append(_WriteFile(output_path, openapi_name, config))
@@ -484,7 +485,8 @@ def _GenOpenApiSpecCallback(args, openapi_func=_GenOpenApiSpec):
   """
   openapi_paths = openapi_func(args.service, args.output,
                                hostname=args.hostname,
-                               application_path=args.application)
+                               application_path=args.application,
+                               x_google_api_name=args.x_google_api_name)
   for openapi_path in openapi_paths:
     print 'OpenAPI spec written to %s' % openapi_path
 
@@ -572,6 +574,8 @@ def MakeParser(prog):
   get_openapi_spec.set_defaults(callback=_GenOpenApiSpecCallback)
   AddStandardOptions(get_openapi_spec, 'application', 'hostname', 'output',
                      'service')
+  get_openapi_spec.add_argument('--x-google-api-name', action='store_true',
+                                help="Add the 'x-google-api-name' field to the generated spec")
 
   # Create an alias for get_openapi_spec called get_swagger_spec to support
   # the old-style naming. This won't be a visible command, but it will still

@@ -17,7 +17,6 @@
 import itertools
 import json
 import unittest
-import pytest
 
 import endpoints.api_config as api_config
 from endpoints.api_config import ApiConfigGenerator
@@ -2109,28 +2108,6 @@ class ApiDecoratorTest(unittest.TestCase):
 
     self.assertEqual([MyDecoratedService1, MyDecoratedService2,
                       MyDecoratedService3], my_api.get_api_classes())
-
-  def testApiNameRestrictions(self):
-
-    @api_config.api(name='coolservice', version='vX')
-    class MyDecoratedService(remote.Service):
-      """Describes MyDecoratedService."""
-      pass
-
-    api_info = MyDecoratedService.api_info
-    assert 'coolservice' == api_info.name
-
-    with pytest.raises(api_exceptions.InvalidApiNameException):
-      @api_config.api('CoolService2', 'v2')
-      class MyDecoratedService(remote.Service):
-        """Describes MyDecoratedService."""
-        pass
-
-    with pytest.raises(api_exceptions.InvalidApiNameException):
-      @api_config.api('c' + 'o'*40 + 'l', 'v2')
-      class MyDecoratedService(remote.Service):
-        """Describes MyDecoratedService."""
-        pass
 
 class MethodDecoratorTest(unittest.TestCase):
 
