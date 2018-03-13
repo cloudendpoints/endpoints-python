@@ -258,17 +258,6 @@ def _CheckLimitDefinitions(limit_definitions):
       _CheckType(ld.default_limit, int, 'limit_definition.default_limit')
 
 
-_VALID_API_NAME = re.compile('^[a-z][a-z0-9]{0,39}$')
-
-
-def _CheckApiName(name):
-  valid = (_VALID_API_NAME.match(name) is not None)
-  if not valid:
-    raise api_exceptions.InvalidApiNameException(
-        'The API name must match the regular expression {}'.format(
-            _VALID_API_NAME.pattern[1:-1]))
-
-
 # pylint: disable=g-bad-name
 class _ApiInfo(object):
   """Configurable attributes of an API.
@@ -592,7 +581,6 @@ class _ApiDecorator(object):
         limit_definitions: list of LimitDefinition tuples used in this API.
       """
       _CheckType(name, basestring, 'name', allow_none=False)
-      _CheckApiName(name)
       _CheckType(version, basestring, 'version', allow_none=False)
       _CheckType(description, basestring, 'description')
       _CheckType(hostname, basestring, 'hostname')

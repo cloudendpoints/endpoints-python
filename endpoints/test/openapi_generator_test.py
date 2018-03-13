@@ -16,6 +16,7 @@
 
 import json
 import unittest
+import pytest
 
 import endpoints.api_config as api_config
 
@@ -23,6 +24,7 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 
+import endpoints.api_exceptions as api_exceptions
 import endpoints.resource_container as resource_container
 import endpoints.openapi_generator as openapi_generator
 import test_util
@@ -154,7 +156,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -481,7 +482,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1033,7 +1033,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'title': 'iata',
             'version': 'v1',
         },
-        'x-google-api-name': 'iata',
         'host': None,
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1127,7 +1126,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'localhost:8080',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1191,7 +1189,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1292,7 +1289,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1365,7 +1361,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': '1.3.4',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1418,7 +1413,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1471,7 +1465,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1524,7 +1517,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Testing repeated params',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1606,7 +1598,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Testing repeated simple field params',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1682,7 +1673,6 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
             'description': 'Testing repeated Message params',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1749,6 +1739,35 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
 
     test_util.AssertDictEqual(expected_openapi, api, self)
 
+  def testApiNameRestrictions(self):
+    @api_config.api(name='coolservice', version='vX')
+    class MyDecoratedService(remote.Service):
+      pass
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyDecoratedService))
+    assert 'x-google-api-name' not in api
+    api = json.loads(self.generator.pretty_print_config_to_json(MyDecoratedService, x_google_api_name=True))
+    assert 'x-google-api-name' in api
+    assert 'coolservice' == api['x-google-api-name']
+
+    @api_config.api('CoolService2', 'v2')
+    class MyDecoratedService(remote.Service):
+      pass
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyDecoratedService))
+    assert 'x-google-api-name' not in api
+    with pytest.raises(api_exceptions.InvalidApiNameException):
+      self.generator.pretty_print_config_to_json(MyDecoratedService, x_google_api_name=True)
+
+    @api_config.api('c' + 'o'*40 + 'l', 'v2')
+    class MyDecoratedService(remote.Service):
+      pass
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyDecoratedService))
+    assert 'x-google-api-name' not in api
+    with pytest.raises(api_exceptions.InvalidApiNameException):
+      self.generator.pretty_print_config_to_json(MyDecoratedService, x_google_api_name=True)
+
 
 class DevServerOpenApiGeneratorTest(BaseOpenApiGeneratorTest,
                                     test_util.DevServerTest):
@@ -1780,7 +1799,6 @@ class DevServerOpenApiGeneratorTest(BaseOpenApiGeneratorTest,
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -1846,7 +1864,6 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -2044,7 +2061,6 @@ class MultiIssuerAuthTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -2131,7 +2147,6 @@ class MultiIssuerAuthTest(BaseOpenApiGeneratorTest):
             'description': 'Describes MyService.',
             'version': 'v1',
         },
-        'x-google-api-name': 'root',
         'host': 'example.appspot.com',
         'consumes': ['application/json'],
         'produces': ['application/json'],

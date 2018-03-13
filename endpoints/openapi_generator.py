@@ -45,6 +45,18 @@ _API_KEY_PARAM = 'key'
 _DEFAULT_SECURITY_DEFINITION = 'google_id_token'
 
 
+_VALID_API_NAME = re.compile('^[a-z][a-z0-9]{0,39}$')
+
+
+def _validate_api_name(name):
+  valid = (_VALID_API_NAME.match(name) is not None)
+  if not valid:
+    raise api_exceptions.InvalidApiNameException(
+        'The API name must match the regular expression {}'.format(
+            _VALID_API_NAME.pattern[1:-1]))
+  return name
+
+
 class OpenApiGenerator(object):
   """Generates an OpenAPI spec from a ProtoRPC service.
 
@@ -845,7 +857,7 @@ class OpenApiGenerator(object):
 
     return merged_api_info
 
-  def __api_openapi_descriptor(self, services, hostname=None):
+  def __api_openapi_descriptor(self, services, hostname=None, x_google_api_name=False):
     """Builds an OpenAPI description of an API.
 
     Args:
@@ -866,7 +878,8 @@ class OpenApiGenerator(object):
     """
     merged_api_info = self.__get_merged_api_info(services)
     descriptor = self.get_descriptor_defaults(merged_api_info,
-                                              hostname=hostname)
+                                              hostname=hostname,
+                                              x_google_api_name=x_google_api_name)
 
     description = merged_api_info.description
     if not description and len(services) == 1:
@@ -956,7 +969,7 @@ class OpenApiGenerator(object):
 
     return descriptor
 
-  def get_descriptor_defaults(self, api_info, hostname=None):
+  def get_descriptor_defaults(self, api_info, hostname=None, x_google_api_name=False):
     """Gets a default configuration for a service.
 
     Args:
@@ -980,7 +993,6 @@ class OpenApiGenerator(object):
             'version': api_info.api_version,
             'title': api_info.name
         },
-        'x-google-api-name': api_info.name,
         'host': hostname,
         'consumes': ['application/json'],
         'produces': ['application/json'],
@@ -988,9 +1000,12 @@ class OpenApiGenerator(object):
         'basePath': base_path,
     }
 
+    if x_google_api_name:
+        defaults['x-google-api-name'] = _validate_api_name(api_info.name)
+
     return defaults
 
-  def get_openapi_dict(self, services, hostname=None):
+  def get_openapi_dict(self, services, hostname=None, x_google_api_name=False):
     """JSON dict description of a protorpc.remote.Service in OpenAPI format.
 
     Args:
@@ -1012,9 +1027,9 @@ class OpenApiGenerator(object):
     util.check_list_type(services, remote._ServiceClass, 'services',
                          allow_none=False)
 
-    return self.__api_openapi_descriptor(services, hostname=hostname)
+    return self.__api_openapi_descriptor(services, hostname=hostname, x_google_api_name=x_google_api_name)
 
-  def pretty_print_config_to_json(self, services, hostname=None):
+  def pretty_print_config_to_json(self, services, hostname=None, x_google_api_name=False):
     """JSON string description of a protorpc.remote.Service in OpenAPI format.
 
     Args:
@@ -1026,7 +1041,7 @@ class OpenApiGenerator(object):
     Returns:
       string, The OpenAPI descriptor document as a JSON string.
     """
-    descriptor = self.get_openapi_dict(services, hostname)
+    descriptor = self.get_openapi_dict(services, hostname, x_google_api_name=x_google_api_name)
     return json.dumps(descriptor, sort_keys=True, indent=2,
                       separators=(',', ': '))
 
