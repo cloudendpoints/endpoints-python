@@ -317,11 +317,7 @@ class ApiConfigManager(object):
 
     pattern = re.sub('(/|^){(%s)}(?=/|$|:)' % _PATH_VARIABLE_PATTERN,
                      replace_variable, pattern)
-    if pattern.endswith('/'):
-      pattern += '?$'
-    else:
-      pattern += '/?$'
-    return re.compile(pattern)
+    return re.compile(pattern + '/?$')
 
   def _save_rpc_method(self, method_name, version, method):
     """Store JsonRpc api methods in a map for lookup at call time.
