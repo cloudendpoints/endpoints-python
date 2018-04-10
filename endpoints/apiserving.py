@@ -66,7 +66,6 @@ import json
 import logging
 import os
 
-from . import api_backend_service
 from . import api_config
 from . import api_exceptions
 from . import endpoints_dispatcher
@@ -76,6 +75,7 @@ from google.appengine.api import app_identity
 from endpoints_management.control import client as control_client
 from endpoints_management.control import wsgi as control_wsgi
 
+from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from protorpc.wsgi import service as wsgi_service
@@ -88,6 +88,7 @@ package = 'google.appengine.endpoints'
 
 
 __all__ = [
+    'ApiConfigRegistry',
     'api_server',
     'EndpointsErrorMessage',
     'package',
@@ -183,6 +184,90 @@ def _get_app_revision(environ=None):
     return environ['CURRENT_VERSION_ID'].split('.')[1]
 
 
+class ApiConfigRegistry(object):
+  """Registry of active APIs"""
+
+  def __init__(self):
+    # Set of API classes that have been registered.
+    self.__registered_classes = set()
+    # Set of API config contents served by this App Engine AppId/version
+    self.__api_configs = []
+    # Map of API method name to ProtoRPC method name.
+    self.__api_methods = {}
+
+  # pylint: disable=g-bad-name
+  def register_backend(self, config_contents):
+    """Register a single API and its config contents.
+
+    Args:
+      config_contents: Dict containing API configuration.
+    """
+    if config_contents is None:
+      return
+    self.__register_class(config_contents)
+    self.__api_configs.append(config_contents)
+    self.__register_methods(config_contents)
+
+  def __register_class(self, parsed_config):
+    """Register the class implementing this config, so we only add it once.
+
+    Args:
+      parsed_config: The JSON object with the API configuration being added.
+
+    Raises:
+      ApiConfigurationError: If the class has already been registered.
+    """
+    methods = parsed_config.get('methods')
+    if not methods:
+      return
+
+    # Determine the name of the class that implements this configuration.
+    service_classes = set()
+    for method in methods.itervalues():
+      rosy_method = method.get('rosyMethod')
+      if rosy_method and '.' in rosy_method:
+        method_class = rosy_method.split('.', 1)[0]
+        service_classes.add(method_class)
+
+    for service_class in service_classes:
+      if service_class in self.__registered_classes:
+        raise api_exceptions.ApiConfigurationError(
+            'API class %s has already been registered.' % service_class)
+      self.__registered_classes.add(service_class)
+
+  def __register_methods(self, parsed_config):
+    """Register all methods from the given api config file.
+
+    Methods are stored in a map from method_name to rosyMethod,
+    the name of the ProtoRPC method to be called on the backend.
+    If no rosyMethod was specified the value will be None.
+
+    Args:
+      parsed_config: The JSON object with the API configuration being added.
+    """
+    methods = parsed_config.get('methods')
+    if not methods:
+      return
+
+    for method_name, method in methods.iteritems():
+      self.__api_methods[method_name] = method.get('rosyMethod')
+
+  def lookup_api_method(self, api_method_name):
+    """Looks an API method up by name to find the backend method to call.
+
+    Args:
+      api_method_name: Name of the method in the API that was called.
+
+    Returns:
+      Name of the ProtoRPC method called on the backend, or None if not found.
+    """
+    return self.__api_methods.get(api_method_name)
+
+  def all_api_configs(self):
+    """Return a list of all API configration specs as registered above."""
+    return self.__api_configs
+
+
 class _ApiServer(object):
   """ProtoRPC wrapper, registers APIs and formats errors for Google API Server.
 
@@ -248,7 +333,7 @@ class _ApiServer(object):
     for entry in api_services:
       self.base_paths.add(entry.api_info.base_path)
 
-    self.api_config_registry = api_backend_service.ApiConfigRegistry()
+    self.api_config_registry = ApiConfigRegistry()
     self.api_name_version_map = self.__create_name_version_map(api_services)
     protorpc_services = self.__register_services(self.api_name_version_map,
                                                  self.api_config_registry)
