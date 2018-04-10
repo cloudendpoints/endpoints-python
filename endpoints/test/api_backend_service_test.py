@@ -39,12 +39,12 @@ class ApiConfigRegistryTest(unittest.TestCase):
 
   def testApiMethodsMapped(self):
     self.registry.register_backend(
-        '{"methods": {"method1": {"rosyMethod": "foo"}}}')
+        {"methods": {"method1": {"rosyMethod": "foo"}}})
     self.assertEquals('foo', self.registry.lookup_api_method('method1'))
 
   def testAllApiConfigsWithTwoConfigs(self):
-    config1 = '{"methods": {"method1": {"rosyMethod": "c1.foo"}}}'
-    config2 = '{"methods": {"method2": {"rosyMethod": "c2.bar"}}}'
+    config1 = {"methods": {"method1": {"rosyMethod": "c1.foo"}}}
+    config2 = {"methods": {"method2": {"rosyMethod": "c2.bar"}}}
     self.registry.register_backend(config1)
     self.registry.register_backend(config2)
     self.assertEquals('c1.foo', self.registry.lookup_api_method('method1'))
@@ -55,29 +55,24 @@ class ApiConfigRegistryTest(unittest.TestCase):
     self.registry.register_backend(None)
     self.assertIsNone(self.registry.lookup_api_method('method'))
 
-  def testUnparseableApiConfigContent(self):
-    config = '{"methods": {"method": {"rosyMethod": "foo"'  # Unclosed {s
-    self.assertRaises(ValueError, self.registry.register_backend, config)
-    self.assertIsNone(self.registry.lookup_api_method('method'))
-
   def testEmptyApiConfig(self):
-    config = '{}'
+    config = {}
     self.registry.register_backend(config)
     self.assertIsNone(self.registry.lookup_api_method('method'))
 
   def testApiConfigContentWithNoMethods(self):
-    config = '{"methods": {}}'
+    config = {"methods": {}}
     self.registry.register_backend(config)
     self.assertIsNone(self.registry.lookup_api_method('method'))
 
   def testApiConfigContentWithNoRosyMethod(self):
-    config = '{"methods": {"method": {}}}'
+    config = {"methods": {"method": {}}}
     self.registry.register_backend(config)
     self.assertIsNone(self.registry.lookup_api_method('method'))
 
   def testRegisterSpiRootRepeatedError(self):
-    config1 = '{"methods": {"method1": {"rosyMethod": "MyClass.Func1"}}}'
-    config2 = '{"methods": {"method2": {"rosyMethod": "MyClass.Func2"}}}'
+    config1 = {"methods": {"method1": {"rosyMethod": "MyClass.Func1"}}}
+    config2 = {"methods": {"method2": {"rosyMethod": "MyClass.Func2"}}}
     self.registry.register_backend(config1)
     self.assertRaises(api_exceptions.ApiConfigurationError,
                       self.registry.register_backend, config2)
@@ -88,9 +83,9 @@ class ApiConfigRegistryTest(unittest.TestCase):
 
   def testRegisterSpiDifferentClasses(self):
     """This can happen when multiple classes implement an API."""
-    config1 = ('{"methods": {'
-               '  "method1": {"rosyMethod": "MyClass.Func1"},'
-               '  "method2": {"rosyMethod": "OtherClass.Func2"}}}')
+    config1 = {"methods": {
+                 "method1": {"rosyMethod": "MyClass.Func1"},
+                 "method2": {"rosyMethod": "OtherClass.Func2"}}}
     self.registry.register_backend(config1)
     self.assertEquals('MyClass.Func1',
                       self.registry.lookup_api_method('method1'))

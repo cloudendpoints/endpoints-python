@@ -39,13 +39,13 @@ __all__ = [
 
 
 class ApiConfigRegistry(object):
-  """Registry of active APIs to be registered with Google API Server."""
+  """Registry of active APIs"""
 
   def __init__(self):
     # Set of API classes that have been registered.
     self.__registered_classes = set()
     # Set of API config contents served by this App Engine AppId/version
-    self.__api_configs = set()
+    self.__api_configs = []
     # Map of API method name to ProtoRPC method name.
     self.__api_methods = {}
 
@@ -54,14 +54,13 @@ class ApiConfigRegistry(object):
     """Register a single API and its config contents.
 
     Args:
-      config_contents: String containing API configuration.
+      config_contents: Dict containing API configuration.
     """
     if config_contents is None:
       return
-    parsed_config = json.loads(config_contents)
-    self.__register_class(parsed_config)
-    self.__api_configs.add(config_contents)
-    self.__register_methods(parsed_config)
+    self.__register_class(config_contents)
+    self.__api_configs.append(config_contents)
+    self.__register_methods(config_contents)
 
   def __register_class(self, parsed_config):
     """Register the class implementing this config, so we only add it once.
@@ -120,7 +119,7 @@ class ApiConfigRegistry(object):
 
   def all_api_configs(self):
     """Return a list of all API configration specs as registered above."""
-    return list(self.__api_configs)
+    return self.__api_configs
 
 
 class BackendServiceImpl(api_backend.BackendService):
@@ -159,7 +158,7 @@ class BackendServiceImpl(api_backend.BackendService):
           message='API backend app revision %s not the same as expected %s' % (
               self.__app_revision, request.appRevision))
 
-    configs = self.__api_config_registry.all_api_configs()
+    configs = [json.dumps(d) for d in self.__api_config_registry.all_api_configs()]
     return api_backend.ApiConfigList(items=configs)
 
   def logMessages(self, request):

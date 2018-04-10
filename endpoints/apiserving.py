@@ -333,8 +333,8 @@ class _ApiServer(object):
     for service_factories in api_name_version_map.itervalues():
       service_classes = [service_factory.service_class
                          for service_factory in service_factories]
-      config_file = generator.pretty_print_config_to_json(service_classes)
-      api_config_registry.register_backend(config_file)
+      config_dict = generator.get_config_dict(service_classes)
+      api_config_registry.register_backend(config_dict)
 
       for service_factory in service_factories:
         protorpc_class_name = service_factory.service_class.__name__
@@ -412,8 +412,7 @@ class _ApiServer(object):
 
   def get_api_configs(self):
     return {
-        'items': [json.loads(c) for c in
-                  self.api_config_registry.all_api_configs()]}
+        'items': self.api_config_registry.all_api_configs()}
 
   def __call__(self, environ, start_response):
     """Wrapper for the Endpoints server app.
