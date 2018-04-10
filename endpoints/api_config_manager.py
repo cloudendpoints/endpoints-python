@@ -36,7 +36,6 @@ class ApiConfigManager(object):
   """Manages loading api configs and method lookup."""
 
   def __init__(self):
-    self._rpc_method_dict = {}
     self._rest_methods = []
     self._configs = {}
     self._config_lock = threading.Lock()
@@ -75,7 +74,6 @@ class ApiConfigManager(object):
 
 
         for method_name, method in sorted_methods:
-          self._save_rpc_method(method_name, api_version, method)
           self._save_rest_method(method_name, name, path_version, method)
 
   def _get_sorted_methods(self, methods):
@@ -166,23 +164,6 @@ class ApiConfigManager(object):
       actual_var_name = ApiConfigManager._from_safe_path_param_name(var_name)
       result[actual_var_name] = urllib.unquote_plus(value)
     return result
-
-  def lookup_rpc_method(self, method_name, version):
-    """Lookup the JsonRPC method at call time.
-
-    The method is looked up in self._rpc_method_dict, the dictionary that
-    it is saved in for SaveRpcMethod().
-
-    Args:
-      method_name: A string containing the name of the method.
-      version: A string containing the version of the API.
-
-    Returns:
-      Method descriptor as specified in the API configuration.
-    """
-    with self._config_lock:
-      method = self._rpc_method_dict.get((method_name, version))
-    return method
 
   def lookup_rest_method(self, path, http_method):
     """Look up the rest method at call time.
@@ -318,19 +299,6 @@ class ApiConfigManager(object):
     pattern = re.sub('(/|^){(%s)}(?=/|$|:)' % _PATH_VARIABLE_PATTERN,
                      replace_variable, pattern)
     return re.compile(pattern + '/?$')
-
-  def _save_rpc_method(self, method_name, version, method):
-    """Store JsonRpc api methods in a map for lookup at call time.
-
-    (rpcMethodName, apiVersion) => method.
-
-    Args:
-      method_name: A string containing the name of the API method.
-      version: A string containing the version of the API.
-      method: A dict containing the method descriptor (as in the api config
-        file).
-    """
-    self._rpc_method_dict[(method_name, version)] = method
 
   def _save_rest_method(self, method_name, api_name, version, method):
     """Store Rest api methods in a list for lookup at call time.

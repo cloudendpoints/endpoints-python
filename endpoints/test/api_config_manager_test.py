@@ -28,15 +28,15 @@ class ApiConfigManagerTest(unittest.TestCase):
 
   def test_process_api_config_empty_response(self):
     self.config_manager.process_api_config_response({})
-    actual_method = self.config_manager.lookup_rpc_method('guestbook_api.get',
-                                                          'v1')
-    self.assertEqual(None, actual_method)
+    actual_method = self.config_manager.lookup_rest_method('guestbook_api',
+                                                           'GET')
+    self.assertEqual((None, None, None), actual_method)
 
   def test_process_api_config_invalid_response(self):
     self.config_manager.process_api_config_response({'name': 'foo'})
-    actual_method = self.config_manager.lookup_rpc_method('guestbook_api.get',
-                                                          'v1')
-    self.assertEqual(None, actual_method)
+    actual_method = self.config_manager.lookup_rest_method('guestbook_api',
+                                                           'GET')
+    self.assertEqual((None, None, None), actual_method)
 
   def test_process_api_config(self):
     fake_method = {'httpMethod': 'GET',
@@ -48,8 +48,8 @@ class ApiConfigManagerTest(unittest.TestCase):
               'path_version': 'X',
               'methods': {'guestbook_api.foo.bar': fake_method}}
     self.config_manager.process_api_config_response({'items': [config]})
-    actual_method = self.config_manager.lookup_rpc_method(
-        'guestbook_api.foo.bar', 'X')
+    actual_method = self.config_manager.lookup_rest_method(
+        'guestbook_api/X/greetings/123', 'GET')[1]
     self.assertEqual(fake_method, actual_method)
 
   def test_process_api_config_order_length(self):
@@ -73,9 +73,9 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.config_manager.process_api_config_response(
         {'items': [config]})
     # Make sure all methods appear in the result.
-    for method_name, _, _ in test_method_info:
-      self.assertIsNotNone(
-          self.config_manager.lookup_rpc_method(method_name, 'X'))
+    for method_name, path, _ in test_method_info:
+      request_path = 'guestbook_api/X/{}'.format(path.replace('{gid}', '123'))
+      assert (None, None, None) != self.config_manager.lookup_rest_method(request_path, 'GET')
     # Make sure paths and partial paths return the right methods.
     self.assertEqual(
         self.config_manager.lookup_rest_method(
@@ -169,19 +169,6 @@ class ApiConfigManagerTest(unittest.TestCase):
     self.assertEqual(
         'https://localhost/_ah/api',
         self.config_manager.configs[('guestbook_api', 'X')]['root'])
-
-  def test_save_lookup_rpc_method(self):
-    # First attempt, guestbook.get does not exist
-    actual_method = self.config_manager.lookup_rpc_method('guestbook_api.get',
-                                                          'v1')
-    self.assertEqual(None, actual_method)
-
-    # Now we manually save it, and should find it
-    fake_method = {'some': 'object'}
-    self.config_manager._save_rpc_method('guestbook_api.get', 'v1', fake_method)
-    actual_method = self.config_manager.lookup_rpc_method('guestbook_api.get',
-                                                          'v1')
-    self.assertEqual(fake_method, actual_method)
 
   def test_save_lookup_rest_method(self):
     # First attempt, guestbook.get does not exist

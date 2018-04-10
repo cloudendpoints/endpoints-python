@@ -179,14 +179,5 @@ class ApiRequest(object):
   def copy(self):
     return copy.deepcopy(self)
 
-  def is_rpc(self):
-    # Google's JsonRPC protocol creates a handler at /rpc for any Cloud
-    # Endpoints API, with api name, version, and method name being in the
-    # body of the request.
-    # If the request is sent to /rpc, we will treat it as JsonRPC.
-    # The client libraries for iOS's Objective C use RPC and not the REST
-    # versions of the API.
-    return self.path == 'rpc'
-
   def is_batch(self):
     return self._is_batch
