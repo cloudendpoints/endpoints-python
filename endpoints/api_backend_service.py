@@ -13,28 +13,19 @@
 # limitations under the License.
 
 """API serving config collection service implementation.
-
-Contains the implementation for BackendService as defined in api_backend.py.
 """
 
 # pylint: disable=g-statement-before-imports,g-import-not-at-top
 from __future__ import absolute_import
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
 import logging
 
-from . import api_backend
 from . import api_exceptions
 
 from protorpc import message_types
 
 __all__ = [
     'ApiConfigRegistry',
-    'BackendServiceImpl',
 ]
 
 
@@ -120,66 +111,3 @@ class ApiConfigRegistry(object):
   def all_api_configs(self):
     """Return a list of all API configration specs as registered above."""
     return self.__api_configs
-
-
-class BackendServiceImpl(api_backend.BackendService):
-  """Implementation of BackendService."""
-
-  def __init__(self, api_config_registry, app_revision):
-    """Create a new BackendService implementation.
-
-    Args:
-      api_config_registry: ApiConfigRegistry to register and look up configs.
-      app_revision: string containing the current app revision.
-    """
-    self.__api_config_registry = api_config_registry
-    self.__app_revision = app_revision
-
-  # pylint: disable=g-bad-name
-  # pylint: disable=g-doc-return-or-yield
-  # pylint: disable=g-doc-args
-  @staticmethod
-  def definition_name():
-    """Override definition_name so that it is not BackendServiceImpl."""
-    return api_backend.BackendService.definition_name()
-
-  def getApiConfigs(self, request=None):
-    """Return a list of active APIs and their configuration files.
-
-    Args:
-      request: A request which may contain an app revision
-
-    Returns:
-      ApiConfigList: A list of API config strings
-    """
-    if (request and request.appRevision and
-        request.appRevision != self.__app_revision):
-      raise api_exceptions.BadRequestException(
-          message='API backend app revision %s not the same as expected %s' % (
-              self.__app_revision, request.appRevision))
-
-    configs = [json.dumps(d) for d in self.__api_config_registry.all_api_configs()]
-    return api_backend.ApiConfigList(items=configs)
-
-  def logMessages(self, request):
-    """Write a log message from the Swarm FE to the log.
-
-    Args:
-      request: A log message request.
-
-    Returns:
-      Void message.
-    """
-    Level = api_backend.LogMessagesRequest.LogMessage.Level
-    log = logging.getLogger(__name__)
-    for message in request.messages:
-      level = message.level if message.level is not None else Level.info
-      # Create a log record and override the pathname and lineno.  These
-      # messages come from the front end, so it's misleading to say that they
-      # come from api_backend_service.
-      record = logging.LogRecord(name=__name__, level=level.number, pathname='',
-                                 lineno='', msg=message.message, args=None,
-                                 exc_info=None)
-      log.handle(record)
-
-    return message_types.VoidMessage()
