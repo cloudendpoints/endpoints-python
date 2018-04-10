@@ -35,6 +35,7 @@ import wsgiref
 import pkg_resources
 
 from . import api_config_manager
+from . import api_exceptions
 from . import api_request
 from . import discovery_service
 from . import errors
@@ -91,6 +92,13 @@ class EndpointsDispatcherMiddleware(object):
                            self.handle_api_explorer_request)
       self._add_dispatcher('%sstatic/.*$' % base_path,
                            self.handle_api_static_request)
+
+    # Get API configuration so we know how to call the backend.
+    api_config_response = self.get_api_configs()
+    if api_config_response:
+      self.config_manager.process_api_config_response(api_config_response)
+    else:
+      raise api_exceptions.ApiConfigurationError('get_api_configs() returned no configs')
 
   def _add_dispatcher(self, path_regex, dispatch_function):
     """Add a request path and dispatch handler.
@@ -156,15 +164,6 @@ class EndpointsDispatcherMiddleware(object):
                                                          start_response)
     if dispatched_response is not None:
       return dispatched_response
-
-    # Get API configuration first.  We need this so we know how to
-    # call the back end.
-    api_config_response = self.get_api_configs()
-    if api_config_response:
-      self.config_manager.process_api_config_response(api_config_response)
-    else:
-      return self.fail_request(request, 'get_api_configs Error',
-                               start_response)
 
     # Call the service.
     try:
