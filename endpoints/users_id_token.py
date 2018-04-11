@@ -125,7 +125,7 @@ def get_current_user():
     # We can get more information from the oauth.get_current_user function,
     # as long as we know what scope to use.  Since that scope has been
     # cached, we can just return this:
-    return oauth.get_current_user(os.environ[_ENV_USE_OAUTH_SCOPE])
+    return oauth.get_current_user(os.environ[_ENV_USE_OAUTH_SCOPE].split())
 
   if (_ENV_AUTH_EMAIL in os.environ and
       _ENV_AUTH_DOMAIN in os.environ):
@@ -316,6 +316,43 @@ def _set_oauth_user_vars(token_info, audiences, allowed_client_ids, scopes,
 # pylint: enable=unused-argument
 
 
+def _process_scopes(scopes):
+  """Parse a scopes list into a set of all scopes and a set of sufficient scope sets.
+
+     scopes: A list of strings, each of which is a space-separated list of scopes.
+       Examples: ['scope1']
+                 ['scope1', 'scope2']
+                 ['scope1', 'scope2 scope3']
+
+     Returns:
+       all_scopes: a set of strings, each of which is one scope to check for
+       sufficient_scopes: a set of sets of strings; each inner set is
+         a set of scopes which are sufficient for access.
+         Example: {{'scope1'}, {'scope2', 'scope3'}}
+  """
+  all_scopes = set()
+  sufficient_scopes = set()
+  for scope_set in scopes:
+    scope_set_scopes = frozenset(scope_set.split())
+    all_scopes.update(scope_set_scopes)
+    sufficient_scopes.add(scope_set_scopes)
+  return all_scopes, sufficient_scopes
+
+
+def _are_scopes_sufficient(authorized_scopes, sufficient_scopes):
+  """Check if a list of authorized scopes satisfies any set of sufficient scopes.
+
+     Args:
+       authorized_scopes: a list of strings, return value from oauth.get_authorized_scopes
+       sufficient_scopes: a set of sets of strings, return value from _process_scopes
+  """
+  for sufficient_scope_set in sufficient_scopes:
+    if sufficient_scope_set.issubset(authorized_scopes):
+      return True
+  return False
+
+
+
 def _set_bearer_user_vars(allowed_client_ids, scopes):
   """Validate the oauth bearer token and set endpoints auth user variables.
 
@@ -327,27 +364,27 @@ def _set_bearer_user_vars(allowed_client_ids, scopes):
     allowed_client_ids: List of client IDs that are acceptable.
     scopes: List of acceptable scopes.
   """
-  for scope in scopes:
-    try:
-      client_id = oauth.get_client_id(scope)
-    except oauth.Error:
-      # This scope failed.  Try the next.
-      continue
+  all_scopes, sufficient_scopes = _process_scopes(scopes)
+  try:
+    authorized_scopes = oauth.get_authorized_scopes(sorted(all_scopes))
+  except oauth.Error:
+    _logger.debug('Unable to get authorized scopes.', exc_info=True)
+    return
+  if not _are_scopes_sufficient(authorized_scopes, sufficient_scopes):
+    _logger.debug('Authorized scopes did not satisfy scope requirements.')
+    return
+  client_id = oauth.get_client_id(authorized_scopes)
 
-    # The client ID must be in allowed_client_ids.  If allowed_client_ids is
-    # empty, don't allow any client ID.  If allowed_client_ids is set to
-    # SKIP_CLIENT_ID_CHECK, all client IDs will be allowed.
-    if (list(allowed_client_ids) != SKIP_CLIENT_ID_CHECK and
-        client_id not in allowed_client_ids):
-      _logger.warning('Client ID is not allowed: %s', client_id)
-      return
-
-    os.environ[_ENV_USE_OAUTH_SCOPE] = scope
-    _logger.debug('Returning user from matched oauth_user.')
+  # The client ID must be in allowed_client_ids.  If allowed_client_ids is
+  # empty, don't allow any client ID.  If allowed_client_ids is set to
+  # SKIP_CLIENT_ID_CHECK, all client IDs will be allowed.
+  if (list(allowed_client_ids) != SKIP_CLIENT_ID_CHECK and
+      client_id not in allowed_client_ids):
+    _logger.warning('Client ID is not allowed: %s', client_id)
     return
 
-  _logger.debug('Oauth framework user didn\'t match oauth token user.')
-  return None
+  os.environ[_ENV_USE_OAUTH_SCOPE] = ' '.join(authorized_scopes)
+  _logger.debug('get_current_user() will return user from matched oauth_user.')
 
 
 def _set_bearer_user_vars_local(token, allowed_client_ids, scopes):
@@ -392,15 +429,15 @@ def _set_bearer_user_vars_local(token, allowed_client_ids, scopes):
     return
 
   # Verify at least one of the scopes matches.
-  token_scopes = token_info.get('scope', '').split(' ')
-  if not any(scope in scopes for scope in token_scopes):
+  _, sufficient_scopes = _process_scopes(scopes)
+  authorized_scopes = token_info.get('scope', '').split(' ')
+  if not _are_scopes_sufficient(authorized_scopes, sufficient_scopes):
     _logger.warning('Oauth token scopes don\'t match any acceptable scopes.')
     return
 
   os.environ[_ENV_AUTH_EMAIL] = token_info['email']
   os.environ[_ENV_AUTH_DOMAIN] = ''
   _logger.debug('Local dev returning user from token.')
-  return
 
 
 def _is_local_dev():

@@ -22,6 +22,7 @@ import time
 import unittest
 
 import mock
+import pytest
 
 import endpoints.api_config as api_config
 
@@ -369,8 +370,9 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
         parsed_token, users_id_token._ISSUERS, [], self._SAMPLE_ALLOWED_CLIENT_IDS)
     self.assertEqual(False, result)
 
+  @mock.patch.object(oauth, 'get_authorized_scopes')
   @mock.patch.object(oauth, 'get_client_id')
-  def AttemptOauth(self, client_id, mock_get_client_id, allowed_client_ids=None):
+  def AttemptOauth(self, client_id, mock_get_client_id, mock_get_authorized_scopes, allowed_client_ids=None):
     if allowed_client_ids is None:
       allowed_client_ids = self._SAMPLE_ALLOWED_CLIENT_IDS
     # We have four cases:
@@ -381,20 +383,20 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     #    mock call for every scope.
     if client_id is None:
       mock_get_client_id.side_effect = oauth.Error
+      mock_get_authorized_scopes.side_effect = oauth.Error
     else:
       mock_get_client_id.return_value = client_id
+      mock_get_authorized_scopes.return_value = self._SAMPLE_OAUTH_SCOPES
     users_id_token._set_bearer_user_vars(allowed_client_ids,
                                          self._SAMPLE_OAUTH_SCOPES)
     if client_id is None:
-      for scope in self._SAMPLE_OAUTH_SCOPES:
-        mock_get_client_id.assert_called_with(scope)
+      mock_get_authorized_scopes.assert_called_with(self._SAMPLE_OAUTH_SCOPES)
     elif (list(allowed_client_ids) == users_id_token.SKIP_CLIENT_ID_CHECK or
           client_id in allowed_client_ids):
       scope = self._SAMPLE_OAUTH_SCOPES[0]
-      mock_get_client_id.assert_called_with(scope)
+      mock_get_client_id.assert_called_with([scope])
     else:
-      for scope in self._SAMPLE_OAUTH_SCOPES:
-        mock_get_client_id.assert_called_with(scope)
+      mock_get_client_id.assert_called_with(self._SAMPLE_OAUTH_SCOPES)
 
 
   def assertOauthSucceeded(self, client_id):
@@ -487,10 +489,10 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
   def testGetCurrentUserOauth(self, mock_get_current_user):
     mock_get_current_user.return_value = users.User('test@gmail.com')
 
-    os.environ['ENDPOINTS_USE_OAUTH_SCOPE'] = 'scope'
+    os.environ['ENDPOINTS_USE_OAUTH_SCOPE'] = 'scope1 scope2'
     user = users_id_token.get_current_user()
     self.assertEqual(user.email(), 'test@gmail.com')
-    mock_get_current_user.assert_called_once_with('scope')
+    mock_get_current_user.assert_called_once_with(['scope1', 'scope2'])
 
   def testGetTokenQueryParamOauthHeader(self):
     os.environ['HTTP_AUTHORIZATION'] = 'OAuth ' + self._SAMPLE_TOKEN
@@ -631,9 +633,10 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.VerifyIdToken(self.TestApiAnnotatedAtApi(),
                        message_types.VoidMessage())
 
+  @mock.patch.object(oauth, 'get_authorized_scopes')
   @mock.patch.object(oauth, 'get_client_id')
   @mock.patch.object(users_id_token, '_is_local_dev')
-  def testMaybeSetVarsWithActualRequestAccessToken(self, mock_local, mock_get_client_id):
+  def testMaybeSetVarsWithActualRequestAccessToken(self, mock_local, mock_get_client_id, mock_get_authorized_scopes):
     dummy_scope = 'scope'
     dummy_token = 'dummy_token'
     dummy_email = 'test@gmail.com'
@@ -656,13 +659,15 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
 
     mock_local.return_value = False
     mock_get_client_id.return_value = dummy_client_id
+    mock_get_authorized_scopes.return_value = [dummy_scope]
 
     api_instance = TestApiScopes()
     os.environ['HTTP_AUTHORIZATION'] = 'Bearer ' + dummy_token
     api_instance.method(message_types.VoidMessage())
-    self.assertEqual(os.getenv('ENDPOINTS_USE_OAUTH_SCOPE'), dummy_scope)
+    assert os.getenv('ENDPOINTS_USE_OAUTH_SCOPE') == dummy_scope
     mock_local.assert_has_calls([mock.call(), mock.call()])
-    mock_get_client_id.assert_called_once_with(dummy_scope)
+    mock_get_client_id.assert_called_once_with([dummy_scope])
+    mock_get_authorized_scopes.assert_called_once_with([dummy_scope])
 
   @mock.patch.object(users_id_token, '_get_id_token_user')
   @mock.patch.object(time, 'time')
@@ -890,6 +895,29 @@ class JwtTest(UsersIdTokenTestBase):
         self._SAMPLE_ISSUERS, self._SAMPLE_AUDIENCES,
         self._SAMPLE_CERT_URI, self.cache)
     self.assertIsNone(parsed_token)
+
+
+@pytest.mark.parametrize(('scopelist', 'all_scopes', 'sufficient_scopes'), [
+    (('scope1', 'scope2'), {'scope1', 'scope2'}, {frozenset(['scope1']), frozenset(['scope2'])}),
+    (('scope1', 'scope2 scope3'), {'scope1', 'scope2', 'scope3'}, {frozenset(['scope1']), frozenset(['scope2', 'scope3'])}),
+    (('scope1 scope2', 'scope1 scope3'), {'scope1', 'scope2', 'scope3'}, {frozenset(['scope1', 'scope2']), frozenset(['scope1', 'scope3'])}),
+])
+def test_process_scopes(scopelist, all_scopes, sufficient_scopes):
+    result = users_id_token._process_scopes(scopelist)
+    assert result == (all_scopes, sufficient_scopes)
+
+@pytest.mark.parametrize(('authorized_scopes', 'sufficient_scopes', 'is_valid'), [
+    (['scope1'], {frozenset(['scope1'])}, True),
+    (['scope1'], {frozenset(['scope1', 'scope2'])}, False),
+    (['scope1', 'scope2'], {frozenset(['scope1'])}, True),
+    (['scope1', 'scope2'], {frozenset(['scope1']), frozenset(['scope2'])}, True),
+    (['scope1', 'scope2'], {frozenset(['scope1', 'scope2'])}, True),
+    (['scope1'], {frozenset(['scope1']), frozenset(['scope2', 'scope3'])}, True),
+    (['scope2'], {frozenset(['scope1']), frozenset(['scope2', 'scope3'])}, False),
+    (['scope2', 'scope3'], {frozenset(['scope1']), frozenset(['scope2', 'scope3'])}, True),
+])
+def test_are_scopes_sufficient(authorized_scopes, sufficient_scopes, is_valid):
+    assert users_id_token._are_scopes_sufficient(authorized_scopes, sufficient_scopes) is is_valid
 
 if __name__ == '__main__':
   unittest.main()
