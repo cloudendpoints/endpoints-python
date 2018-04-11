@@ -31,7 +31,7 @@ with open('endpoints/__init__.py', 'r') as f:
         raise RuntimeError("No version number found!")
 
 install_requires = [
-    'attrs==17.2.0',
+    'attrs==17.4.0',
     'google-endpoints-api-management>=1.5.0',
     'semver==2.7.7',
     'setuptools>=36.2.5',

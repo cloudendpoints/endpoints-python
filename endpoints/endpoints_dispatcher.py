@@ -35,6 +35,7 @@ import wsgiref
 import pkg_resources
 
 from . import api_config_manager
+from . import api_exceptions
 from . import api_request
 from . import discovery_service
 from . import errors
@@ -91,6 +92,13 @@ class EndpointsDispatcherMiddleware(object):
                            self.handle_api_explorer_request)
       self._add_dispatcher('%sstatic/.*$' % base_path,
                            self.handle_api_static_request)
+
+    # Get API configuration so we know how to call the backend.
+    api_config_response = self.get_api_configs()
+    if api_config_response:
+      self.config_manager.process_api_config_response(api_config_response)
+    else:
+      raise api_exceptions.ApiConfigurationError('get_api_configs() returned no configs')
 
   def _add_dispatcher(self, path_regex, dispatch_function):
     """Add a request path and dispatch handler.
@@ -156,15 +164,6 @@ class EndpointsDispatcherMiddleware(object):
                                                          start_response)
     if dispatched_response is not None:
       return dispatched_response
-
-    # Get API configuration first.  We need this so we know how to
-    # call the back end.
-    api_config_response = self.get_api_configs()
-    if api_config_response:
-      self.config_manager.process_api_config_response(api_config_response)
-    else:
-      return self.fail_request(request, 'get_api_configs Error',
-                               start_response)
 
     # Call the service.
     try:
@@ -327,11 +326,7 @@ class EndpointsDispatcherMiddleware(object):
     Returns:
       A string containing the response body.
     """
-    if orig_request.is_rpc():
-      method_config = self.lookup_rpc_method(orig_request)
-      params = None
-    else:
-      method_config, params = self.lookup_rest_method(orig_request)
+    method_config, params = self.lookup_rest_method(orig_request)
     if not method_config:
       cors_handler = self._create_cors_handler(orig_request)
       return util.send_wsgi_not_found_response(start_response,
@@ -448,19 +443,14 @@ class EndpointsDispatcherMiddleware(object):
 
     self.check_error_response(response_body, response_status)
 
-    # Need to check is_rpc() against the original request, because the
-    # incoming request here has had its path modified.
-    if orig_request.is_rpc():
-      body = self.transform_jsonrpc_response(backend_request, response_body)
-    else:
-      # Check if the response from the API was empty.  Empty REST responses
-      # generate a HTTP 204.
-      empty_response = self.check_empty_response(orig_request, method_config,
+    # Check if the response from the API was empty.  Empty REST responses
+    # generate a HTTP 204.
+    empty_response = self.check_empty_response(orig_request, method_config,
                                                  start_response)
-      if empty_response is not None:
-        return empty_response
+    if empty_response is not None:
+      return empty_response
 
-      body = self.transform_rest_response(response_body)
+    body = self.transform_rest_response(response_body)
 
     cors_handler = self._create_cors_handler(orig_request)
     return util.send_wsgi_response(response_status, response_headers, body,
@@ -498,23 +488,6 @@ class EndpointsDispatcherMiddleware(object):
     orig_request.method_name = method_name
     return method, params
 
-  def lookup_rpc_method(self, orig_request):
-    """Looks up and returns RPC method for the currently-pending request.
-
-    Args:
-      orig_request: An ApiRequest, the original request from the user.
-
-    Returns:
-      The RPC method descriptor that was found for the current request, or None
-      if none was found.
-    """
-    if not orig_request.body_json:
-      return None
-    method_name = orig_request.body_json.get('method', '')
-    version = orig_request.body_json.get('apiVersion', '')
-    orig_request.method_name = method_name
-    return self.config_manager.lookup_rpc_method(method_name, version)
-
   def transform_request(self, orig_request, params, method_config):
     """Transforms orig_request to apiserving request.
 
@@ -533,11 +506,8 @@ class EndpointsDispatcherMiddleware(object):
       be sent to the backend.  The path is updated and parts of the body or
       other properties may also be changed.
     """
-    if orig_request.is_rpc():
-      request = self.transform_jsonrpc_request(orig_request)
-    else:
-      method_params = method_config.get('request', {}).get('parameters', {})
-      request = self.transform_rest_request(orig_request, params, method_params)
+    method_params = method_config.get('request', {}).get('parameters', {})
+    request = self.transform_rest_request(orig_request, params, method_params)
     request.path = method_config.get('rosyMethod', '')
     return request
 
@@ -674,21 +644,6 @@ class EndpointsDispatcherMiddleware(object):
     request.body = json.dumps(request.body_json)
     return request
 
-  def transform_jsonrpc_request(self, orig_request):
-    """Translates a JsonRpc request/response into apiserving request/response.
-
-    Args:
-      orig_request: An ApiRequest, the original request from the user.
-
-    Returns:
-      A new request with the request_id updated and params moved to the body.
-    """
-    request = orig_request.copy()
-    request.request_id = request.body_json.get('id')
-    request.body_json = request.body_json.get('params', {})
-    request.body = json.dumps(request.body_json)
-    return request
-
   def check_error_response(self, body, status):
     """Raise an exception if the response from the backend was an error.
 
@@ -740,40 +695,6 @@ class EndpointsDispatcherMiddleware(object):
     body_json = json.loads(response_body)
     return json.dumps(body_json, indent=1, sort_keys=True)
 
-  def transform_jsonrpc_response(self, backend_request, response_body):
-    """Translates an apiserving response to a JsonRpc response.
-
-    Args:
-      backend_request: An ApiRequest, the transformed request that was sent to
-        the backend handler.
-      response_body: A string containing the backend response to transform
-        back to JsonRPC.
-
-    Returns:
-      A string with the updated, JsonRPC-formatted request body.
-    """
-    body_json = {'result': json.loads(response_body)}
-    return self._finish_rpc_response(backend_request.request_id,
-                                     backend_request.is_batch(), body_json)
-
-  def _finish_rpc_response(self, request_id, is_batch, body_json):
-    """Finish adding information to a JSON RPC response.
-
-    Args:
-      request_id: None if the request didn't have a request ID.  Otherwise, this
-        is a string containing the request ID for the request.
-      is_batch: A boolean indicating whether the request is a batch request.
-      body_json: A dict containing the JSON body of the response.
-
-    Returns:
-      A string with the updated, JsonRPC-formatted request body.
-    """
-    if request_id is not None:
-      body_json['id'] = request_id
-    if is_batch:
-      body_json = [body_json]
-    return json.dumps(body_json, indent=1, sort_keys=True)
-
   def _handle_request_error(self, orig_request, error, start_response):
     """Handle a request error, converting it to a WSGI response.
 
@@ -786,16 +707,8 @@ class EndpointsDispatcherMiddleware(object):
       A string containing the response body.
     """
     headers = [('Content-Type', 'application/json')]
-    if orig_request.is_rpc():
-      # JSON RPC errors are returned with status 200 OK and the
-      # error details in the body.
-      status_code = 200
-      body = self._finish_rpc_response(orig_request.body_json.get('id'),
-                                       orig_request.is_batch(),
-                                       error.rpc_error())
-    else:
-      status_code = error.status_code()
-      body = error.rest_error()
+    status_code = error.status_code()
+    body = error.rest_error()
 
     response_status = '%d %s' % (status_code,
                                  httplib.responses.get(status_code,
