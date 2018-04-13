@@ -152,6 +152,9 @@ _AUTH_LEVEL_DOCSTRING = """
 
 AUTH_LEVEL = _Enum(_AUTH_LEVEL_DOCSTRING, 'REQUIRED', 'OPTIONAL',
                    'OPTIONAL_CONTINUE', 'NONE')
+_AUTH_LEVEL_WARNING = ("Due to a design error, auth_level has never actually been functional. "
+                       "It will likely be removed and replaced by a functioning alternative "
+                       "in a future version of the framework. Please stop using auth_level now.")
 
 
 def _GetFieldAttributes(field):
@@ -808,6 +811,8 @@ class _ApiDecorator(object):
     Returns:
       A decorator function to decorate a class that implements an API.
     """
+    if auth_level is not None:
+      _logger.warn(_AUTH_LEVEL_WARNING)
 
     def apiserving_api_decorator(api_class):
       """Decorator for ProtoRPC class that configures Google's API server.
@@ -1046,6 +1051,8 @@ def api(name, version, description=None, hostname=None, audiences=None,
   Returns:
     Class decorated with api_info attribute, an instance of ApiInfo.
   """
+  if auth_level is not None:
+    _logger.warn(_AUTH_LEVEL_WARNING)
 
   return _ApiDecorator(name, version, description=description,
                        hostname=hostname, audiences=audiences, scopes=scopes,
@@ -1275,6 +1282,8 @@ def method(request_message=message_types.VoidMessage,
     TypeError: if the request_type or response_type parameters are not
       proper subclasses of messages.Message.
   """
+  if auth_level is not None:
+    _logger.warn(_AUTH_LEVEL_WARNING)
 
   # Default HTTP method if one is not specified.
   DEFAULT_HTTP_METHOD = 'POST'
