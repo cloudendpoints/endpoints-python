@@ -170,6 +170,7 @@ TEST_SERVICE_API_CONFIG = {'items': [{
         'testapi.delete': {
             'httpMethod': 'DELETE',
             'path': 'items/{id}',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameterOrder': ['id'],
@@ -224,6 +225,7 @@ TEST_SERVICE_CUSTOM_URL_API_CONFIG = {'items': [{
         'testapicustomurl.delete': {
             'httpMethod': 'DELETE',
             'path': 'items/{id}',
+            'useRequestUri': False,
             'request': {
                 'body': 'empty',
                 'parameterOrder': ['id'],

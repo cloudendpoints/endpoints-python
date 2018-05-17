@@ -50,6 +50,9 @@ class ApiRequest(object):
     self.server = environ['SERVER_NAME']
     self.port = environ['SERVER_PORT']
     self.path = environ['PATH_INFO']
+    self.request_uri = environ.get('REQUEST_URI')
+    if self.request_uri is not None and len(self.request_uri) < len(self.path):
+      self.request_uri = None
     self.query = environ.get('QUERY_STRING')
     self.body = environ['wsgi.input'].read()
     if self.body and self.headers.get('CONTENT-ENCODING') == 'gzip':
@@ -74,6 +77,8 @@ class ApiRequest(object):
     for base_path in base_paths:
       if self.path.startswith(base_path):
         self.path = self.path[len(base_path):]
+        if self.request_uri is not None:
+          self.request_uri = self.request_uri[len(base_path):]
         self.base_path = base_path
         break
     else:
