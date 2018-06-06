@@ -195,7 +195,7 @@ class ApiConfigManager(object):
           method_name, method = candidate_method_info
           break
       else:
-        _logger.warn('No endpoint found for path: %s', path)
+        _logger.warn('No endpoint found for path: %r, method: %r', path, http_method)
         method_name = None
         method = None
         params = None
