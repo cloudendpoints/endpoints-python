@@ -977,8 +977,8 @@ class DiscoveryGenerator(object):
         'name': api_info.name,
         'version': api_info.api_version,
         'icons': {
-            'x16': 'http://www.google.com/images/icons/product/search-16.gif',
-            'x32': 'http://www.google.com/images/icons/product/search-32.gif'
+            'x16': 'https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png',
+            'x32': 'https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png'
         },
         'protocol': 'rest',
         'servicePath': '{0}/{1}/'.format(api_info.name, api_info.path_version),
