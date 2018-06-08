@@ -986,7 +986,16 @@ class DiscoveryGenerator(object):
         'basePath': full_base_path,
         'rootUrl': root_url,
         'baseUrl': base_url,
+        'description': 'This is an API',
     }
+    if api_info.description:
+        defaults['description'] = api_info.description
+    if api_info.title:
+        defaults['title'] = api_info.title
+    if api_info.documentation:
+        defaults['documentationLink'] = api_info.documentation
+    if api_info.canonical_name:
+        defaults['canonicalName'] = api_info.canonical_name
 
     return defaults
 
