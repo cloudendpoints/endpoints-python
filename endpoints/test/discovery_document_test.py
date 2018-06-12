@@ -90,6 +90,44 @@ class FooEndpoint(remote.Service):
         pass
 
 
+class Bar(messages.Message):
+    name = messages.StringField(1, default='Jimothy')
+    value = messages.IntegerField(2, default=42, variant=messages.Variant.INT32)
+    active = messages.BooleanField(3, default=True)
+
+BarCollection = make_collection(Bar)
+BarResource = endpoints.ResourceContainer(
+    Bar,
+    id=messages.StringField(1, required=True),
+)
+BarIdResource = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    id=messages.StringField(1, required=True),
+)
+BarNResource = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    n = messages.IntegerField(1, required=True, variant=messages.Variant.INT32),
+)
+
+@endpoints.api(name='bar', version='v1')
+class BarEndpoint(remote.Service):
+    @endpoints.method(BarResource, Bar, name='bar.create', path='bars/{id}', http_method='PUT')
+    def createBar(self, request):
+        pass
+    @endpoints.method(BarIdResource, Bar, name='bar.get', path='bars/{id}', http_method='GET')
+    def getBar(self, request):
+        pass
+    @endpoints.method(BarResource, Bar, name='bar.update', path='bars/{id}', http_method='POST')
+    def updateBar(self, request):
+        pass
+    @endpoints.method(BarIdResource, Bar, name='bar.delete', path='bars/{id}', http_method='DELETE')
+    def deleteBar(self, request):
+        pass
+    @endpoints.method(BarNResource, BarCollection, name='bar.list', path='bars', http_method='GET')
+    def listBars(self, request):
+        pass
+
+
 @endpoints.api(name='multipleparam', version='v1')
 class MultipleParameterEndpoint(remote.Service):
     @endpoints.method(endpoints.ResourceContainer(
@@ -105,6 +143,7 @@ class MultipleParameterEndpoint(remote.Service):
 
 @pytest.mark.parametrize('endpoint, json_filename', [
     (FooEndpoint, 'foo_endpoint.json'),
+    (BarEndpoint, 'bar_endpoint.json'),
     (MultipleParameterEndpoint, 'multiple_parameter_endpoint.json'),
 ])
 def test_discovery(endpoint, json_filename):

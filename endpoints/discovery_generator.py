@@ -324,7 +324,7 @@ class DiscoveryGenerator(object):
       if isinstance(field, messages.EnumField):
         return field.default.name
       else:
-        return field.default
+        return str(field.default)
 
   def __parameter_enum(self, param):
     """Returns enum descriptor of a parameter if it is an enum.
@@ -562,6 +562,9 @@ class DiscoveryGenerator(object):
             num_enums = len(prop_value['enum'])
             key_result['properties'][prop_key]['enumDescriptions'] = (
                 [''] * num_enums)
+          elif 'default' in prop_value:
+            # stringify default values
+            prop_value['default'] = str(prop_value['default'])
           key_result['properties'][prop_key].pop('required', None)
 
       for key in ('type', 'id', 'description'):
