@@ -324,7 +324,7 @@ class DiscoveryGenerator(object):
       if isinstance(field, messages.EnumField):
         return field.default.name
       else:
-        return field.default
+        return str(field.default)
 
   def __parameter_enum(self, param):
     """Returns enum descriptor of a parameter if it is an enum.
@@ -508,17 +508,19 @@ class DiscoveryGenerator(object):
 
     return params
 
-  def __params_order_descriptor(self, message_type, path):
+  def __params_order_descriptor(self, message_type, path, is_params_class=False):
     """Describe the order of path parameters.
 
     Args:
       message_type: messages.Message class, Message with parameters to describe.
       path: string, HTTP path to method.
+      is_params_class: boolean, Whether the message represents URL parameters.
 
     Returns:
       Descriptor list for the parameter order.
     """
-    descriptor = []
+    path_params = []
+    query_params = []
     path_parameter_dict = self.__get_path_parameters(path)
 
     for field in sorted(message_type.all_fields(), key=lambda f: f.number):
@@ -526,14 +528,18 @@ class DiscoveryGenerator(object):
       if not isinstance(field, messages.MessageField):
         name = field.name
         if name in matched_path_parameters:
-          descriptor.append(name)
+          path_params.append(name)
+        elif is_params_class and field.required:
+          query_params.append(name)
       else:
         for subfield_list in self.__field_to_subfields(field):
           name = '.'.join(subfield.name for subfield in subfield_list)
           if name in matched_path_parameters:
-            descriptor.append(name)
+            path_params.append(name)
+          elif is_params_class and field.required:
+            query_params.append(name)
 
-    return descriptor
+    return path_params + sorted(query_params)
 
   def __schemas_descriptor(self):
     """Describes the schemas section of the discovery document.
@@ -557,6 +563,9 @@ class DiscoveryGenerator(object):
             num_enums = len(prop_value['enum'])
             key_result['properties'][prop_key]['enumDescriptions'] = (
                 [''] * num_enums)
+          elif 'default' in prop_value:
+            # stringify default values
+            prop_value['default'] = str(prop_value['default'])
           key_result['properties'][prop_key].pop('required', None)
 
       for key in ('type', 'id', 'description'):
@@ -668,10 +677,10 @@ class DiscoveryGenerator(object):
 
     if method_info.request_params_class:
       parameter_order = self.__params_order_descriptor(
-        method_info.request_params_class, path)
+        method_info.request_params_class, path, is_params_class=True)
     else:
       parameter_order = self.__params_order_descriptor(
-        request_message_type, path)
+        request_message_type, path, is_params_class=False)
     if parameter_order:
       descriptor['parameterOrder'] = parameter_order
 
@@ -972,8 +981,8 @@ class DiscoveryGenerator(object):
         'name': api_info.name,
         'version': api_info.api_version,
         'icons': {
-            'x16': 'http://www.google.com/images/icons/product/search-16.gif',
-            'x32': 'http://www.google.com/images/icons/product/search-32.gif'
+            'x16': 'https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png',
+            'x32': 'https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png'
         },
         'protocol': 'rest',
         'servicePath': '{0}/{1}/'.format(api_info.name, api_info.path_version),
@@ -981,7 +990,16 @@ class DiscoveryGenerator(object):
         'basePath': full_base_path,
         'rootUrl': root_url,
         'baseUrl': base_url,
+        'description': 'This is an API',
     }
+    if api_info.description:
+        defaults['description'] = api_info.description
+    if api_info.title:
+        defaults['title'] = api_info.title
+    if api_info.documentation:
+        defaults['documentationLink'] = api_info.documentation
+    if api_info.canonical_name:
+        defaults['canonicalName'] = api_info.canonical_name
 
     return defaults
 
