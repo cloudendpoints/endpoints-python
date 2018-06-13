@@ -139,6 +139,7 @@ class EndpointsDispatcherMiddleware(object):
     Yields:
       An iterable over strings containing the body of the HTTP response.
     """
+    logging.info('Starting endpoint request')
     request = api_request.ApiRequest(environ,
                                      base_paths=self._backend.base_paths)
 
