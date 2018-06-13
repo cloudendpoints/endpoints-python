@@ -692,8 +692,7 @@ class EndpointsDispatcherMiddleware(object):
     Returns:
       A reformatted version of the response JSON.
     """
-    body_json = json.loads(response_body)
-    return json.dumps(body_json, indent=1, sort_keys=True)
+    return response_body
 
   def _handle_request_error(self, orig_request, error, start_response):
     """Handle a request error, converting it to a WSGI response.
