@@ -296,6 +296,7 @@ class _ApiServer(object):
   # A common EndpointsProtoJson for all _ApiServer instances.  At the moment,
   # EndpointsProtoJson looks to be thread safe.
   __PROTOJSON = protojson.EndpointsProtoJson()
+  _api_configs = None
 
   def __init__(self, api_services, **kwargs):
     """Initialize an _ApiServer instance.
@@ -494,8 +495,10 @@ class _ApiServer(object):
     return status, body
 
   def get_api_configs(self):
-    return {
+    if not self._api_configs:
+      self._api_configs =  {
         'items': self.api_config_registry.all_api_configs()}
+    return self._api_configs
 
   def __call__(self, environ, start_response):
     """Wrapper for the Endpoints server app.
