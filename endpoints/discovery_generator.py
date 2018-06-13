@@ -514,6 +514,7 @@ class DiscoveryGenerator(object):
     Args:
       message_type: messages.Message class, Message with parameters to describe.
       path: string, HTTP path to method.
+      is_params_class: boolean, Whether the message represents URL parameters.
 
     Returns:
       Descriptor list for the parameter order.
