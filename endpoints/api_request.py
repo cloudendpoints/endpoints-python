@@ -28,6 +28,8 @@ from . import util
 
 _logger = logging.getLogger(__name__)
 
+_METHOD_OVERRIDE = 'X-HTTP-METHOD-OVERRIDE'
+
 
 class ApiRequest(object):
   """Simple data object representing an API request.
@@ -65,6 +67,10 @@ class ApiRequest(object):
         self.body = zlib.decompress(self.body, 16 + zlib.MAX_WBITS)
       except zlib.error:
         pass
+    if _METHOD_OVERRIDE in self.headers:
+      # the query arguments in the body will be handled by ._process_req_body()
+      self.http_method = self.headers[_METHOD_OVERRIDE]
+      del self.headers[_METHOD_OVERRIDE]  # wsgiref.headers.Headers doesn't implement .pop()
     self.source_ip = environ.get('REMOTE_ADDR')
     self.relative_url = self._reconstruct_relative_url(environ)
 
