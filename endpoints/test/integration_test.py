@@ -105,3 +105,37 @@ class TestSlashVariable(object):
         if not expect_404:
             expected = {'path': '/hello', 'payload': '80e3d7ee-d289-4aa7-b0ef-eb3a8232f33f'}
             assert actual.json == expected
+
+MP_INPUT = endpoints.ResourceContainer(
+        message_types.VoidMessage,
+        query_foo = messages.StringField(2, required=False),
+        query_bar = messages.StringField(4, required=True),
+        query_baz = messages.StringField(5, required=True),
+    )
+
+class MPResponse(messages.Message):
+    value_foo = messages.StringField(1)
+    value_bar = messages.StringField(2)
+    value_baz = messages.StringField(3)
+
+@endpoints.api(name='multiparam', version='v1')
+class MultiParamApi(remote.Service):
+    @endpoints.method(MP_INPUT, MPResponse, http_method='GET', name='param', path='param')
+    def param(self, request):
+        return MPResponse(value_foo=request.query_foo, value_bar=request.query_bar, value_baz=request.query_baz)
+
+MULTI_PARAM_APP = webtest.TestApp(endpoints.api_server([MultiParamApi]), lint=False)
+
+def test_normal_get():
+    url = '/_ah/api/multiparam/v1/param?query_foo=alice&query_bar=bob&query_baz=carol'
+    actual = MULTI_PARAM_APP.get(url)
+    assert actual.json == {'value_foo': 'alice', 'value_bar': 'bob', 'value_baz': 'carol'}
+
+def test_post_method_override():
+    url = '/_ah/api/multiparam/v1/param'
+    body = 'query_foo=alice&query_bar=bob&query_baz=carol'
+    actual = MULTI_PARAM_APP.post(
+        url, params=body, content_type='application/x-www-form-urlencoded', headers={
+            'x-http-method-override': 'GET',
+        })
+    assert actual.json == {'value_foo': 'alice', 'value_bar': 'bob', 'value_baz': 'carol'}
