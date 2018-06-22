@@ -23,9 +23,9 @@ information about this script's capabilities.
 """
 
 import sys
+
 import _endpointscfg_setup  # pylint: disable=unused-import
 from endpoints._endpointscfg_impl import main
-
 
 if __name__ == '__main__':
   main(sys.argv)

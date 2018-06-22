@@ -28,21 +28,15 @@ import unittest
 import urllib2
 
 import mock
-
-import endpoints.api_config as api_config
-import endpoints.api_exceptions as api_exceptions
-import endpoints.apiserving as apiserving
-from protorpc import message_types
-from protorpc import messages
-from protorpc import protojson
-from protorpc import registry
-from protorpc import remote
-from protorpc import transport
-
-import endpoints.resource_container as resource_container
 import test_util
-
 import webtest
+from endpoints import api_config
+from endpoints import api_exceptions
+from endpoints import apiserving
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+from endpoints import resource_container
 
 package = 'endpoints.test'
 

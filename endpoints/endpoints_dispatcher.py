@@ -32,6 +32,7 @@ import logging
 import re
 import urlparse
 import wsgiref
+
 import pkg_resources
 
 from . import api_config_manager
@@ -41,7 +42,6 @@ from . import discovery_service
 from . import errors
 from . import parameter_converter
 from . import util
-
 
 _logger = logging.getLogger(__name__)
 

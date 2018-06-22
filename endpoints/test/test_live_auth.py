@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tempfile
-import os
-import cStringIO
-import zipfile
-import sys
-import importlib
-import shutil
 import base64
+import cStringIO
+import importlib
+import os
+import shutil
 import subprocess
+import sys
+import tempfile
+import zipfile
+
+import requests  # provided by endpoints-management-python
 
 import pytest
-import requests  # provided by endpoints-management-python
 import yaml
 
 JSON_HEADERS = {'content-type': 'application/json'}

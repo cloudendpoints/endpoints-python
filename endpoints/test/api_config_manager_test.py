@@ -17,7 +17,7 @@
 import re
 import unittest
 
-import endpoints.api_config_manager as api_config_manager
+from endpoints import api_config_manager
 
 
 class ApiConfigManagerTest(unittest.TestCase):

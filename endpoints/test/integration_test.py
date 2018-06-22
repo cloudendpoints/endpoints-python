@@ -14,14 +14,14 @@
 
 """Tests against fully-constructed apps"""
 
-import pytest
-import webtest
 import urllib
 
 import endpoints
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+import pytest
+import webtest
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
 
 
 class FileResponse(messages.Message):

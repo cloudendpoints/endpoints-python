@@ -18,19 +18,16 @@ import json
 import os
 import unittest
 
-import endpoints.api_config as api_config
-import endpoints.api_exceptions as api_exceptions
-import endpoints.users_id_token as users_id_token
-import endpoints.types as endpoints_types
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-import endpoints.resource_container as resource_container
-import endpoints.discovery_generator as discovery_generator
 import test_util
-
+from endpoints import api_config
+from endpoints import api_exceptions
+from endpoints import discovery_generator
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+from endpoints import resource_container
+from endpoints import types as endpoints_types
+from endpoints import users_id_token
 
 package = 'DiscoveryGeneratorTest'
 

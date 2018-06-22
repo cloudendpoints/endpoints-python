@@ -39,25 +39,22 @@ import json
 import logging
 import re
 
-from . import api_exceptions
-from . import message_parser
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-from protorpc import util
+from google.appengine.api import app_identity
 
 import attr
 import semver
+from protorpc import util
 
+from . import api_exceptions
+from . import constants
+from . import message_parser
+from . import message_types
+from . import messages
+from . import remote
 from . import resource_container
+from . import types as endpoints_types
 from . import users_id_token
 from . import util as endpoints_util
-from . import types as endpoints_types
-from . import constants
-
-from google.appengine.api import app_identity
-
 
 _logger = logging.getLogger(__name__)
 package = 'google.appengine.endpoints'

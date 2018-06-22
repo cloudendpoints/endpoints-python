@@ -15,15 +15,15 @@
 """This is a sample Hello World API implemented using Google Cloud
 Endpoints."""
 
-# [START imports]
-import endpoints
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
 import copy
 
+# [START imports]
+import endpoints
 from data import AIRPORTS as SOURCE_AIRPORTS
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+
 # [END imports]
 
 AIRPORTS = copy.deepcopy(SOURCE_AIRPORTS)

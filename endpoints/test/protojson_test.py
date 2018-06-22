@@ -17,10 +17,9 @@
 import json
 import unittest
 
-import endpoints.protojson as protojson
-from protorpc import messages
-
 import test_util
+from endpoints import messages
+from endpoints import protojson
 
 
 class MyMessage(messages.Message):

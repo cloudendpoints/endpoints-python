@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mock import patch
 import os
+
 import pytest
+from mock import patch
 
 # The environment settings in this section were extracted from the
 # google.appengine.ext.testbed library, as extracted from version

@@ -21,24 +21,20 @@ import string
 import time
 import unittest
 
-import mock
-import pytest
-
-import endpoints.api_config as api_config
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-import test_util
-import endpoints.users_id_token as users_id_token
-import endpoints.constants as constants
-
 from google.appengine.api import memcache
 from google.appengine.api import oauth
 from google.appengine.api import urlfetch
 from google.appengine.api import users
 
+import mock
+import pytest
+import test_util
+from endpoints import api_config
+from endpoints import constants
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+from endpoints import users_id_token
 
 # The key response that allows the _SAMPLE_TOKEN to be verified.  This key was
 # retrieved from:

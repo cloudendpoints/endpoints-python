@@ -22,7 +22,6 @@ import logging
 
 from . import generated_error_info
 
-
 __all__ = ['BackendError',
            'BasicTypeParameterError',
            'EnumRejectionError',

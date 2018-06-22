@@ -44,6 +44,20 @@ from __future__ import absolute_import
 import argparse
 import collections
 import contextlib
+import logging
+import os
+import re
+import sys
+import urllib
+import urllib2
+
+import yaml
+from google.appengine.ext import testbed
+
+from . import api_config
+from . import openapi_generator
+from . import remote
+
 # Conditional import, pylint: disable=g-import-not-at-top
 try:
   import json
@@ -51,18 +65,7 @@ except ImportError:
   # If we can't find json packaged with Python import simplejson, which is
   # packaged with the SDK.
   import simplejson as json
-import logging
-import os
-import re
-import sys
-import urllib
-import urllib2
-from . import api_config
-from protorpc import remote
-from . import openapi_generator
-import yaml
 
-from google.appengine.ext import testbed
 
 DISCOVERY_DOC_BASE = ('https://webapis-discovery.appspot.com/_ah/api/'
                       'discovery/v1/apis/generate/')

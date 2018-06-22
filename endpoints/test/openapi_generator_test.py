@@ -16,19 +16,16 @@
 
 import json
 import unittest
+
 import pytest
-
-import endpoints.api_config as api_config
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-import endpoints.api_exceptions as api_exceptions
-import endpoints.resource_container as resource_container
-import endpoints.openapi_generator as openapi_generator
 import test_util
-
+from endpoints import api_config
+from endpoints import api_exceptions
+from endpoints import message_types
+from endpoints import messages
+from endpoints import openapi_generator
+from endpoints import remote
+from endpoints import resource_container
 
 package = 'OpenApiGeneratorTest'
 
