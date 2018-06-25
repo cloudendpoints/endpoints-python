@@ -20,7 +20,6 @@ from __future__ import absolute_import
 
 import collections
 
-
 _ErrorInfo = collections.namedtuple(
     '_ErrorInfo', ['http_status', 'rpc_status', 'reason', 'domain'])
 

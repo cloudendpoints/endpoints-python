@@ -18,7 +18,7 @@ from __future__ import absolute_import
 
 import httplib
 
-from protorpc import remote
+from . import remote
 
 
 class ServiceException(remote.ApplicationError):

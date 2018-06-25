@@ -29,15 +29,15 @@ import os
 import re
 import time
 import urllib
-
-from collections import Container as _Container, Iterable as _Iterable
-
-from . import constants
+from collections import Container as _Container
+from collections import Iterable as _Iterable
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
 from google.appengine.api import urlfetch
 from google.appengine.api import users
+
+from . import constants
 
 try:
   # PyCrypto may not be installed for the import_aeta_test or in dev's

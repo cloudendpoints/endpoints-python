@@ -18,12 +18,10 @@ import difflib
 import json
 import unittest
 
-import endpoints.message_parser as message_parser
-from protorpc import message_types
-from protorpc import messages
-
 import test_util
-
+from endpoints import message_parser
+from endpoints import message_types
+from endpoints import messages
 
 package = 'TestPackage'
 

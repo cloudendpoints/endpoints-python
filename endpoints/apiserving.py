@@ -66,22 +66,20 @@ import json
 import logging
 import os
 
+from google.appengine.api import app_identity
+
+from endpoints_management.control import client as control_client
+from endpoints_management.control import wsgi as control_wsgi
+from protorpc.wsgi import service as wsgi_service
+
 from . import api_config
 from . import api_exceptions
 from . import endpoints_dispatcher
+from . import message_types
+from . import messages
 from . import protojson
-
-from google.appengine.api import app_identity
-from endpoints_management.control import client as control_client
-from endpoints_management.control import wsgi as control_wsgi
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-from protorpc.wsgi import service as wsgi_service
-
+from . import remote
 from . import util
-
 
 _logger = logging.getLogger(__name__)
 package = 'google.appengine.endpoints'

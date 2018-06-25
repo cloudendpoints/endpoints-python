@@ -18,19 +18,17 @@ import itertools
 import json
 import unittest
 
-import endpoints.api_config as api_config
-from endpoints.api_config import ApiConfigGenerator
-from endpoints.api_config import AUTH_LEVEL
-from endpoints.constants import API_EXPLORER_CLIENT_ID
-import endpoints.api_exceptions as api_exceptions
 import mock
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-import endpoints.resource_container as resource_container
-
 import test_util
+from endpoints import api_config
+from endpoints import api_exceptions
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+from endpoints import resource_container
+from endpoints.api_config import AUTH_LEVEL
+from endpoints.api_config import ApiConfigGenerator
+from endpoints.constants import API_EXPLORER_CLIENT_ID
 
 package = 'api_config_test'
 _DESCRIPTOR_PATH_PREFIX = ''

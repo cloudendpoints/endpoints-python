@@ -16,12 +16,11 @@
 
 import unittest
 
-from protorpc import remote
+from endpoints import api_config
+from endpoints import apiserving
+from endpoints import endpoints_dispatcher
+from endpoints import remote
 from webtest import TestApp
-
-import endpoints.api_config as api_config
-import endpoints.apiserving as apiserving
-import endpoints.endpoints_dispatcher as endpoints_dispatcher
 
 
 @api_config.api('aservice', 'v1', hostname='aservice.appspot.com',

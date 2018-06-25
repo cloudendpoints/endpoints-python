@@ -16,16 +16,16 @@
 
 import json
 import os.path
-
-import pytest
-import webtest
 import urllib
 
 import endpoints
-import endpoints.discovery_generator as discovery_generator
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+import pytest
+import webtest
+from endpoints import discovery_generator
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+
 
 def make_collection(cls):
     return type(

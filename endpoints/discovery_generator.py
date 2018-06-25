@@ -23,12 +23,11 @@ import re
 
 from . import api_exceptions
 from . import message_parser
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+from . import message_types
+from . import messages
+from . import remote
 from . import resource_container
 from . import util
-
 
 _logger = logging.getLogger(__name__)
 _PATH_VARIABLE_PATTERN = r'{([a-zA-Z_][a-zA-Z_.\d]*)}'

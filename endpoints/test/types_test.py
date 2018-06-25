@@ -21,14 +21,12 @@ import string
 import time
 import unittest
 
-import endpoints.api_config as api_config
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
 import test_util
-import endpoints.types as endpoints_types
+from endpoints import api_config
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
+from endpoints import types as endpoints_types
 
 
 class ModuleInterfaceTest(test_util.ModuleInterfaceTest,

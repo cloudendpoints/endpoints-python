@@ -17,17 +17,15 @@
 import os
 import unittest
 
-import endpoints.api_config as api_config
-import endpoints.api_config_manager as api_config_manager
-import endpoints.apiserving as apiserving
-import endpoints.discovery_service as discovery_service
 import test_util
-
 import webtest
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+from endpoints import api_config
+from endpoints import api_config_manager
+from endpoints import apiserving
+from endpoints import discovery_service
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
 
 
 @api_config.api('aservice', 'v3', hostname='aservice.appspot.com',

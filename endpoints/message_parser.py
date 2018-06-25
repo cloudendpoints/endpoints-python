@@ -23,9 +23,8 @@ from __future__ import absolute_import
 
 import re
 
-from protorpc import message_types
-from protorpc import messages
-
+from . import message_types
+from . import messages
 
 __all__ = ['MessageTypeToJsonSchema']
 

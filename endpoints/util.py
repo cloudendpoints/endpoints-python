@@ -23,7 +23,6 @@ import os
 import wsgiref.headers
 
 from google.appengine.api import app_identity
-
 from google.appengine.api.modules import modules
 
 

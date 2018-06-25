@@ -18,18 +18,14 @@ import json
 import os
 import unittest
 
-import endpoints.api_config as api_config
-
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-import endpoints.api_request as api_request
-import endpoints.apiserving as apiserving
-import endpoints.directory_list_generator as directory_list_generator
-
 import test_util
-
+from endpoints import api_config
+from endpoints import api_request
+from endpoints import apiserving
+from endpoints import directory_list_generator
+from endpoints import message_types
+from endpoints import messages
+from endpoints import remote
 
 _GET_REST_API = 'apisdev.getRest'
 _GET_RPC_API = 'apisdev.getRpc'

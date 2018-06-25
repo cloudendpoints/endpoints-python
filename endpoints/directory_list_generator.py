@@ -23,6 +23,7 @@ import urlparse
 
 from . import util
 
+
 class DirectoryListGenerator(object):
   """Generates a discovery directory list from a ProtoRPC service.
 

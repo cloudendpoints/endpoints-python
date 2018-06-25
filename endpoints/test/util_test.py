@@ -18,11 +18,9 @@ import os
 import sys
 import unittest
 
-import mock
-
 import endpoints._endpointscfg_setup  # pylint: disable=unused-import
-
-import endpoints.util as util
+import mock
+from endpoints import util
 
 MODULES_MODULE = 'google.appengine.api.modules.modules'
 
@@ -72,4 +70,3 @@ class GetProtocolForEnvTest(unittest.TestCase):
 
 if __name__ == '__main__':
   unittest.main()
-

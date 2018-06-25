@@ -15,19 +15,18 @@
 """A library for converting service configs to OpenAPI (Swagger) specs."""
 from __future__ import absolute_import
 
+import hashlib
 import json
 import logging
 import re
-import hashlib
 
 from . import api_exceptions
 from . import message_parser
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+from . import message_types
+from . import messages
+from . import remote
 from . import resource_container
 from . import util
-
 
 _logger = logging.getLogger(__name__)
 
