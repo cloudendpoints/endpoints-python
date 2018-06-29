@@ -73,7 +73,7 @@ _ENV_USE_OAUTH_SCOPE = 'ENDPOINTS_USE_OAUTH_SCOPE'
 _ENV_AUTH_EMAIL = 'ENDPOINTS_AUTH_EMAIL'
 _ENV_AUTH_DOMAIN = 'ENDPOINTS_AUTH_DOMAIN'
 _EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
-_TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
+_TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
 _MAX_AGE_REGEX = re.compile(r'\s*max-age\s*=\s*(\d+)\s*')
 _CERT_NAMESPACE = '__verify_jwt'
 _ISSUERS = ('accounts.google.com', 'https://accounts.google.com')
@@ -417,12 +417,12 @@ def _set_bearer_user_vars_local(token, allowed_client_ids, scopes):
   if 'email' not in token_info:
     _logger.warning('Oauth token doesn\'t include an email address.')
     return
-  if not token_info.get('verified_email'):
+  if token_info.get('email_verified') != 'true':
     _logger.warning('Oauth token email isn\'t verified.')
     return
 
   # Validate client ID.
-  client_id = token_info.get('issued_to')
+  client_id = token_info.get('azp')
   if (list(allowed_client_ids) != SKIP_CLIENT_ID_CHECK and
       client_id not in allowed_client_ids):
     _logger.warning('Client ID is not allowed: %s', client_id)
