@@ -142,18 +142,19 @@ class UsersIdTokenTestBase(unittest.TestCase):
   _SAMPLE_TIME_NOW = 1360964700
   _SAMPLE_OAUTH_SCOPES = ['https://www.googleapis.com/auth/userinfo.email']
   _SAMPLE_OAUTH_TOKEN_INFO = {
-      'issued_to': ('919214422084-c0jrodnkm7ntttjhhttilqjq5d7l7mu5.apps.'
-                    'googleusercontent.com'),
-      'user_id': '108495933693426793887',
-      'expires_in': 3384,
       'access_type': 'online',
-      'audience': ('919214422084-c0jrodnkm7ntttjhhttilqjq5d7l7mu5.apps.'
+      'aud': ('919214422084-c0jrodnkm7ntttjhhttilqjq5d7l7mu5.apps.'
                    'googleusercontent.com'),
+      'azp': ('919214422084-c0jrodnkm7ntttjhhttilqjq5d7l7mu5.apps.'
+                   'googleusercontent.com'),
+      'email': 'kevind@gmail.com',
+      'email_verified': 'true',
+      'exp': str(_SAMPLE_TIME_NOW + 3384),
+      'expires_in': 3384,
       'scope': (
           'https://www.googleapis.com/auth/userinfo.profile '
           'https://www.googleapis.com/auth/userinfo.email'),
-      'email': 'kevind@gmail.com',
-      'verified_email': True
+      'sub': '108495933693426793887',
   }
 
   def setUp(self):
@@ -431,7 +432,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
       status_code = 200
       content = json.dumps(token)
 
-    expected_uri = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=unused_token'
+    expected_uri = 'https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=unused_token'
     with mock.patch.object(urlfetch, 'fetch') as mock_fetch:
       mock_fetch.return_value = DummyResponse()
       users_id_token._set_bearer_user_vars_local(
@@ -454,10 +455,10 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     self.assertNotIn('ENDPOINTS_AUTH_DOMAIN', os.environ)
 
   def testOauthLocalBadEmail(self):
-    self.assertOauthLocalFailed({'verified_email': False})
+    self.assertOauthLocalFailed({'email_verified': 'false'})
 
   def testOauthLocalBadClientId(self):
-    self.assertOauthLocalFailed({'issued_to': 'abc.appspot.com'})
+    self.assertOauthLocalFailed({'azp': 'abc.appspot.com'})
 
   def testOauthLocalBadScopes(self):
     self.assertOauthLocalFailed({'scope': 'useless_scope and_another'})
