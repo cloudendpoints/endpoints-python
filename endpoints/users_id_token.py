@@ -187,6 +187,7 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
     scopes = method.method_info.scopes
     audiences = method.method_info.audiences
     allowed_client_ids = method.method_info.allowed_client_ids
+    issuers = None
   else:
     scopes = (method.method_info.scopes
               if method.method_info.scopes is not None
@@ -197,12 +198,19 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
     allowed_client_ids = (method.method_info.allowed_client_ids
                           if method.method_info.allowed_client_ids is not None
                           else api_info.allowed_client_ids)
+    issuers = api_info.issuers
 
   if not scopes and not audiences and not allowed_client_ids:
     # The user hasn't provided any information to allow us to parse either
     # an id_token or an Oauth token.  They appear not to be interested in
     # auth.
     return
+
+  
+  if issuers:
+    _ISSUERS = []
+    for issuer_name, issuer_value in issuers.items():
+      _ISSUERS.append(issuer_value.issuer)
 
   token = _get_token(request)
   if not token:
@@ -456,8 +464,9 @@ def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
     True if the token is verified, False otherwise.
   """
   # Verify the issuer.
-  if parsed_token.get('iss') not in issuers:
-    _logger.warning('Issuer was not valid: %s', parsed_token.get('iss'))
+  iss = parsed_token.get('iss')
+  if iss not in issuers:
+    _logger.warning('Issuer was not valid: %s', iss)
     return False
 
   # Check audiences.
@@ -469,10 +478,26 @@ def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
   # As long as audience == client_id and cid is allowed, we need to accept
   # the audience for compatibility.
   cid = parsed_token.get('azp')
-  if aud != cid and aud not in audiences:
-    _logger.warning('Audience not allowed: %s', aud)
+  valid_audience = False
+  provider = None
+  if aud == cid:
+    valid_audience = True
+  elif isinstance(audiences, dict):
+    for provider_name, provider_audiences in audiences.iteritems():
+      if aud in provider_audiences:
+        valid_audience = True
+        provider = provider_name
+        break
+  elif aud in audiences:
+    valid_audience = True
+
+  if not valid_audience:
+    logging.warning('Audience not allowed: %s', aud)
     return False
 
+  if provider is 'firebase':
+    cid = 'firebase_auth'
+  
   # Check allowed client IDs.
   if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
     _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
