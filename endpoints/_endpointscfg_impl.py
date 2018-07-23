@@ -55,6 +55,7 @@ import yaml
 from google.appengine.ext import testbed
 
 from . import api_config
+from . import discovery_generator
 from . import openapi_generator
 from . import remote
 
@@ -67,8 +68,6 @@ except ImportError:
   import simplejson as json
 
 
-DISCOVERY_DOC_BASE = ('https://webapis-discovery.appspot.com/_ah/api/'
-                      'discovery/v1/apis/generate/')
 CLIENT_LIBRARY_BASE = 'https://google-api-client-libraries.appspot.com/generate'
 _VISIBLE_COMMANDS = ('get_client_lib', 'get_discovery_doc', 'get_openapi_spec')
 
@@ -258,64 +257,37 @@ def _GetAppYamlHostname(application_path, open_func=open):
   return '%s.appspot.com' % application
 
 
-def _FetchDiscoveryDoc(config, doc_format):
-  """Fetch discovery documents generated from a cloud service.
-
-  Args:
-    config: An API config.
-    doc_format: The requested format for the discovery doc. (rest|rpc)
-
-  Raises:
-    ServerRequestException: If fetching the generated discovery doc fails.
-
-  Returns:
-    A list of discovery doc strings.
-  """
-  body = json.dumps({'config': config}, indent=2, sort_keys=True)
-  request = urllib2.Request(DISCOVERY_DOC_BASE + doc_format, body)
-  request.add_header('content-type', 'application/json')
-
-  try:
-    with contextlib.closing(urllib2.urlopen(request)) as response:
-      return response.read()
-  except urllib2.HTTPError, error:
-    raise ServerRequestException(error)
-
-
-def _GenDiscoveryDoc(service_class_names, doc_format,
+def _GenDiscoveryDoc(service_class_names,
                      output_path, hostname=None,
                      application_path=None):
-  """Write discovery documents generated from a cloud service to file.
+  """Write discovery documents generated from the service classes to file.
 
   Args:
     service_class_names: A list of fully qualified ProtoRPC service names.
-    doc_format: The requested format for the discovery doc. (rest|rpc)
     output_path: The directory to output the discovery docs to.
     hostname: A string hostname which will be used as the default version
       hostname. If no hostname is specificied in the @endpoints.api decorator,
       this value is the fallback. Defaults to None.
     application_path: A string containing the path to the AppEngine app.
 
-  Raises:
-    ServerRequestException: If fetching the generated discovery doc fails.
-
   Returns:
     A list of discovery doc filenames.
   """
   output_files = []
-  service_configs = GenApiConfig(service_class_names, hostname=hostname,
-                                 application_path=application_path)
+  service_configs = GenApiConfig(
+      service_class_names, hostname=hostname,
+      config_string_generator=discovery_generator.DiscoveryGenerator(),
+      application_path=application_path)
   for api_name_version, config in service_configs.iteritems():
-    discovery_doc = _FetchDiscoveryDoc(config, doc_format)
     discovery_name = api_name_version + '.discovery'
-    output_files.append(_WriteFile(output_path, discovery_name, discovery_doc))
+    output_files.append(_WriteFile(output_path, discovery_name, config))
 
   return output_files
 
 
 def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
                     application_path=None, x_google_api_name=False):
-  """Write discovery documents generated from a cloud service to file.
+  """Write openapi documents generated from the service classes to file.
 
   Args:
     service_class_names: A list of fully qualified ProtoRPC service names.
@@ -342,7 +314,7 @@ def _GenOpenApiSpec(service_class_names, output_path, hostname=None,
 
 
 def _GenClientLib(discovery_path, language, output_path, build_system):
-  """Write a client library from a discovery doc, using a cloud service to file.
+  """Write a client library from a discovery doc.
 
   Args:
     discovery_path: Path to the discovery doc used to generate the client
@@ -370,7 +342,7 @@ def _GenClientLib(discovery_path, language, output_path, build_system):
 
 def _GenClientLibFromContents(discovery_doc, language, output_path,
                               build_system, client_name):
-  """Write a client library from a discovery doc, using a cloud service to file.
+  """Write a client library from a discovery doc.
 
   Args:
     discovery_doc: A string, the contents of the discovery doc used to
@@ -417,13 +389,14 @@ def _GetClientLib(service_class_names, language, output_path, build_system,
     A list of paths to client libraries.
   """
   client_libs = []
-  service_configs = GenApiConfig(service_class_names, hostname=hostname,
-                                 application_path=application_path)
+  service_configs = GenApiConfig(
+      service_class_names, hostname=hostname,
+      config_string_generator=discovery_generator.DiscoveryGenerator(),
+      application_path=application_path)
   for api_name_version, config in service_configs.iteritems():
-    discovery_doc = _FetchDiscoveryDoc(config, 'rest')
     client_name = api_name_version + '.zip'
     client_libs.append(
-        _GenClientLibFromContents(discovery_doc, language, output_path,
+        _GenClientLibFromContents(config, language, output_path,
                                   build_system, client_name))
   return client_libs
 
@@ -471,8 +444,8 @@ def _GenDiscoveryDocCallback(args, discovery_func=_GenDiscoveryDoc):
       files, accepting a list of service names, a discovery doc format, and an
       output directory.
   """
-  discovery_paths = discovery_func(args.service, args.format,
-                                   args.output, hostname=args.hostname,
+  discovery_paths = discovery_func(args.service, args.output,
+                                   hostname=args.hostname,
                                    application_path=args.application)
   for discovery_path in discovery_paths:
     print 'API discovery document written to %s' % discovery_path
@@ -530,9 +503,12 @@ def MakeParser(prog):
       parser.add_argument('-a', '--application', default='.',
                           help='The path to the Python App Engine App')
     if 'format' in args:
+      # This used to be a valid option, allowing the user to select 'rest' or 'rpc',
+      # but now 'rest' is the only valid type. The argument remains so scripts using it
+      # won't break.
       parser.add_argument('-f', '--format', default='rest',
-                          choices=['rest', 'rpc'],
-                          help='The requested API protocol type')
+                          choices=['rest'],
+                          help='The requested API protocol type (ignored)')
     if 'hostname' in args:
       help_text = ('Default application hostname, if none is specified '
                    'for API service.')
