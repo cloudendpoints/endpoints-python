@@ -37,4 +37,4 @@ from .users_id_token import get_current_user, get_verified_jwt, convert_jwks_uri
 from .users_id_token import InvalidGetUserCall
 from .users_id_token import SKIP_CLIENT_ID_CHECK
 
-__version__ = '4.4.1'
+__version__ = '4.5.0'
