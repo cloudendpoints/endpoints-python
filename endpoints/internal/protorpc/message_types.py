@@ -34,6 +34,9 @@ __all__ = [
     'VoidMessage',
 ]
 
+package = 'protorpc.message_types'
+
+
 class VoidMessage(messages.Message):
   """Empty message."""
 

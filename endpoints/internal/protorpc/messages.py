@@ -83,6 +83,8 @@ __all__ = ['MAX_ENUM_VALUE',
            'DefinitionNotFoundError',
           ]
 
+package = 'protorpc.messages'
+
 
 # TODO(rafek): Add extended module test to ensure all exceptions
 # in services extends Error.
