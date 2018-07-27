@@ -20,9 +20,9 @@
 # pylint: disable=wildcard-import
 from __future__ import absolute_import
 
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
+from .internal.protorpc import message_types
+from .internal.protorpc import messages
+from .internal.protorpc import remote
 
 from .api_config import api, method
 from .api_config import AUTH_LEVEL, EMAIL_SCOPE

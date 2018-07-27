@@ -17,7 +17,7 @@ from __future__ import absolute_import
 
 import base64
 
-from protorpc import protojson
+from .internal.protorpc import protojson
 
 from . import messages
 

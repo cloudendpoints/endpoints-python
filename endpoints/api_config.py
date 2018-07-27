@@ -43,7 +43,7 @@ from google.appengine.api import app_identity
 
 import attr
 import semver
-from protorpc import util
+from .internal.protorpc import util
 
 from . import api_exceptions
 from . import constants

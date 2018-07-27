@@ -70,7 +70,7 @@ from google.appengine.api import app_identity
 
 from endpoints_management.control import client as control_client
 from endpoints_management.control import wsgi as control_wsgi
-from protorpc.wsgi import service as wsgi_service
+from .internal.protorpc.wsgi import service as wsgi_service
 
 from . import api_config
 from . import api_exceptions
@@ -563,6 +563,10 @@ def api_server(api_services, **kwargs):
   # Disallow protocol configuration for now, Lily is json-only.
   if 'protocols' in kwargs:
     raise TypeError("__init__() got an unexpected keyword argument 'protocols'")
+
+  for service in api_services:
+    if not issubclass(service, remote.Service):
+      raise TypeError('%s is not a subclass of endpoints.remote.Service' % service)
 
   # Construct the api serving app
   apis_app = _ApiServer(api_services, **kwargs)

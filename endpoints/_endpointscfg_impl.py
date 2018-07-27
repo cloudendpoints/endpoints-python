@@ -188,7 +188,7 @@ def GenApiConfig(service_class_names, config_string_generator=None,
       resolved_services.extend(service.get_api_classes())
     elif (not isinstance(service, type) or
           not issubclass(service, remote.Service)):
-      raise TypeError('%s is not a ProtoRPC service' % service_class_name)
+      raise TypeError('%s is not a subclass of endpoints.remote.Service' % service_class_name)
     else:
       resolved_services.append(service)
 
