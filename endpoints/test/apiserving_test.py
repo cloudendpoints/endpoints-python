@@ -28,6 +28,7 @@ import unittest
 import urllib2
 
 import mock
+import pytest
 import test_util
 import webtest
 from endpoints import api_config
@@ -37,6 +38,8 @@ from endpoints import message_types
 from endpoints import messages
 from endpoints import remote
 from endpoints import resource_container
+
+from protorpc import remote as nonbundled_remote
 
 package = 'endpoints.test'
 
@@ -361,6 +364,22 @@ class ApiServerTestApiConfigRegistryEndToEndCustomUrl(unittest.TestCase):
     configs = my_app.get_api_configs()
     self.assertEqual(TEST_SERVICE_CUSTOM_URL_API_CONFIG, configs)
 
+
+@api_config.api(name='testapi', version='v3', description='A wonderful API.')
+class TestNonbundledService(nonbundled_remote.Service):
+
+  @api_config.method(test_request,
+                     message_types.VoidMessage,
+                     http_method='DELETE', path='items/{id}')
+  # Silence lint warning about method naming conventions
+  # pylint: disable=g-bad-name
+  def delete(self, unused_request):
+    return message_types.VoidMessage()
+
+
+def test_nonbundled_service_error():
+  with pytest.raises(TypeError):
+    apiserving.api_server([TestNonbundledService])
 
 if __name__ == '__main__':
   unittest.main()
