@@ -70,7 +70,7 @@ from google.appengine.api import app_identity
 
 from endpoints_management.control import client as control_client
 from endpoints_management.control import wsgi as control_wsgi
-from .internal.protorpc.wsgi import service as wsgi_service
+from .bundled.protorpc.wsgi import service as wsgi_service
 
 from . import api_config
 from . import api_exceptions
