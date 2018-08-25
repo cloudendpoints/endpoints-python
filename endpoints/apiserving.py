@@ -564,6 +564,10 @@ def api_server(api_services, **kwargs):
   if 'protocols' in kwargs:
     raise TypeError("__init__() got an unexpected keyword argument 'protocols'")
 
+  from endpoints import _logger as endpoints_logger
+  from endpoints import __version__ as endpoints_version
+  endpoints_logger.info('Initializing Endpoints Framework version %s', endpoints_version)
+
   # Construct the api serving app
   apis_app = _ApiServer(api_services, **kwargs)
   dispatcher = endpoints_dispatcher.EndpointsDispatcherMiddleware(apis_app)
@@ -582,6 +586,10 @@ def api_server(api_services, **kwargs):
   if control_wsgi.running_on_devserver():
     _logger.warn('Running on local devserver, so service control is disabled.')
     return dispatcher
+
+  from endpoints_management import _logger as management_logger
+  from endpoints_management import __version__ as management_version
+  management_logger.info('Initializing Endpoints Management Framework version %s', management_version)
 
   # The DEFAULT 'config' should be tuned so that it's always OK for python
   # App Engine workloads.  The config can be adjusted, but that's probably
