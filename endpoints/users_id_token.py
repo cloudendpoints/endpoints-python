@@ -371,7 +371,7 @@ def _set_bearer_user_vars(allowed_client_ids, scopes):
     _logger.debug('Unable to get authorized scopes.', exc_info=True)
     return
   if not _are_scopes_sufficient(authorized_scopes, sufficient_scopes):
-    _logger.debug('Authorized scopes did not satisfy scope requirements.')
+    _logger.warning('Authorized scopes did not satisfy scope requirements.')
     return
   client_id = oauth.get_client_id(authorized_scopes)
 
@@ -547,7 +547,7 @@ def _get_cached_certs(cert_uri, cache):
   """
   certs = cache.get(cert_uri, namespace=_CERT_NAMESPACE)
   if certs is None:
-    _logger.debug('Cert cache miss')
+    _logger.debug('Cert cache miss for %s', cert_uri)
     try:
       result = urlfetch.fetch(cert_uri)
     except AssertionError:
