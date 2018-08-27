@@ -233,7 +233,7 @@ class EndpointsDispatcherMiddleware(object):
                                        'text/html')],
                                      PROXY_HTML, start_response)
     else:
-      _logger.error('Unknown static url requested: %s',
+      _logger.debug('Unknown static url requested: %s',
                     request.relative_url)
       return util.send_wsgi_response('404 Not Found', [('Content-Type',
                                        'text/plain')], 'Not Found',

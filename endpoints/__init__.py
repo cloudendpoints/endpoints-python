@@ -20,6 +20,8 @@
 # pylint: disable=wildcard-import
 from __future__ import absolute_import
 
+import logging
+
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -38,3 +40,6 @@ from .users_id_token import InvalidGetUserCall
 from .users_id_token import SKIP_CLIENT_ID_CHECK
 
 __version__ = '4.5.0'
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
