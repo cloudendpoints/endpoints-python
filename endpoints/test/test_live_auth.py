@@ -107,6 +107,11 @@ class TestAppManager(object):
         shutil.copytree(source_path, self.app_path)
         self.update_app_yaml(project_id)
 
+    def become_base_path_app(self, project_id):
+        source_path = os.path.join(TESTDIR, 'testdata', 'base_path_sample_app')
+        shutil.copytree(source_path, self.app_path)
+        self.update_app_yaml(project_id)
+
     def update_app_yaml(self, project_id, version=None):
         yaml_path = os.path.join(self.app_path, 'app.yaml')
         app_yaml = yaml.load(open(yaml_path))
@@ -126,7 +131,7 @@ def apikey_app(gcloud_sdk, integration_project_id):
     os.mkdir(os.path.join(path, 'lib'))
     # Install the checked-out endpoints repo
     subprocess.check_call(['python', '-m', 'pip', 'install', '-t', 'lib', PKGDIR, '--ignore-installed'], cwd=path)
-    print path
+
     subprocess.check_call(['python', 'lib/endpoints/endpointscfg.py', 'get_openapi_spec', 'main.IataApi', '--hostname', '{}.appspot.com'.format(integration_project_id)], cwd=path)
     out, err, code = gcloud_sdk.RunGcloud(['endpoints', 'services', 'deploy', os.path.join(path, 'iatav1openapi.json')])
     assert code == 0
@@ -223,6 +228,43 @@ class TestApikeyRequirement(object):
         r = requests.delete(url, headers=JSON_HEADERS)
         assert r.status_code == 401
 
+        r = requests.get(url, headers=JSON_HEADERS)
+        actual = r.json()
+        expected = {u'iata': u'YYZ', u'name': u'Lester B. Pearson International Airport'}
+        assert actual == expected
+
+
+@pytest.fixture(scope='class')
+def base_path_app(gcloud_sdk, integration_project_id):
+    app = TestAppManager()
+    app.become_base_path_app(integration_project_id)
+    path = app.app_path
+    os.mkdir(os.path.join(path, 'lib'))
+    # Install the checked-out endpoints repo
+    subprocess.check_call(['python', '-m', 'pip', 'install', '-t', 'lib', PKGDIR, '--ignore-installed'], cwd=path)
+
+    subprocess.check_call(['python', 'lib/endpoints/endpointscfg.py', 'get_openapi_spec', 'main.IataApi', '--hostname', '{}.appspot.com'.format(integration_project_id)], cwd=path)
+    out, err, code = gcloud_sdk.RunGcloud(['endpoints', 'services', 'deploy', os.path.join(path, 'iatav1openapi.json')])
+    assert code == 0
+    version = out['serviceConfig']['id'].encode('ascii')
+    app.update_app_yaml(integration_project_id, version)
+
+    out, err, code = gcloud_sdk.RunGcloud(['app', 'deploy', os.path.join(path, 'app.yaml')])
+    assert code == 0
+
+    base_url = 'https://{}.appspot.com/custom_base_path/iata/v1'.format(integration_project_id)
+    yield base_url
+    app.cleanup()
+
+
+@pytest.mark.livetest
+class TestBasePathDeployment(object):
+    # This test doesn't need the clean fixture to reset its state;
+    # we're not using the mutation methods in this test.
+    def test_get_airport(self, base_path_app):
+        url = '/'.join([base_path_app, 'airport', 'YYZ'])
+        assert 'custom_base_path' in url
+        assert '_ah/api' not in url
         r = requests.get(url, headers=JSON_HEADERS)
         actual = r.json()
         expected = {u'iata': u'YYZ', u'name': u'Lester B. Pearson International Airport'}
