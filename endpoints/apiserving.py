@@ -564,8 +564,8 @@ def api_server(api_services, **kwargs):
   if 'protocols' in kwargs:
     raise TypeError("__init__() got an unexpected keyword argument 'protocols'")
 
-  from endpoints import _logger as endpoints_logger
-  from endpoints import __version__ as endpoints_version
+  from . import _logger as endpoints_logger
+  from . import __version__ as endpoints_version
   endpoints_logger.info('Initializing Endpoints Framework version %s', endpoints_version)
 
   # Construct the api serving app
