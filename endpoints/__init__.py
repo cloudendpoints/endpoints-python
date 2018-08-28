@@ -39,7 +39,7 @@ from .users_id_token import get_current_user, get_verified_jwt, convert_jwks_uri
 from .users_id_token import InvalidGetUserCall
 from .users_id_token import SKIP_CLIENT_ID_CHECK
 
-__version__ = '4.6.0'
+__version__ = '4.6.1'
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
