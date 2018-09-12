@@ -26,6 +26,8 @@ from endpoints import message_types
 from endpoints import messages
 from endpoints import remote
 
+package = 'DiscoveryDocumentTest'
+
 
 def make_collection(cls):
     return type(

@@ -8,33 +8,18 @@
       }
     }
   },
-  "basePath": "/_ah/api/foo/v1/",
-  "baseUrl": "https://discovery-test.appspot.com/_ah/api/foo/v1/",
+  "basePath": "/_ah/api/bar/v1/",
+  "baseUrl": "https://discovery-test.appspot.com/_ah/api/bar/v1/",
   "batchPath": "batch",
-  "canonicalName": "CanonicalName",
-  "description": "Just Foo Things",
+  "description": "This is an API",
   "discoveryVersion": "v1",
-  "documentationLink": "https://example.com",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
   },
-  "id": "foo:v1",
+  "id": "bar:v1",
   "kind": "discovery#restDescription",
-  "methods": {
-    "toplevel": {
-      "httpMethod": "POST",
-      "id": "foo.toplevel",
-      "path": "foos",
-      "response": {
-        "$ref": "ProtorpcMessagesCollectionFoo"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    }
-  },
-  "name": "foo",
+  "name": "bar",
   "parameters": {
     "alt": {
       "default": "json",
@@ -82,11 +67,11 @@
   },
   "protocol": "rest",
   "resources": {
-    "foo": {
+    "bar": {
       "methods": {
         "create": {
           "httpMethod": "PUT",
-          "id": "foo.foo.create",
+          "id": "bar.bar.create",
           "parameterOrder": [
             "id"
           ],
@@ -97,13 +82,13 @@
               "type": "string"
             }
           },
-          "path": "foos/{id}",
+          "path": "bars/{id}",
           "request": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo",
+            "$ref": "DiscoveryDocumentTestBar",
             "parameterName": "resource"
           },
           "response": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo"
+            "$ref": "DiscoveryDocumentTestBar"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -111,7 +96,7 @@
         },
         "delete": {
           "httpMethod": "DELETE",
-          "id": "foo.foo.delete",
+          "id": "bar.bar.delete",
           "parameterOrder": [
             "id"
           ],
@@ -122,9 +107,9 @@
               "type": "string"
             }
           },
-          "path": "foos/{id}",
+          "path": "bars/{id}",
           "response": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo"
+            "$ref": "DiscoveryDocumentTestBar"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -132,7 +117,7 @@
         },
         "get": {
           "httpMethod": "GET",
-          "id": "foo.foo.get",
+          "id": "bar.bar.get",
           "parameterOrder": [
             "id"
           ],
@@ -143,9 +128,9 @@
               "type": "string"
             }
           },
-          "path": "foos/{id}",
+          "path": "bars/{id}",
           "response": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo"
+            "$ref": "DiscoveryDocumentTestBar"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -153,7 +138,7 @@
         },
         "list": {
           "httpMethod": "GET",
-          "id": "foo.foo.list",
+          "id": "bar.bar.list",
           "parameterOrder": [
             "n"
           ],
@@ -165,9 +150,9 @@
               "type": "integer"
             }
           },
-          "path": "foos",
+          "path": "bars",
           "response": {
-            "$ref": "ProtorpcMessagesCollectionFoo"
+            "$ref": "ProtorpcMessagesCollectionBar"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -175,7 +160,7 @@
         },
         "update": {
           "httpMethod": "POST",
-          "id": "foo.foo.update",
+          "id": "bar.bar.update",
           "parameterOrder": [
             "id"
           ],
@@ -186,13 +171,13 @@
               "type": "string"
             }
           },
-          "path": "foos/{id}",
+          "path": "bars/{id}",
           "request": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo",
+            "$ref": "DiscoveryDocumentTestBar",
             "parameterName": "resource"
           },
           "response": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo"
+            "$ref": "DiscoveryDocumentTestBar"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -203,12 +188,12 @@
   },
   "rootUrl": "https://discovery-test.appspot.com/_ah/api/",
   "schemas": {
-    "ProtorpcMessagesCollectionFoo": {
-      "id": "ProtorpcMessagesCollectionFoo",
+    "ProtorpcMessagesCollectionBar": {
+      "id": "ProtorpcMessagesCollectionBar",
       "properties": {
         "items": {
           "items": {
-            "$ref": "EndpointsTestDiscoveryDocumentTestFoo"
+            "$ref": "DiscoveryDocumentTestBar"
           },
           "type": "array"
         },
@@ -218,21 +203,26 @@
       },
       "type": "object"
     },
-    "EndpointsTestDiscoveryDocumentTestFoo": {
-      "id": "EndpointsTestDiscoveryDocumentTestFoo",
+    "DiscoveryDocumentTestBar": {
+      "id": "DiscoveryDocumentTestBar",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+	  "default": "Jimothy"
         },
         "value": {
           "format": "int32",
-          "type": "integer"
-        }
+          "type": "integer",
+	  "default": "42"
+        },
+	"active": {
+	  "type": "boolean",
+	  "default": "True"
+	}
       },
       "type": "object"
     }
   },
-  "servicePath": "foo/v1/",
-  "title": "The Foo API",
+  "servicePath": "bar/v1/",
   "version": "v1"
 }

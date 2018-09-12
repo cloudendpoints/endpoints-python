@@ -45,7 +45,7 @@ setup(
     author='Google Endpoints Authors',
     author_email='googleapis-packages@google.com',
     url='https://github.com/cloudendpoints/endpoints-python',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test', 'test.*']),
     package_dir={'google-endpoints': 'endpoints'},
     include_package_data=True,
     license='Apache',
