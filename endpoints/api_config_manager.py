@@ -39,6 +39,7 @@ class ApiConfigManager(object):
     self._rest_methods = []
     self._configs = {}
     self._config_lock = threading.Lock()
+    self._processing_already_done = False
 
   @property
   def configs(self):
@@ -60,6 +61,8 @@ class ApiConfigManager(object):
     Args:
       config_json: A dict, the JSON body of the getApiConfigs response.
     """
+    if self._processing_already_done:
+      return
     with self._config_lock:
       self._add_discovery_config()
       for config in config_json.get('items', []):
@@ -75,6 +78,8 @@ class ApiConfigManager(object):
 
         for method_name, method in sorted_methods:
           self._save_rest_method(method_name, name, path_version, method)
+
+    self._processing_already_done = True
 
   def _get_sorted_methods(self, methods):
     """Get a copy of 'methods' sorted the way they would be on the live server.
