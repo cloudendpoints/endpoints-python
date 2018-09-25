@@ -166,6 +166,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ALL_FIELDS)
                             },
@@ -185,6 +186,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             "in": "body",
                             "name": "body",
+                            'required': True,
                             "schema": {
                                 "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
                             }
@@ -209,6 +211,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             "in": "body",
                             "name": "body",
+                            'required': True,
                             "schema": {
                                 "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
                             }
@@ -233,6 +236,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             "in": "body",
                             "name": "body",
+                            'required': True,
                             "schema": {
                                 "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
                             }
@@ -575,6 +579,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(PUT_REQUEST)
                             }
@@ -683,6 +688,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(
                                     PUT_REQUEST_FOR_CONTAINER)
@@ -709,6 +715,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(
                                     PUBLISH_REQUEST_FOR_CONTAINER)
@@ -741,6 +748,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ITEMS_PUT_REQUEST)
                             },
@@ -766,6 +774,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ENTRY_PUBLISH_REQUEST)
                             },
@@ -796,6 +805,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ALL_FIELDS)
                             },
@@ -815,6 +825,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ALL_FIELDS)
                             },
@@ -1538,6 +1549,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ID_FIELD)
                             },
@@ -1622,6 +1634,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ID_REPEATED_FIELD)
                             }
@@ -1709,6 +1722,7 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(NESTED_REPEATED_MESSAGE)
                             }
@@ -1874,6 +1888,7 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
                         {
                             'name': 'body',
                             'in': 'body',
+                            'required': True,
                             'schema': {
                                 '$ref': self._def_path(ALL_FIELDS)
                             },
@@ -1898,6 +1913,7 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
                         {
                             "in": "body",
                             "name": "body",
+                            'required': True,
                             "schema": {
                                 "$ref": "#/definitions/OpenApiGeneratorTestAllFields"
                             }
