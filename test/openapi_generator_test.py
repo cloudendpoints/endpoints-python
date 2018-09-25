@@ -87,6 +87,12 @@ REPEATED_CONTAINER = resource_container.ResourceContainer(
     IdField,
     repeated_field=messages.StringField(2, repeated=True))
 
+class SimpleRequest(messages.Message):
+    message = messages.StringField(1)
+
+RESOURCE_WITH_BODY = resource_container.ResourceContainer(
+    SimpleRequest, n=messages.IntegerField(2, default=1))
+
 
 # Some constants to shorten line length in expected OpenAPI output
 PREFIX = 'OpenApiGeneratorTest'
@@ -1492,6 +1498,25 @@ class OpenApiGeneratorTest(BaseOpenApiGeneratorTest):
     }
 
     assert api == expected_openapi
+
+  def testResourceContainerBody(self):
+    # A ResourceContainer with a positional argument treats that argument as the
+    # request body. GET/DELETE requests cannot take a request body. A confusing
+    # error message used to occur when this happened.
+    @api_config.api(name='root', hostname='example.appspot.com', version='1.3.4')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(RESOURCE_WITH_BODY, message_types.VoidMessage,
+                         path='noop', http_method='GET', name='noop')
+      def noop_get(self, unused_request):
+        return message_types.VoidMessage()
+
+    with pytest.raises(api_exceptions.ApiConfigurationError) as excinfo:
+      self.generator.pretty_print_config_to_json(MyService)
+    msg = excinfo.value.message
+    assert 'root.noop' in msg
+    assert 'cannot accept a body' in msg
 
   def testRepeatedResourceContainer(self):
     @api_config.api(name='root', hostname='example.appspot.com', version='v1',
