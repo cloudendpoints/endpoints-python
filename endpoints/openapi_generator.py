@@ -770,6 +770,21 @@ class OpenApiGenerator(object):
       return [{_API_KEY: []}]
 
     if isinstance(audiences, (tuple, list)):
+      # security_definitions includes not just the base issuers, but also the
+      # hash-appended versions, so we need to filter them out
+      security_issuers = set()
+      for definition_key in security_definitions.keys():
+        if '-' in definition_key:
+          split_key = definition_key.rsplit('-', 1)[0]
+          if split_key in security_definitions:
+            continue
+        security_issuers.add(definition_key)
+
+      if security_issuers != {_DEFAULT_SECURITY_DEFINITION}:
+        raise api_exceptions.ApiConfigurationError(
+          'audiences must be a dict when third-party issuers '
+          '(auth0, firebase, etc) are in use.'
+        )
       audiences = {_DEFAULT_SECURITY_DEFINITION: audiences}
 
     results = []
