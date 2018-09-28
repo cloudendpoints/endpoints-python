@@ -591,6 +591,11 @@ class OpenApiGenerator(object):
     """
     if isinstance(message_type, resource_container.ResourceContainer):
       base_message_type = message_type.body_message_class()
+      if (request_kind == self.__NO_BODY and
+          base_message_type != message_types.VoidMessage()):
+        msg = ('Method %s specifies a body message in its ResourceContainer, but '
+               'is a HTTP method type that cannot accept a body.') % method_id
+        raise api_exceptions.ApiConfigurationError(msg)
     else:
       base_message_type = message_type
 
