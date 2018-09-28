@@ -373,6 +373,7 @@ class OpenApiGenerator(object):
     return {
         'name': 'body',
         'in': 'body',
+        'required': True,
         'schema': {
             '$ref': '#/definitions/{0}'.format(
                 self.__request_schema[method_id])
