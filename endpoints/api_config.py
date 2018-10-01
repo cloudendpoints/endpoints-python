@@ -53,6 +53,7 @@ from . import messages
 from . import remote
 from . import resource_container
 from . import types as endpoints_types
+from .types import Issuer, LimitDefinition, Namespace  # originally in this module
 from . import users_id_token
 from . import util as endpoints_util
 
@@ -95,14 +96,6 @@ _INVALID_NAMESPACE_ERROR_TEMPLATE = (
 _VALID_PART_RE = re.compile('^{[^{}]+}$')
 _VALID_LAST_PART_RE = re.compile('^{[^{}]+}(:)?(?(1)[^{}]+)$')
 
-
-Issuer = attr.make_class('Issuer', ['issuer', 'jwks_uri'])
-LimitDefinition = attr.make_class('LimitDefinition', ['metric_name',
-                                                      'display_name',
-                                                      'default_limit'])
-Namespace = attr.make_class('Namespace', ['owner_domain',
-                                          'owner_name',
-                                          'package_path'])
 
 
 def _Enum(docstring, *names):
