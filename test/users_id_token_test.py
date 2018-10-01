@@ -176,7 +176,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
 
   def testSampleIdToken(self):
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
-                                             users_id_token._ISSUERS,
+                                             users_id_token._DEFAULT_GOOGLE_ISSUER,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              self._SAMPLE_TIME_NOW, self.cache)
@@ -273,7 +273,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     # Also verify that this doesn't return a user when called from
     # users_id_token.
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
-                                             users_id_token._ISSUERS,
+                                             users_id_token._DEFAULT_GOOGLE_ISSUER,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              expired_time_now, self.cache)
@@ -613,7 +613,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
       mock_time.time.assert_called_once_with()
       mock_get.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
@@ -691,7 +691,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.assertEqual(os.getenv('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
     mock_get_id_token_user.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
@@ -707,7 +707,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
 
     mock_get_id_token_user.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
