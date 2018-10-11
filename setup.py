@@ -26,7 +26,7 @@ install_requires = [
 
 setup(
     name='google-endpoints',
-    version='4.6.1',
+    version='4.7.0',
     description='Google Cloud Endpoints',
     long_description=open('README.rst').read(),
     author='Google Endpoints Authors',
