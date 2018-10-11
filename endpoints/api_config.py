@@ -53,7 +53,8 @@ from . import messages
 from . import remote
 from . import resource_container
 from . import types as endpoints_types
-from .types import Issuer, LimitDefinition, Namespace  # originally in this module
+# originally in this module
+from .types import Issuer, LimitDefinition, Namespace
 from . import users_id_token
 from . import util as endpoints_util
 
