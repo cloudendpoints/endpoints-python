@@ -31,6 +31,7 @@ import time
 import urllib
 from collections import Container as _Container
 from collections import Iterable as _Iterable
+from collections import Mapping as _Mapping
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
@@ -38,6 +39,7 @@ from google.appengine.api import urlfetch
 from google.appengine.api import users
 
 from . import constants
+from . import types as endpoints_types
 
 try:
   # PyCrypto may not be installed for the import_aeta_test or in dev's
@@ -77,6 +79,9 @@ _TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
 _MAX_AGE_REGEX = re.compile(r'\s*max-age\s*=\s*(\d+)\s*')
 _CERT_NAMESPACE = '__verify_jwt'
 _ISSUERS = ('accounts.google.com', 'https://accounts.google.com')
+_DEFAULT_GOOGLE_ISSUER = {
+    'google_id_token': endpoints_types.Issuer(_ISSUERS, _DEFAULT_CERT_URI)
+}
 
 
 class _AppIdentityError(Exception):
@@ -218,8 +223,13 @@ def _maybe_set_current_user_vars(method, api_info=None, request=None):
   if ((scopes == [_EMAIL_SCOPE] or scopes == (_EMAIL_SCOPE,)) and
       allowed_client_ids):
     _logger.debug('Checking for id_token.')
+    issuers = api_info.issuers
+    if issuers is None:
+      issuers = _DEFAULT_GOOGLE_ISSUER
+    elif 'google_id_token' not in issuers:
+      issuers.update(_DEFAULT_GOOGLE_ISSUER)
     time_now = long(time.time())
-    user = _get_id_token_user(token, _ISSUERS, audiences, allowed_client_ids,
+    user = _get_id_token_user(token, issuers, audiences, allowed_client_ids,
                               time_now, memcache)
     if user:
       os.environ[_ENV_AUTH_EMAIL] = user.email()
@@ -280,6 +290,7 @@ def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, 
 
   Args:
     token: The id_token to check.
+    issuers: dict of Issuers
     audiences: List of audiences that are acceptable.
     allowed_client_ids: List of client IDs that are acceptable.
     time_now: The current time as a long (eg. long(time.time())).
@@ -290,21 +301,33 @@ def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, 
   """
   # Verify that the token is valid before we try to extract anything from it.
   # This verifies the signature and some of the basic info in the token.
-  try:
-    parsed_token = _verify_signed_jwt_with_certs(token, time_now, cache)
-  except Exception as e:  # pylint: disable=broad-except
-    _logger.debug('id_token verification failed: %s', e)
-    return None
+  for issuer_key, issuer in issuers.items():
+    issuer_cert_uri = convert_jwks_uri(issuer.jwks_uri)
+    try:
+      parsed_token = _verify_signed_jwt_with_certs(
+          token, time_now, cache, cert_uri=issuer_cert_uri)
+    except Exception:  # pylint: disable=broad-except
+      _logger.debug(
+          'id_token verification failed for issuer %s', issuer_key, exc_info=True)
+      continue
 
-  if _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
-    email = parsed_token['email']
-    # The token might have an id, but it's a Gaia ID that's been
-    # obfuscated with the Focus key, rather than the AppEngine (igoogle)
-    # key.  If the developer ever put this email into the user DB
-    # and retrieved the ID from that, it'd be different from the ID we'd
-    # return here, so it's safer to not return the ID.
-    # Instead, we'll only return the email.
-    return users.User(email)
+    issuer_values = _listlike_guard(issuer.issuer, 'issuer', log_warning=False)
+    if isinstance(audiences, _Mapping):
+      audiences = audiences[issuer_key]
+    if _verify_parsed_token(
+        parsed_token, issuer_values, audiences, allowed_client_ids,
+        # There's some special handling we do for Google issuers.
+        # ESP doesn't do this, and it's both unnecessary and invalid for other issuers.
+        # So we'll turn it off except in the Google issuer case.
+        is_legacy_google_auth=(issuer.issuer == _ISSUERS)):
+      email = parsed_token['email']
+      # The token might have an id, but it's a Gaia ID that's been
+      # obfuscated with the Focus key, rather than the AppEngine (igoogle)
+      # key.  If the developer ever put this email into the user DB
+      # and retrieved the ID from that, it'd be different from the ID we'd
+      # return here, so it's safer to not return the ID.
+      # Instead, we'll only return the email.
+      return users.User(email)
 
 
 # pylint: disable=unused-argument
@@ -444,11 +467,12 @@ def _is_local_dev():
   return os.environ.get('SERVER_SOFTWARE', '').startswith('Development')
 
 
-def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
+def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids, is_legacy_google_auth=True):
   """Verify a parsed user ID token.
 
   Args:
     parsed_token: The parsed token information.
+    issuers: A list of allowed issuers
     audiences: The allowed audiences.
     allowed_client_ids: The allowed client IDs.
 
@@ -465,22 +489,24 @@ def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
   if not aud:
     _logger.warning('No aud field in token')
     return False
-  # Special handling if aud == cid.  This occurs with iOS and browsers.
+  # Special legacy handling if aud == cid.  This occurs with iOS and browsers.
   # As long as audience == client_id and cid is allowed, we need to accept
   # the audience for compatibility.
   cid = parsed_token.get('azp')
-  if aud != cid and aud not in audiences:
+  audience_allowed = (aud in audiences) or (is_legacy_google_auth and aud == cid)
+  if not audience_allowed:
     _logger.warning('Audience not allowed: %s', aud)
     return False
 
-  # Check allowed client IDs.
-  if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
-    _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
-                    'Id_token cannot be verified.')
-    return False
-  elif not cid or cid not in allowed_client_ids:
-    _logger.warning('Client ID is not allowed: %s', cid)
-    return False
+  # Check allowed client IDs, for legacy auth.
+  if is_legacy_google_auth:
+    if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
+      _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
+                      'Id_token cannot be verified.')
+      return False
+    elif not cid or cid not in allowed_client_ids:
+      _logger.warning('Client ID is not allowed: %s', cid)
+      return False
 
   if 'email' not in parsed_token:
     return False
@@ -717,7 +743,7 @@ def convert_jwks_uri(jwks_uri):
   public cert in modulus/exponent form in JSON.
   """
   if not jwks_uri.startswith(_TEXT_CERT_PREFIX):
-    raise ValueError('Unrecognized URI type')
+    return jwks_uri
   return jwks_uri.replace(_TEXT_CERT_PREFIX, _JSON_CERT_PREFIX)
 
 
@@ -795,7 +821,7 @@ def _parse_and_verify_jwt(token, time_now, issuers, audiences, cert_uri, cache):
   return parsed_token
 
 
-def _listlike_guard(obj, name, iterable_only=False):
+def _listlike_guard(obj, name, iterable_only=False, log_warning=True):
   """
   We frequently require passed objects to support iteration or
   containment expressions, but not be strings. (Of course, strings
@@ -811,6 +837,7 @@ def _listlike_guard(obj, name, iterable_only=False):
     raise ValueError('{} must be of type {}'.format(name, required_type_name))
   # at this point it is definitely the right type, but might be a string
   if isinstance(obj, basestring):
-    _logger.warning('{} passed as a string; should be list-like'.format(name))
+    if log_warning:
+      _logger.warning('{} passed as a string; should be list-like'.format(name))
     return (obj,)
   return obj

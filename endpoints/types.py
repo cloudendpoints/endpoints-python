@@ -24,7 +24,7 @@ from __future__ import absolute_import
 import attr
 
 __all__ = [
-    'OAuth2Scope',
+    'OAuth2Scope', 'Issuer', 'LimitDefinition', 'Namespace',
 ]
 
 
@@ -45,3 +45,11 @@ class OAuth2Scope(object):
         "Convert a list of scopes into a list of OAuth2Scope objects."
         if values is not None:
             return [cls.convert_scope(value) for value in values]
+
+Issuer = attr.make_class('Issuer', ['issuer', 'jwks_uri'])
+LimitDefinition = attr.make_class('LimitDefinition', ['metric_name',
+                                                      'display_name',
+                                                      'default_limit'])
+Namespace = attr.make_class('Namespace', ['owner_domain',
+                                          'owner_name',
+                                          'package_path'])

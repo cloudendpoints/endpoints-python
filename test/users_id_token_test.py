@@ -34,6 +34,7 @@ from endpoints import constants
 from endpoints import message_types
 from endpoints import messages
 from endpoints import remote
+from endpoints import types as endpoints_types
 from endpoints import users_id_token
 
 # The key response that allows the _SAMPLE_TOKEN to be verified.  This key was
@@ -176,7 +177,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
 
   def testSampleIdToken(self):
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
-                                             users_id_token._ISSUERS,
+                                             users_id_token._DEFAULT_GOOGLE_ISSUER,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              self._SAMPLE_TIME_NOW, self.cache)
@@ -273,7 +274,7 @@ class UsersIdTokenTest(UsersIdTokenTestBase):
     # Also verify that this doesn't return a user when called from
     # users_id_token.
     user = users_id_token._get_id_token_user(self._SAMPLE_TOKEN,
-                                             users_id_token._ISSUERS,
+                                             users_id_token._DEFAULT_GOOGLE_ISSUER,
                                              self._SAMPLE_AUDIENCES,
                                              self._SAMPLE_ALLOWED_CLIENT_IDS,
                                              expired_time_now, self.cache)
@@ -613,7 +614,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
       mock_time.time.assert_called_once_with()
       mock_get.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
@@ -691,7 +692,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
     self.assertEqual(os.getenv('ENDPOINTS_AUTH_EMAIL'), 'test@gmail.com')
     mock_get_id_token_user.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
@@ -707,7 +708,7 @@ class UsersIdTokenTestWithSimpleApi(UsersIdTokenTestBase):
 
     mock_get_id_token_user.assert_called_once_with(
         self._SAMPLE_TOKEN,
-        users_id_token._ISSUERS,
+        users_id_token._DEFAULT_GOOGLE_ISSUER,
         self._SAMPLE_AUDIENCES,
         (constants.API_EXPLORER_CLIENT_ID,) + self._SAMPLE_ALLOWED_CLIENT_IDS,
         1001,
@@ -916,5 +917,87 @@ def test_process_scopes(scopelist, all_scopes, sufficient_scopes):
 def test_are_scopes_sufficient(authorized_scopes, sufficient_scopes, is_valid):
     assert users_id_token._are_scopes_sufficient(authorized_scopes, sufficient_scopes) is is_valid
 
-if __name__ == '__main__':
-  unittest.main()
+def _make_mocked_verify_signed_jwt_with_certs(valid_cert_uri):
+    def side_effect(jwt, time_now, cache, cert_uri=users_id_token._DEFAULT_CERT_URI):
+        if cert_uri == valid_cert_uri:
+            return jwt
+        raise users_id_token._AppIdentityError('mock mismatch')
+    return side_effect
+
+# Mock _verify_signed_jwt_with_certs (certificate/signature, timestamps)
+_ID_TOKEN_PARAMS = (
+    'valid_issuers', 'valid_audiences', 'valid_client_ids',
+    'token_sig_cert_uri', 'token_issuer',
+    'token_audience', 'token_client_id', 'token_email_address'
+)
+
+
+GOOGLE_ISSUER = endpoints_types.Issuer(
+    'https://accounts.google.com',
+    users_id_token._DEFAULT_CERT_URI)
+AUTH0_ISSUER = endpoints_types.Issuer(
+    'https://YOUR-ACCOUNT-NAME.auth0.com',
+    'https://YOUR-ACCOUNT-NAME.auth0.com/.well-known/jwks.json')
+FIREBASE_ISSUER = endpoints_types.Issuer(
+    'https://securetoken.google.com/YOUR-PROJECT-ID',
+    'https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com')
+SA1_ISSUER = endpoints_types.Issuer(
+    'YOUR-SERVICE-ACCOUNT-EMAIL-1',
+    'https://www.googleapis.com/robot/v1/metadata/x509/YOUR-SERVICE-ACCOUNT-EMAIL-1')
+SA2_ISSUER = endpoints_types.Issuer(
+    'YOUR-SERVICE-ACCOUNT-EMAIL-2',
+    'https://www.googleapis.com/robot/v1/metadata/x509/YOUR-SERVICE-ACCOUNT-EMAIL-2')
+
+
+@pytest.mark.parametrize(_ID_TOKEN_PARAMS, [
+    # Only Google auth configured
+    ({'google_id_token': GOOGLE_ISSUER}, ['audience1'], ['clientid1'],
+     GOOGLE_ISSUER.jwks_uri, GOOGLE_ISSUER.issuer, 'audience1', 'clientid1', 'user@example.com'),
+    # Only Auth0 auth configured
+    ({'auth0': AUTH0_ISSUER}, {'auth0': ['auth0_audience']}, [],
+      AUTH0_ISSUER.jwks_uri, AUTH0_ISSUER.issuer, 'auth0_audience', None, 'user@example.com'),
+    # Both Google and Auth0 auth configured, token is for Google
+    ({'google_id_token': GOOGLE_ISSUER, 'auth0': AUTH0_ISSUER},
+     {'google_id_token': ['audience1'], 'auth0': ['auth0_audience']}, ['clientid1'],
+     GOOGLE_ISSUER.jwks_uri, GOOGLE_ISSUER.issuer, 'audience1', 'clientid1', 'user@example.com'),
+    # Both Google and Auth0 auth configured, token is for Auth0
+    ({'google_id_token': GOOGLE_ISSUER, 'auth0': AUTH0_ISSUER},
+     {'google_id_token': ['audience1'], 'auth0': ['auth0_audience']}, ['clientid1'],
+      AUTH0_ISSUER.jwks_uri, AUTH0_ISSUER.issuer, 'auth0_audience', None, 'user@example.com'),
+    # Only Firebase auth configured
+    ({'firebase': FIREBASE_ISSUER}, {'firebase': ['audience2', 'audience3']}, [],
+     FIREBASE_ISSUER.jwks_uri, FIREBASE_ISSUER.issuer, 'audience3', None, 'firebase@user.com'),
+    # Service Account configured
+    ({'serviceAccount': SA1_ISSUER}, {'serviceAccount': ['https://www.googleapis.com/oauth2/v4/token']}, [],
+     'https://www.googleapis.com/service_accounts/v1/metadata/raw/YOUR-SERVICE-ACCOUNT-EMAIL-1',
+     SA1_ISSUER.issuer, 'https://www.googleapis.com/oauth2/v4/token', None, SA1_ISSUER.issuer),
+    # Both Service Accounts configured, token from first
+    ({'serviceAccount1': SA1_ISSUER, 'serviceAccount2': SA2_ISSUER},
+     {'serviceAccount1': ['https://www.googleapis.com/oauth2/v4/token'],
+      'serviceAccount2': ['https://myservice.appspot.com']}, [],
+     'https://www.googleapis.com/service_accounts/v1/metadata/raw/YOUR-SERVICE-ACCOUNT-EMAIL-1',
+     SA1_ISSUER.issuer, 'https://www.googleapis.com/oauth2/v4/token', None, SA1_ISSUER.issuer),
+    # Both Service Accounts configured, token from second
+    ({'serviceAccount1': SA1_ISSUER, 'serviceAccount2': SA2_ISSUER},
+     {'serviceAccount1': ['https://www.googleapis.com/oauth2/v4/token'],
+      'serviceAccount2': ['https://myservice.appspot.com']}, [],
+     'https://www.googleapis.com/service_accounts/v1/metadata/raw/YOUR-SERVICE-ACCOUNT-EMAIL-2',
+     SA2_ISSUER.issuer, 'https://myservice.appspot.com', None, SA2_ISSUER.issuer),
+])
+def test_get_id_token_user(valid_issuers, valid_audiences, valid_client_ids,
+                           token_sig_cert_uri, token_issuer,
+                           token_audience, token_client_id, token_email_address):
+    cache = TestCache()
+    parsed_token = {
+        'iss': token_issuer,
+        'aud': token_audience,
+        'azp': token_client_id,
+        'email': token_email_address,
+    }
+
+    with mock.patch.object(users_id_token, '_verify_signed_jwt_with_certs') as mocked_verify:
+        mocked_verify.side_effect = _make_mocked_verify_signed_jwt_with_certs(token_sig_cert_uri)
+        user = users_id_token._get_id_token_user(
+            parsed_token, valid_issuers, valid_audiences, valid_client_ids, 0, cache)
+        assert user is not None
+        assert user.email() == token_email_address
