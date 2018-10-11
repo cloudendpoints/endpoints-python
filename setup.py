@@ -15,20 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import re
-import sys
 from setuptools import setup, find_packages
-
-# Get the version
-version_regex = r'__version__ = ["\']([^"\']*)["\']'
-with open('endpoints/__init__.py', 'r') as f:
-    text = f.read()
-    match = re.search(version_regex, text)
-    if match:
-        version = match.group(1)
-    else:
-        raise RuntimeError("No version number found!")
 
 install_requires = [
     'attrs==17.4.0',
@@ -39,7 +26,7 @@ install_requires = [
 
 setup(
     name='google-endpoints',
-    version=version,
+    version='4.7.0',
     description='Google Cloud Endpoints',
     long_description=open('README.rst').read(),
     author='Google Endpoints Authors',
