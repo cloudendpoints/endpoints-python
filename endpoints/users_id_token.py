@@ -314,7 +314,12 @@ def _get_id_token_user(token, issuers, audiences, allowed_client_ids, time_now, 
     issuer_values = _listlike_guard(issuer.issuer, 'issuer', log_warning=False)
     if isinstance(audiences, _Mapping):
       audiences = audiences[issuer_key]
-    if _verify_parsed_token(parsed_token, issuer_values, audiences, allowed_client_ids):
+    if _verify_parsed_token(
+        parsed_token, issuer_values, audiences, allowed_client_ids,
+        # There's some special handling we do for Google issuers.
+        # ESP doesn't do this, and it's both unnecessary and invalid for other issuers.
+        # So we'll turn it off except in the Google issuer case.
+        is_legacy_google_auth=(issuer.issuer == _ISSUERS)):
       email = parsed_token['email']
       # The token might have an id, but it's a Gaia ID that's been
       # obfuscated with the Focus key, rather than the AppEngine (igoogle)
@@ -462,7 +467,7 @@ def _is_local_dev():
   return os.environ.get('SERVER_SOFTWARE', '').startswith('Development')
 
 
-def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
+def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids, is_legacy_google_auth=True):
   """Verify a parsed user ID token.
 
   Args:
@@ -484,22 +489,24 @@ def _verify_parsed_token(parsed_token, issuers, audiences, allowed_client_ids):
   if not aud:
     _logger.warning('No aud field in token')
     return False
-  # Special handling if aud == cid.  This occurs with iOS and browsers.
+  # Special legacy handling if aud == cid.  This occurs with iOS and browsers.
   # As long as audience == client_id and cid is allowed, we need to accept
   # the audience for compatibility.
   cid = parsed_token.get('azp')
-  if aud != cid and aud not in audiences:
+  audience_allowed = (aud in audiences) or (is_legacy_google_auth and aud == cid)
+  if not audience_allowed:
     _logger.warning('Audience not allowed: %s', aud)
     return False
 
-  # Check allowed client IDs.
-  if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
-    _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
-                    'Id_token cannot be verified.')
-    return False
-  elif not cid or cid not in allowed_client_ids:
-    _logger.warning('Client ID is not allowed: %s', cid)
-    return False
+  # Check allowed client IDs, for legacy auth.
+  if is_legacy_google_auth:
+    if list(allowed_client_ids) == SKIP_CLIENT_ID_CHECK:
+      _logger.warning('Client ID check can\'t be skipped for ID tokens.  '
+                      'Id_token cannot be verified.')
+      return False
+    elif not cid or cid not in allowed_client_ids:
+      _logger.warning('Client ID is not allowed: %s', cid)
+      return False
 
   if 'email' not in parsed_token:
     return False
