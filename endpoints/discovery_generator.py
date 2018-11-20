@@ -322,6 +322,10 @@ class DiscoveryGenerator(object):
     if field.default:
       if isinstance(field, messages.EnumField):
         return field.default.name
+      elif isinstance(field, messages.BooleanField):
+        # The Python standard representation of a boolean value causes problems
+        # when generating client code.
+        return 'true' if field.default else 'false'
       else:
         return str(field.default)
 
@@ -564,7 +568,10 @@ class DiscoveryGenerator(object):
                 [''] * num_enums)
           elif 'default' in prop_value:
             # stringify default values
-            prop_value['default'] = str(prop_value['default'])
+            if prop_value.get('type') == 'boolean':
+              prop_value['default'] = 'true' if prop_value['default'] else 'false'
+            else:
+              prop_value['default'] = str(prop_value['default'])
           key_result['properties'][prop_key].pop('required', None)
 
       for key in ('type', 'id', 'description'):
@@ -881,6 +888,13 @@ class DiscoveryGenerator(object):
       descriptor['ownerDomain'] = merged_api_info.namespace.owner_domain
       descriptor['ownerName'] = merged_api_info.namespace.owner_name
       descriptor['packagePath'] = merged_api_info.namespace.package_path or ''
+    else:
+      if merged_api_info.owner_domain is not None:
+        descriptor['ownerDomain'] = merged_api_info.owner_domain
+      if merged_api_info.owner_name is not None:
+        descriptor['ownerName'] = merged_api_info.owner_name
+      if merged_api_info.package_path is not None:
+        descriptor['packagePath'] = merged_api_info.package_path
 
     method_map = {}
     method_collision_tracker = {}

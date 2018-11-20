@@ -53,7 +53,12 @@
           "location": "query",
           "required": true,
           "type": "string"
-        }
+        },
+	"allow": {
+	  "default": "true",
+	  "location": "query",
+	  "type": "boolean"
+	}
       },
       "path": "param/{parent}/{child}",
       "scopes": [

@@ -139,6 +139,7 @@ class MultipleParameterEndpoint(remote.Service):
         child = messages.StringField(3, required=True),
         queryb = messages.StringField(4, required=True),
         querya = messages.StringField(5, required=True),
+        allow = messages.BooleanField(6, default=True),
     ), message_types.VoidMessage, name='param', path='param/{parent}/{child}')
     def param(self, request):
         pass
