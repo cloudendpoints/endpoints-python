@@ -888,6 +888,13 @@ class DiscoveryGenerator(object):
       descriptor['ownerDomain'] = merged_api_info.namespace.owner_domain
       descriptor['ownerName'] = merged_api_info.namespace.owner_name
       descriptor['packagePath'] = merged_api_info.namespace.package_path or ''
+    else:
+      if merged_api_info.owner_domain is not None:
+        descriptor['ownerDomain'] = merged_api_info.owner_domain
+      if merged_api_info.owner_name is not None:
+        descriptor['ownerName'] = merged_api_info.owner_name
+      if merged_api_info.package_path is not None:
+        descriptor['packagePath'] = merged_api_info.package_path
 
     method_map = {}
     method_collision_tracker = {}

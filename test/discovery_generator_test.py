@@ -274,6 +274,36 @@ class DiscoveryGeneratorTest(BaseDiscoveryGeneratorTest):
 
     test_util.AssertDictEqual(expected_discovery, api, self)
 
+  def testNamespaceWithoutNamespace(self):
+    """
+    The owner_domain, owner_name, and package_path can all
+    be specified directly on the api.
+    """
+    @api_config.api(name='root', hostname='example.appspot.com', version='v1',
+                    description='This is an API',
+                    owner_domain='domain', owner_name='name', package_path='path')
+    class MyService(remote.Service):
+      """Describes MyService."""
+
+      @api_config.method(IdField, message_types.VoidMessage, path='entries',
+                         http_method='GET', name='get_entry')
+      def entries_get(self, unused_request):
+        """Id (integer) field type in the query parameters."""
+        return message_types.VoidMessage()
+
+    api = json.loads(self.generator.pretty_print_config_to_json(MyService))
+
+    try:
+      pwd = os.path.dirname(os.path.realpath(__file__))
+      test_file = os.path.join(pwd, 'testdata', 'discovery', 'namespace.json')
+      with open(test_file) as f:
+        expected_discovery = json.loads(f.read())
+    except IOError as e:
+      print 'Could not find expected output file ' + test_file
+      raise e
+
+    test_util.AssertDictEqual(expected_discovery, api, self)
+
 class DiscoveryMultiClassGeneratorTest(BaseDiscoveryGeneratorTest):
 
   def testMultipleClassService(self):
