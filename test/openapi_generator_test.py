@@ -2067,7 +2067,7 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
 
     @api_config.api(name='root', hostname='example.appspot.com',
                     version='v1', issuers=ISSUERS, audiences=['auth0audapi'])
-    class MyService1(remote.Service):
+    class Auth0Service(remote.Service):
       """Describes MyService."""
 
       @api_config.method(message_types.VoidMessage, message_types.VoidMessage, path='void',
@@ -2079,26 +2079,27 @@ class ThirdPartyAuthTest(BaseOpenApiGeneratorTest):
                          http_method='POST', name='void3', audiences=['auth0audmethod'])
       def void_post_audience(self, unused_request):
         return message_types.VoidMessage()
+
+    with pytest.raises(api_exceptions.ApiConfigurationError):
+      self.generator.pretty_print_config_to_json(Auth0Service)
 
     @api_config.api(name='root', hostname='example.appspot.com',
-                    version='v1', issuers=ISSUERS, audiences=['auth0audapi'])
-    class MyService2(remote.Service):
+                    version='v1')
+    class ApiKeyAndGoogleAuthService(remote.Service):
       """Describes MyService."""
 
       @api_config.method(message_types.VoidMessage, message_types.VoidMessage, path='void',
-                         http_method='POST', name='void')
+                         http_method='POST', name='void', api_key_required=True)
       def void_post(self, unused_request):
         return message_types.VoidMessage()
 
       @api_config.method(message_types.VoidMessage, message_types.VoidMessage, path='void3',
-                         http_method='POST', name='void3', audiences=['auth0audmethod'])
+                         http_method='POST', name='void3', audiences=['google-auth-audience'])
       def void_post_audience(self, unused_request):
         return message_types.VoidMessage()
 
-    with pytest.raises(api_exceptions.ApiConfigurationError):
-      self.generator.pretty_print_config_to_json(MyService1)
-    with pytest.raises(api_exceptions.ApiConfigurationError):
-      self.generator.pretty_print_config_to_json(MyService2)
+    # Shouldn't raise
+    self.generator.pretty_print_config_to_json(ApiKeyAndGoogleAuthService)
 
 
 MULTI_ISSUERS = {
