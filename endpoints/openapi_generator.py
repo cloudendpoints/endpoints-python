@@ -780,6 +780,9 @@ class OpenApiGenerator(object):
       # hash-appended versions, so we need to filter them out
       security_issuers = set()
       for definition_key in security_definitions.keys():
+        if definition_key == _API_KEY:
+          # API key definitions don't count for these purposes
+          continue
         if '-' in definition_key:
           split_key = definition_key.rsplit('-', 1)[0]
           if split_key in security_definitions:
