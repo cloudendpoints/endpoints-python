@@ -565,6 +565,8 @@ def MakeParser(prog):
   get_swagger_spec.set_defaults(callback=_GenOpenApiSpecCallback)
   AddStandardOptions(get_swagger_spec, 'application', 'hostname', 'output',
                      'service')
+  get_swagger_spec.add_argument('--x-google-api-name', action='store_true',
+                                help="Add the 'x-google-api-name' field to the generated spec")
 
   # By removing the help attribute, the following three actions won't be
   # displayed in usage message
