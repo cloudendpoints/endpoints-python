@@ -467,6 +467,20 @@ def _GenOpenApiSpecCallback(args, openapi_func=_GenOpenApiSpec):
     print 'OpenAPI spec written to %s' % openapi_path
 
 
+def _GenSwaggerSpecCallback(args):
+  """Generate OpenAPI (Swagger) specs to files [DEPRECATED].
+
+  This is a deprecated command generating OpenAPI (Swagger) specs. Use
+  get_openapi_spec instead.
+
+  Args:
+    args: An argparse.Namespace object to extract parameters from.
+  """
+  print "WARNING: gen_swagger_spec is deprecated."
+  print "WARNING: Use get_openapi_spec instead."
+  _GenOpenApiSpecCallback(args)
+
+
 def _GenClientLibCallback(args, client_func=_GenClientLib):
   """Generate a client library to file.
 
@@ -562,9 +576,11 @@ def MakeParser(prog):
   get_swagger_spec = subparsers.add_parser(
       'get_swagger_spec',
       help='Generates OpenAPI (Swagger) specs from service classes')
-  get_swagger_spec.set_defaults(callback=_GenOpenApiSpecCallback)
+  get_swagger_spec.set_defaults(callback=_GenSwaggerSpecCallback)
   AddStandardOptions(get_swagger_spec, 'application', 'hostname', 'output',
                      'service')
+  get_swagger_spec.add_argument('--x-google-api-name', action='store_true',
+                                help="Add the 'x-google-api-name' field to the generated spec")
 
   # By removing the help attribute, the following three actions won't be
   # displayed in usage message
